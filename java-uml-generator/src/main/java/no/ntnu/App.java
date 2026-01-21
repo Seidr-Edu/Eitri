@@ -9,7 +9,6 @@ import com.github.javaparser.ast.AccessSpecifier;
 import com.github.javaparser.ast.nodeTypes.modifiers.NodeWithAccessModifiers;
 // import com.github.javaparser.ast.body.BodyDeclaration;
 
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -88,21 +87,82 @@ public class App {
             String title = extractTitle(outFile);
             writer.write("@startuml "+ title +"\n");
             
-            // First, declare all classes/interfaces/enums
+            // First, declare all LOCAL classes/interfaces/enums (skip external dependencies)
             for (UmlType type : model.types.values()) {
-                writer.write(type.toPlantUmlDeclaration());
-                writer.newLine();
+                if (type.isLocal) {
+                    writer.write(type.toPlantUmlDeclaration());
+                    writer.newLine();
+                }
             }
             writer.newLine();
 
             // Then relations
             for (UmlRelation rel : model.relations) {
-                writer.write(rel.toPlantUmlRelation());
-                writer.newLine();
+                // Only include associations between local types or to meaningful external types
+                if (shouldIncludeRelation(rel, model)) {
+                    writer.write(rel.toPlantUmlRelation());
+                    writer.newLine();
+                }
             }
 
             writer.write("@enduml\n");
         }
+    }
+
+    private static boolean shouldIncludeRelation(UmlRelation rel, UmlModel model) {
+        // Always include inheritance and implementation relationships
+        if (rel.type != UmlRelation.Type.ASSOCIATION) {
+            return true;
+        }
+        
+        // For associations, filter out common Java types that clutter diagrams
+        String targetType = rel.to;
+        
+        // Skip primitive wrappers and common types
+        if (isCommonJavaType(targetType)) {
+            return false;
+        }
+        
+        // Include if target is a local type (defined in the scanned source)
+        UmlType targetTypeObj = model.types.get(targetType);
+        if (targetTypeObj != null && targetTypeObj.isLocal) {
+            return true;
+        }
+        
+        // Include if it's a meaningful external dependency (not java.*/javax.*)
+        return !targetType.startsWith("java.") && !targetType.startsWith("javax.");
+    }
+    
+    private static boolean isCommonJavaType(String fullTypeName) {
+        // Extract simple name for comparison
+        String simpleName = fullTypeName;
+        int lastDot = fullTypeName.lastIndexOf('.');
+        if (lastDot >= 0) {
+            simpleName = fullTypeName.substring(lastDot + 1);
+        }
+        
+        // Remove generics before comparison: Map<String,UmlType> -> Map
+        int genericStart = simpleName.indexOf('<');
+        if (genericStart >= 0) {
+            simpleName = simpleName.substring(0, genericStart);
+        }
+        
+        // Common types to exclude from associations
+        Set<String> commonTypes = Set.of(
+            // Primitives and wrappers
+            "boolean", "byte", "char", "short", "int", "long", "float", "double",
+            "Boolean", "Byte", "Character", "Short", "Integer", "Long", "Float", "Double",
+            "String", "Object", "Class", "Void",
+            // Collections
+            "List", "Set", "Map", "Collection", "Queue", "Deque",
+            "ArrayList", "LinkedList", "HashSet", "TreeSet", "HashMap", "TreeMap",
+            "LinkedHashMap", "LinkedHashSet", "Vector", "Stack",
+            // Common utilities
+            "Optional", "Stream", "Iterator", "Iterable", "Comparable", "Comparator",
+            "StringBuilder", "StringBuffer", "Pattern", "Matcher"
+        );
+        
+        return commonTypes.contains(simpleName) || fullTypeName.startsWith("java.") || fullTypeName.startsWith("javax.");
     }
 
     private static String extractTitle(String filePath) {
@@ -145,12 +205,14 @@ public class App {
 
         String fullName; // e.g. com.example.foo.Bar
         Kind kind;
+        boolean isLocal; // true if defined in scanned source, false if external dependency
         List<String> fields = new ArrayList<>();
         List<String> methods = new ArrayList<>();
 
         UmlType(String fullName, Kind kind) {
             this.fullName = fullName;
             this.kind = kind;
+            this.isLocal = false; // default to external, marked local when visited
         }
 
         String simpleName() {
@@ -258,6 +320,7 @@ public class App {
                     : UmlType.Kind.CLASS;
 
             UmlType type = model.getOrCreateType(fullName, kind);
+            type.isLocal = true; // Mark as locally defined
 
             // Fields
             for (FieldDeclaration field : n.getFields()) {
@@ -306,6 +369,13 @@ public class App {
                     : pkg + "." + n.getNameAsString();
 
             UmlType type = model.getOrCreateType(fullName, UmlType.Kind.ENUM);
+            type.isLocal = true; // Mark as locally defined
+            
+            // Add enum constants
+            for (EnumConstantDeclaration constant : n.getEntries()) {
+                type.fields.add(constant.getNameAsString());
+            }
+            
             super.visit(n, arg);
         }
 private String toVisibilityPrefix(BodyDeclaration<?> decl) {
