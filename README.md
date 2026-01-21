@@ -18,8 +18,14 @@ This tool uses JavaParser to statically analyze .java files and extract:
 ## 📦 Build
 
 Make sure you have Java 17+ and Maven installed.
+Install graphviz (for rendering diagrams from PlantUML) if you want to visualize the output.
 
 ```bash
+brew install graphviz
+```
+
+```bash
+cd java-uml-generator
 mvn clean package
 ```
 
