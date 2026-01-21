@@ -47,6 +47,10 @@ public class App {
 
         UmlModel model = new UmlModel();
 
+        // Configure JavaParser to support modern Java features (switch expressions, etc.)
+        StaticJavaParser.getParserConfiguration().setLanguageLevel(
+            com.github.javaparser.ParserConfiguration.LanguageLevel.JAVA_17);
+
         // Walk all .java files
         try (Stream<Path> paths = Files.walk(srcPath)) {
             List<Path> javaFiles = paths
