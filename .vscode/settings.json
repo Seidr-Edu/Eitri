@@ -1,3 +1,13 @@
 {
-	"java.compile.nullAnalysis.mode": "automatic"
+	"java.compile.nullAnalysis.mode": "automatic",
+	"java.search.scope": "main",
+	"java.import.exclusions": ["**/repos/**"],
+	"java.project.sourcePaths": [],
+	"java.project.referencedLibraries": [],
+	"files.exclude": {
+		"**/repos/**": false
+	},
+	"files.watcherExclude": {
+		"**/repos/**": true
+	}
 }
