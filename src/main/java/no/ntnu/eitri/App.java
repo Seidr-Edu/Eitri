@@ -1,29 +1,34 @@
 package no.ntnu.eitri;
 
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.body.*;
-import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
-import com.github.javaparser.ast.AccessSpecifier;
-import com.github.javaparser.ast.nodeTypes.modifiers.NodeWithAccessModifiers;
-// import com.github.javaparser.ast.body.BodyDeclaration;
+import no.ntnu.eitri.model.UmlModel;
+import no.ntnu.eitri.visitor.ClassCollectorVisitor;
+import no.ntnu.eitri.writer.PlantUmlWriter;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Simple CLI:
- * java -jar java-uml-generator-1.0-SNAPSHOT-jar-with-dependencies.jar \
- * --src /path/to/project/src/main/java \
- * --out /path/to/output.puml
+ * CLI entry point for generating PlantUML class diagrams from Java source code.
+ * 
+ * This tool parses Java source files using JavaParser, extracts class structures,
+ * relationships (inheritance, implementation, associations), and outputs a PlantUML
+ * diagram that can be rendered using PlantUML tools.
+ * 
+ * Usage:
+ *   java -jar eitri.jar --src /path/to/src --out /path/to/output.puml
+ * 
+ * @see <a href="https://plantuml.com/class-diagram">PlantUML Class Diagrams</a>
  */
 public class App {
 
@@ -44,377 +49,80 @@ public class App {
             System.exit(1);
         }
 
-        UmlModel model = new UmlModel();
-
-        // Configure JavaParser to support modern Java features (switch expressions,
-        // etc.)
-        StaticJavaParser.getParserConfiguration().setLanguageLevel(
-                com.github.javaparser.ParserConfiguration.LanguageLevel.JAVA_25);
-
-        // Walk all .java files
-        try (Stream<Path> paths = Files.walk(srcPath)) {
-            List<Path> javaFiles = paths
-                    .filter(p -> p.toString().endsWith(".java"))
-                    .collect(Collectors.toList());
-
-            for (Path p : javaFiles) {
-                try {
-                    CompilationUnit cu = StaticJavaParser.parse(p);
-                    cu.accept(new ClassCollectorVisitor(model), null);
-                } catch (Exception e) {
-                    System.err.println("Failed to parse " + p + ": " + e.getMessage());
-                }
-            }
-        }
-
-        // Write PlantUML
-        writePlantUml(model, outFile);
+        UmlModel model = parseSourceDirectory(srcPath);
+        
+        PlantUmlWriter writer = new PlantUmlWriter();
+        writer.write(model, outFile);
+        
         System.out.println("Wrote PlantUML to " + outFile);
     }
 
+    /**
+     * Parses command-line arguments into a key-value map.
+     * 
+     * Expects arguments in the format: --key value --key2 value2
+     * Uses a while loop with explicit index control to properly skip
+     * over the value after consuming a --key pair.
+     * 
+     * @param args command-line arguments from main()
+     * @return map of argument keys (including --) to their values
+     */
     private static Map<String, String> parseArgs(String[] args) {
         Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < args.length - 1; i++) {
+        int i = 0;
+        while (i < args.length - 1) {
             if (args[i].startsWith("--")) {
                 map.put(args[i], args[i + 1]);
+                // Skip both the key and value by advancing by 2
+                i += 2;
+            } else {
+                // Unknown argument format, skip it
                 i++;
             }
         }
         return map;
     }
 
-    private static void writePlantUml(UmlModel model, String outFile) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outFile))) {
-            String title = extractTitle(outFile);
-            writer.write("@startuml " + title + "\n");
-
-            // First, declare all LOCAL classes/interfaces/enums (skip external
-            // dependencies)
-            for (UmlType type : model.types.values()) {
-                if (type.isLocal) {
-                    writer.write(type.toPlantUmlDeclaration());
-                    writer.newLine();
-                }
-            }
-            writer.newLine();
-
-            // Then relations
-            for (UmlRelation rel : model.relations) {
-                // Only include associations between local types or to meaningful external types
-                if (shouldIncludeRelation(rel, model)) {
-                    writer.write(rel.toPlantUmlRelation());
-                    writer.newLine();
-                }
-            }
-
-            writer.write("@enduml\n");
-        }
-    }
-
-    private static boolean shouldIncludeRelation(UmlRelation rel, UmlModel model) {
-        // Always include inheritance and implementation relationships
-        if (rel.type != UmlRelation.Type.ASSOCIATION) {
-            return true;
-        }
-
-        // For associations, filter out common Java types that clutter diagrams
-        String targetType = rel.to;
-
-        // Skip primitive wrappers and common types
-        if (isCommonJavaType(targetType)) {
-            return false;
-        }
-
-        // Include if target is a local type (defined in the scanned source)
-        UmlType targetTypeObj = model.types.get(targetType);
-        if (targetTypeObj != null && targetTypeObj.isLocal) {
-            return true;
-        }
-
-        // Include if it's a meaningful external dependency (not java.*/javax.*)
-        return !targetType.startsWith("java.") && !targetType.startsWith("javax.");
-    }
-
-    private static boolean isCommonJavaType(String fullTypeName) {
-        // Extract simple name for comparison
-        String simpleName = fullTypeName;
-        int lastDot = fullTypeName.lastIndexOf('.');
-        if (lastDot >= 0) {
-            simpleName = fullTypeName.substring(lastDot + 1);
-        }
-
-        // Remove generics before comparison: Map<String,UmlType> -> Map
-        int genericStart = simpleName.indexOf('<');
-        if (genericStart >= 0) {
-            simpleName = simpleName.substring(0, genericStart);
-        }
-
-        // Common types to exclude from associations
-        Set<String> commonTypes = Set.of(
-                // Primitives and wrappers
-                "boolean", "byte", "char", "short", "int", "long", "float", "double",
-                "Boolean", "Byte", "Character", "Short", "Integer", "Long", "Float", "Double",
-                "String", "Object", "Class", "Void",
-                // Collections
-                "List", "Set", "Map", "Collection", "Queue", "Deque",
-                "ArrayList", "LinkedList", "HashSet", "TreeSet", "HashMap", "TreeMap",
-                "LinkedHashMap", "LinkedHashSet", "Vector", "Stack",
-                // Common utilities
-                "Optional", "Stream", "Iterator", "Iterable", "Comparable", "Comparator",
-                "StringBuilder", "StringBuffer", "Pattern", "Matcher");
-
-        return commonTypes.contains(simpleName) || fullTypeName.startsWith("java.")
-                || fullTypeName.startsWith("javax.");
-    }
-
-    private static String extractTitle(String filePath) {
-        // Extract filename from path
-        int lastSeparator = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
-        String filename = (lastSeparator >= 0) ? filePath.substring(lastSeparator + 1) : filePath;
-
-        // Remove .puml extension if present
-        if (filename.endsWith(".puml"))
-            filename = filename.substring(0, filename.length() - 5);
-
-        return filename;
-    }
-
-    // ===== Model classes =====
-
     /**
-     * Simple in-memory model of types and relations.
+     * Recursively parses all Java files in a directory and builds a UML model.
+     * 
+     * Uses JavaParser to parse source files and a visitor pattern to extract
+     * class/interface/enum declarations along with their members and relationships.
+     * 
+     * @param srcPath root directory containing Java source files
+     * @return populated UmlModel containing all discovered types and relations
+     * @throws IOException if directory traversal fails
      */
-    static class UmlModel {
-        Map<String, UmlType> types = new LinkedHashMap<>();
-        Set<UmlRelation> relations = new LinkedHashSet<>();
+    private static UmlModel parseSourceDirectory(Path srcPath) throws IOException {
+        UmlModel model = new UmlModel();
 
-        UmlType getOrCreateType(String fullName, UmlType.Kind kind) {
-            UmlType existing = types.get(fullName);
-            if (existing != null) {
-                return existing;
-            }
-            UmlType t = new UmlType(fullName, kind);
-            types.put(fullName, t);
-            return t;
-        }
+        // Configure JavaParser for modern Java syntax (switch expressions, records, etc.)
+        // Must match the Java version used in pom.xml to avoid parsing errors
+        StaticJavaParser.getParserConfiguration()
+                .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_25);
 
-        void addRelation(UmlRelation relation) {
-            relations.add(relation);
-        }
-    }
+        // Use try-with-resources to ensure the directory stream is closed
+        // Files.walk recursively traverses all subdirectories
+        try (Stream<Path> paths = Files.walk(srcPath)) {
+            // Collect to list first to avoid stream reuse issues
+            List<Path> javaFiles = paths
+                    .filter(p -> p.toString().endsWith(".java"))
+                    .collect(Collectors.toList());
 
-    static class UmlType {
-        enum Kind {
-            CLASS, INTERFACE, ENUM
-        }
-
-        String fullName; // e.g. com.example.foo.Bar
-        Kind kind;
-        boolean isLocal; // true if defined in scanned source, false if external dependency
-        List<String> fields = new ArrayList<>();
-        List<String> methods = new ArrayList<>();
-
-        UmlType(String fullName, Kind kind) {
-            this.fullName = fullName;
-            this.kind = kind;
-            this.isLocal = false; // default to external, marked local when visited
-        }
-
-        String simpleName() {
-            int idx = fullName.lastIndexOf('.');
-            return (idx >= 0) ? fullName.substring(idx + 1) : fullName;
-        }
-
-        String toPlantUmlDeclaration() {
-            StringBuilder sb = new StringBuilder();
-            switch (kind) {
-                case INTERFACE -> sb.append("interface ");
-                case ENUM -> sb.append("enum ");
-                case CLASS -> sb.append("class ");
-            }
-            sb.append(simpleName()).append(" {\n");
-            for (String f : fields) {
-                sb.append("  ").append(f).append("\n");
-            }
-            for (String m : methods) {
-                sb.append("  ").append(m).append("\n");
-            }
-            sb.append("}\n");
-            return sb.toString();
-        }
-    }
-
-    static class UmlRelation {
-        enum Type {
-            EXTENDS, IMPLEMENTS, ASSOCIATION
-        }
-
-        String from; // full name
-        String to; // full name
-        Type type;
-
-        UmlRelation(String from, String to, Type type) {
-            this.from = from;
-            this.to = to;
-            this.type = type;
-        }
-
-        String simple(String fullName) {
-            int idx = fullName.lastIndexOf('.');
-            return (idx >= 0) ? fullName.substring(idx + 1) : fullName;
-        }
-
-        String toPlantUmlRelation() {
-            String f = cleanTypeName(simple(from));
-            String t = cleanTypeName(simple(to));
-            return switch (type) {
-                case EXTENDS -> f + " --|> " + t;
-                case IMPLEMENTS -> f + " ..|> " + t;
-                case ASSOCIATION -> f + " --> " + t;
-            };
-        }
-
-        private String cleanTypeName(String typeName) {
-            // Remove generic parameters: Set<String> -> Set, List<CaseInfo> -> List
-            int idx = typeName.indexOf('<');
-            String cleaned = (idx >= 0) ? typeName.substring(0, idx) : typeName;
-            // Remove array brackets: byte[] -> byte
-            cleaned = cleaned.replace("[]", "");
-            // Remove any stray > characters
-            cleaned = cleaned.replace(">", "");
-            return cleaned;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
-            UmlRelation that = (UmlRelation) o;
-            return Objects.equals(from, that.from) &&
-                    Objects.equals(to, that.to) &&
-                    type == that.type;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(from, to, type);
-        }
-    }
-
-    // ===== Visitor that fills the UmlModel =====
-
-    static class ClassCollectorVisitor extends VoidVisitorAdapter<Void> {
-        private final UmlModel model;
-
-        ClassCollectorVisitor(UmlModel model) {
-            this.model = model;
-        }
-
-        @Override
-        public void visit(ClassOrInterfaceDeclaration n, Void arg) {
-            String pkg = n.findCompilationUnit()
-                    .flatMap(CompilationUnit::getPackageDeclaration)
-                    .map(pd -> pd.getName().asString())
-                    .orElse("");
-            String fullName = pkg.isEmpty()
-                    ? n.getNameAsString()
-                    : pkg + "." + n.getNameAsString();
-
-            UmlType.Kind kind = n.isInterface()
-                    ? UmlType.Kind.INTERFACE
-                    : UmlType.Kind.CLASS;
-
-            UmlType type = model.getOrCreateType(fullName, kind);
-            type.isLocal = true; // Mark as locally defined
-
-            // Fields
-            for (FieldDeclaration field : n.getFields()) {
-                for (VariableDeclarator v : field.getVariables()) {
-                    String typeName = v.getType().asString();
-                    String visibility = toVisibilityPrefix(field);
-                    type.fields.add(visibility + v.getNameAsString() + " : " + typeName);
-
-                    // Association: this class "has-a" that type
-                    String assocTo = qualifyTypeName(pkg, typeName);
-                    model.addRelation(new UmlRelation(fullName, assocTo, UmlRelation.Type.ASSOCIATION));
+            for (Path p : javaFiles) {
+                try {
+                    // Parse the source file into an AST (Abstract Syntax Tree)
+                    CompilationUnit cu = StaticJavaParser.parse(p);
+                    // Visit all nodes in the AST to collect UML-relevant information
+                    cu.accept(new ClassCollectorVisitor(model), null);
+                } catch (Exception e) {
+                    // Continue processing other files even if one fails
+                    // Common causes: syntax errors, unsupported language features
+                    System.err.println("Failed to parse " + p + ": " + e.getMessage());
                 }
             }
-
-            // Methods
-            for (MethodDeclaration m : n.getMethods()) {
-                String visibility = toVisibilityPrefix(m);
-                String params = m.getParameters().stream()
-                        .map(p -> p.getNameAsString() + " : " + p.getType().asString())
-                        .collect(Collectors.joining(", "));
-                String sig = visibility + m.getNameAsString() + "(" + params + ") : " + m.getType().asString();
-                type.methods.add(sig);
-            }
-
-            // Inheritance / implementation
-            n.getExtendedTypes().forEach(ext -> {
-                String target = qualifyTypeName(pkg, ext.getNameAsString());
-                model.addRelation(new UmlRelation(fullName, target, UmlRelation.Type.EXTENDS));
-            });
-            n.getImplementedTypes().forEach(impl -> {
-                String target = qualifyTypeName(pkg, impl.getNameAsString());
-                model.addRelation(new UmlRelation(fullName, target, UmlRelation.Type.IMPLEMENTS));
-            });
-
-            super.visit(n, arg); // continue to inner classes, etc.
         }
 
-        @Override
-        public void visit(EnumDeclaration n, Void arg) {
-            String pkg = n.findCompilationUnit()
-                    .flatMap(CompilationUnit::getPackageDeclaration)
-                    .map(pd -> pd.getName().asString())
-                    .orElse("");
-            String fullName = pkg.isEmpty()
-                    ? n.getNameAsString()
-                    : pkg + "." + n.getNameAsString();
-
-            UmlType type = model.getOrCreateType(fullName, UmlType.Kind.ENUM);
-            type.isLocal = true; // Mark as locally defined
-
-            // Add enum constants
-            for (EnumConstantDeclaration constant : n.getEntries()) {
-                type.fields.add(constant.getNameAsString());
-            }
-
-            super.visit(n, arg);
-        }
-
-        private String toVisibilityPrefix(BodyDeclaration<?> decl) {
-            if (decl instanceof NodeWithAccessModifiers) {
-                NodeWithAccessModifiers<?> node = (NodeWithAccessModifiers<?>) decl;
-                AccessSpecifier access = node.getAccessSpecifier();
-                switch (access) {
-                    case PUBLIC:
-                        return "+ ";
-                    case PROTECTED:
-                        return "# ";
-                    case PRIVATE:
-                        return "- ";
-                    case NONE: // package-private in your version
-                    default:
-                        return "~ ";
-                }
-            }
-            return "~ ";
-        }
-
-        private String qualifyTypeName(String currentPackage, String typeName) {
-            // VERY simplistic: if it contains '.', treat as already-qualified.
-            // Otherwise, assume same package (good enough for diagrams).
-            if (typeName.contains(".")) {
-                return typeName;
-            }
-            if (currentPackage == null || currentPackage.isEmpty()) {
-                return typeName;
-            }
-            return currentPackage + "." + typeName;
-        }
+        return model;
     }
 }
