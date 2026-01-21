@@ -81,8 +81,9 @@ public class App {
 
     private static void writePlantUml(UmlModel model, String outFile) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outFile))) {
-            writer.write("@startuml\n");
-
+            String title = extractTitle(outFile);
+            writer.write("@startuml "+ title +"\n");
+            
             // First, declare all classes/interfaces/enums
             for (UmlType type : model.types.values()) {
                 writer.write(type.toPlantUmlDeclaration());
@@ -98,6 +99,17 @@ public class App {
 
             writer.write("@enduml\n");
         }
+    }
+
+    private static String extractTitle(String filePath) {
+        // Extract filename from path
+        int lastSeparator = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+        String filename = (lastSeparator >= 0) ? filePath.substring(lastSeparator + 1) : filePath;
+        
+        // Remove .puml extension if present
+        if (filename.endsWith(".puml")) filename = filename.substring(0, filename.length() - 5);
+        
+        return filename;
     }
 
     // ===== Model classes =====
