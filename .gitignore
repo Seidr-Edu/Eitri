@@ -26,3 +26,5 @@ replay_pid*
 repos/*
 .DS_Store
 target
+
+*.puml
