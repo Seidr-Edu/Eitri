@@ -25,7 +25,6 @@ brew install graphviz
 ```
 
 ```bash
-cd java-uml-generator
 mvn clean package
 ```
 
