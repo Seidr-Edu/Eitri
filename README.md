@@ -15,6 +15,10 @@ This tool uses JavaParser to statically analyze .java files and extract:
 - Basic associations between user‑defined types
 - Generics and common JDK types are filtered out to avoid diagram noise.
 
+## Dependencies
+
+- [JavaParser](https://javaparser.org/) for parsing Java source code. See [JavaParser GitHub](https://github.com/javaparser/javaparser/blob/master/readme.md) for docs.
+
 ## 📦 Build
 
 Make sure you have Java 17+ and Maven installed.
