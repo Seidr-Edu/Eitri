@@ -1,4 +1,4 @@
-package no.ntnu;
+package no.ntnu.eitri;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
@@ -21,9 +21,9 @@ import java.util.stream.Stream;
 
 /**
  * Simple CLI:
- *   java -jar java-uml-generator-1.0-SNAPSHOT-jar-with-dependencies.jar \
- *       --src /path/to/project/src/main/java \
- *       --out /path/to/output.puml
+ * java -jar java-uml-generator-1.0-SNAPSHOT-jar-with-dependencies.jar \
+ * --src /path/to/project/src/main/java \
+ * --out /path/to/output.puml
  */
 public class App {
 
@@ -46,9 +46,10 @@ public class App {
 
         UmlModel model = new UmlModel();
 
-        // Configure JavaParser to support modern Java features (switch expressions, etc.)
+        // Configure JavaParser to support modern Java features (switch expressions,
+        // etc.)
         StaticJavaParser.getParserConfiguration().setLanguageLevel(
-            com.github.javaparser.ParserConfiguration.LanguageLevel.JAVA_17);
+                com.github.javaparser.ParserConfiguration.LanguageLevel.JAVA_25);
 
         // Walk all .java files
         try (Stream<Path> paths = Files.walk(srcPath)) {
@@ -85,9 +86,10 @@ public class App {
     private static void writePlantUml(UmlModel model, String outFile) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outFile))) {
             String title = extractTitle(outFile);
-            writer.write("@startuml "+ title +"\n");
-            
-            // First, declare all LOCAL classes/interfaces/enums (skip external dependencies)
+            writer.write("@startuml " + title + "\n");
+
+            // First, declare all LOCAL classes/interfaces/enums (skip external
+            // dependencies)
             for (UmlType type : model.types.values()) {
                 if (type.isLocal) {
                     writer.write(type.toPlantUmlDeclaration());
@@ -114,25 +116,25 @@ public class App {
         if (rel.type != UmlRelation.Type.ASSOCIATION) {
             return true;
         }
-        
+
         // For associations, filter out common Java types that clutter diagrams
         String targetType = rel.to;
-        
+
         // Skip primitive wrappers and common types
         if (isCommonJavaType(targetType)) {
             return false;
         }
-        
+
         // Include if target is a local type (defined in the scanned source)
         UmlType targetTypeObj = model.types.get(targetType);
         if (targetTypeObj != null && targetTypeObj.isLocal) {
             return true;
         }
-        
+
         // Include if it's a meaningful external dependency (not java.*/javax.*)
         return !targetType.startsWith("java.") && !targetType.startsWith("javax.");
     }
-    
+
     private static boolean isCommonJavaType(String fullTypeName) {
         // Extract simple name for comparison
         String simpleName = fullTypeName;
@@ -140,39 +142,40 @@ public class App {
         if (lastDot >= 0) {
             simpleName = fullTypeName.substring(lastDot + 1);
         }
-        
+
         // Remove generics before comparison: Map<String,UmlType> -> Map
         int genericStart = simpleName.indexOf('<');
         if (genericStart >= 0) {
             simpleName = simpleName.substring(0, genericStart);
         }
-        
+
         // Common types to exclude from associations
         Set<String> commonTypes = Set.of(
-            // Primitives and wrappers
-            "boolean", "byte", "char", "short", "int", "long", "float", "double",
-            "Boolean", "Byte", "Character", "Short", "Integer", "Long", "Float", "Double",
-            "String", "Object", "Class", "Void",
-            // Collections
-            "List", "Set", "Map", "Collection", "Queue", "Deque",
-            "ArrayList", "LinkedList", "HashSet", "TreeSet", "HashMap", "TreeMap",
-            "LinkedHashMap", "LinkedHashSet", "Vector", "Stack",
-            // Common utilities
-            "Optional", "Stream", "Iterator", "Iterable", "Comparable", "Comparator",
-            "StringBuilder", "StringBuffer", "Pattern", "Matcher"
-        );
-        
-        return commonTypes.contains(simpleName) || fullTypeName.startsWith("java.") || fullTypeName.startsWith("javax.");
+                // Primitives and wrappers
+                "boolean", "byte", "char", "short", "int", "long", "float", "double",
+                "Boolean", "Byte", "Character", "Short", "Integer", "Long", "Float", "Double",
+                "String", "Object", "Class", "Void",
+                // Collections
+                "List", "Set", "Map", "Collection", "Queue", "Deque",
+                "ArrayList", "LinkedList", "HashSet", "TreeSet", "HashMap", "TreeMap",
+                "LinkedHashMap", "LinkedHashSet", "Vector", "Stack",
+                // Common utilities
+                "Optional", "Stream", "Iterator", "Iterable", "Comparable", "Comparator",
+                "StringBuilder", "StringBuffer", "Pattern", "Matcher");
+
+        return commonTypes.contains(simpleName) || fullTypeName.startsWith("java.")
+                || fullTypeName.startsWith("javax.");
     }
 
     private static String extractTitle(String filePath) {
         // Extract filename from path
         int lastSeparator = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
         String filename = (lastSeparator >= 0) ? filePath.substring(lastSeparator + 1) : filePath;
-        
+
         // Remove .puml extension if present
-        if (filename.endsWith(".puml")) filename = filename.substring(0, filename.length() - 5);
-        
+        if (filename.endsWith(".puml"))
+            filename = filename.substring(0, filename.length() - 5);
+
         return filename;
     }
 
@@ -201,7 +204,9 @@ public class App {
     }
 
     static class UmlType {
-        enum Kind { CLASS, INTERFACE, ENUM }
+        enum Kind {
+            CLASS, INTERFACE, ENUM
+        }
 
         String fullName; // e.g. com.example.foo.Bar
         Kind kind;
@@ -245,7 +250,7 @@ public class App {
         }
 
         String from; // full name
-        String to;   // full name
+        String to; // full name
         Type type;
 
         UmlRelation(String from, String to, Type type) {
@@ -282,12 +287,14 @@ public class App {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
             UmlRelation that = (UmlRelation) o;
             return Objects.equals(from, that.from) &&
-                   Objects.equals(to, that.to) &&
-                   type == that.type;
+                    Objects.equals(to, that.to) &&
+                    type == that.type;
         }
 
         @Override
@@ -370,33 +377,33 @@ public class App {
 
             UmlType type = model.getOrCreateType(fullName, UmlType.Kind.ENUM);
             type.isLocal = true; // Mark as locally defined
-            
+
             // Add enum constants
             for (EnumConstantDeclaration constant : n.getEntries()) {
                 type.fields.add(constant.getNameAsString());
             }
-            
+
             super.visit(n, arg);
         }
-private String toVisibilityPrefix(BodyDeclaration<?> decl) {
-    if (decl instanceof NodeWithAccessModifiers) {
-        NodeWithAccessModifiers<?> node = (NodeWithAccessModifiers<?>) decl;
-        AccessSpecifier access = node.getAccessSpecifier();
-        switch (access) {
-            case PUBLIC:
-                return "+ ";
-            case PROTECTED:
-                return "# ";
-            case PRIVATE:
-                return "- ";
-            case NONE:           // package-private in your version
-            default:
-                return "~ ";
-        }
-    }
-    return "~ ";
-}
 
+        private String toVisibilityPrefix(BodyDeclaration<?> decl) {
+            if (decl instanceof NodeWithAccessModifiers) {
+                NodeWithAccessModifiers<?> node = (NodeWithAccessModifiers<?>) decl;
+                AccessSpecifier access = node.getAccessSpecifier();
+                switch (access) {
+                    case PUBLIC:
+                        return "+ ";
+                    case PROTECTED:
+                        return "# ";
+                    case PRIVATE:
+                        return "- ";
+                    case NONE: // package-private in your version
+                    default:
+                        return "~ ";
+                }
+            }
+            return "~ ";
+        }
 
         private String qualifyTypeName(String currentPackage, String typeName) {
             // VERY simplistic: if it contains '.', treat as already-qualified.

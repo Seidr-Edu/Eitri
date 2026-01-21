@@ -31,7 +31,7 @@ mvn clean package
 This produces an executable jar:
 
 ```bash
-target/java-uml-generator-1.0-SNAPSHOT-jar-with-dependencies.jar
+target/eitri-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
 ## ▶️ Usage
@@ -39,7 +39,7 @@ target/java-uml-generator-1.0-SNAPSHOT-jar-with-dependencies.jar
 Generate a PlantUML diagram from any Java project’s source directory:
 
 ```bash
-java -jar target/java-uml-generator-1.0-SNAPSHOT-jar-with-dependencies.jar \
+java -jar target/eitri-1.0-SNAPSHOT-jar-with-dependencies.jar \
  --src /path/to/project/src/main/java \
  --out /path/to/output/diagram.puml
 --src : Path to the root Java source folder
@@ -55,7 +55,7 @@ Example script for running the generator on all projects inside a directory:
 ```bash
 #!/usr/bin/env bash
 
-JAR="target/java-uml-generator-1.0-SNAPSHOT-jar-with-dependencies.jar"
+JAR="target/eitri-1.0-SNAPSHOT-jar-with-dependencies.jar"
 PROJECTS_ROOT="/path/to/projects"
 OUT_ROOT="/path/to/diagrams"
 
