@@ -110,4 +110,26 @@ public class UmlType {
         sb.append("}\n");
         return sb.toString();
     }
+
+    /**
+     * Generates a minimal PlantUML declaration for external types.
+     * 
+     * Used for types referenced in inheritance relationships but not
+     * defined in the scanned source. Declares only the type kind and name,
+     * ensuring PlantUML renders them with the correct stereotype (interface vs class).
+     * 
+     * Output format: "interface IFoo" or "class Bar"
+     * 
+     * @return PlantUML type declaration without body
+     */
+    public String toPlantUmlDeclarationHeader() {
+        StringBuilder sb = new StringBuilder();
+        switch (kind) {
+            case INTERFACE -> sb.append("interface ");
+            case ENUM -> sb.append("enum ");
+            case CLASS -> sb.append("class ");
+        }
+        sb.append(getSimpleName());
+        return sb.toString();
+    }
 }

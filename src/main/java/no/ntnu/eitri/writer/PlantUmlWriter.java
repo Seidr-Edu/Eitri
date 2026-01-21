@@ -7,6 +7,7 @@ import no.ntnu.eitri.model.UmlType;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -45,11 +46,29 @@ public class PlantUmlWriter {
             String title = extractTitle(outFile);
             writer.write("@startuml " + title + "\n");
 
-            // Declare all local types
+            // Declare all local types (fully detailed with fields and methods)
             for (UmlType type : model.getTypes()) {
                 if (type.isLocal()) {
                     writer.write(type.toPlantUmlDeclaration());
                     writer.newLine();
+                }
+            }
+            writer.newLine();
+
+            // Declare external types that are part of inheritance relationships
+            // These need to be declared so PlantUML renders them with the correct stereotype
+            // (interface vs class). We only declare the type header, no members.
+            // Track which external types we've already declared to avoid duplicates.
+            Set<String> declaredExternalTypes = new HashSet<>();
+            for (UmlRelation rel : model.getRelations()) {
+                if (rel.getType() == UmlRelation.Type.IMPLEMENTS || rel.getType() == UmlRelation.Type.EXTENDS) {
+                    UmlType targetType = model.getType(rel.getTo());
+                    if (targetType != null && !targetType.isLocal() && !declaredExternalTypes.contains(rel.getTo())) {
+                        // Declare external parent/interface types without members
+                        writer.write(targetType.toPlantUmlDeclarationHeader());
+                        writer.newLine();
+                        declaredExternalTypes.add(rel.getTo());
+                    }
                 }
             }
             writer.newLine();

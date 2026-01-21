@@ -106,10 +106,17 @@ public class ClassCollectorVisitor extends VoidVisitorAdapter<Void> {
     private void collectInheritance(ClassOrInterfaceDeclaration n, String pkg, String fullName) {
         n.getExtendedTypes().forEach(ext -> {
             String target = qualifyTypeName(pkg, ext.getNameAsString());
+            // Register the parent type - if extending, it could be a class or interface
+            // We use the same kind as the current type (interface extends interface, class extends class)
+            UmlType.Kind parentKind = n.isInterface() ? UmlType.Kind.INTERFACE : UmlType.Kind.CLASS;
+            model.getOrCreateType(target, parentKind);
             model.addRelation(new UmlRelation(fullName, target, UmlRelation.Type.EXTENDS));
         });
         n.getImplementedTypes().forEach(impl -> {
             String target = qualifyTypeName(pkg, impl.getNameAsString());
+            // Types referenced via 'implements' are always interfaces
+            // Register them as such so they render correctly in PlantUML
+            model.getOrCreateType(target, UmlType.Kind.INTERFACE);
             model.addRelation(new UmlRelation(fullName, target, UmlRelation.Type.IMPLEMENTS));
         });
     }
