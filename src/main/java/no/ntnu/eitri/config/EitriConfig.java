@@ -39,6 +39,7 @@ public final class EitriConfig {
     private boolean showNotes = false;
     private boolean showMultiplicities = true;
     private boolean showLabels = true;
+    private boolean showGhostTypes = false;  // Show placeholder types for unresolved references
 
     // === Relation Filtering (individual toggles) ===
     private boolean showInheritance = true;
@@ -218,6 +219,14 @@ public final class EitriConfig {
 
     public void setShowLabels(boolean showLabels) {
         this.showLabels = showLabels;
+    }
+
+    public boolean isShowGhostTypes() {
+        return showGhostTypes;
+    }
+
+    public void setShowGhostTypes(boolean showGhostTypes) {
+        this.showGhostTypes = showGhostTypes;
     }
 
     public boolean isShowInheritance() {
@@ -400,6 +409,11 @@ public final class EitriConfig {
 
         public Builder showLabels(boolean show) {
             config.setShowLabels(show);
+            return this;
+        }
+
+        public Builder showGhostTypes(boolean show) {
+            config.setShowGhostTypes(show);
             return this;
         }
 

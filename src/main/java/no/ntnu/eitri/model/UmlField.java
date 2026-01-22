@@ -1,6 +1,7 @@
 package no.ntnu.eitri.model;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -96,13 +97,64 @@ public final class UmlField {
         if (fullType == null || fullType.isBlank()) {
             return fullType;
         }
+        
+        // Handle generic types recursively
         int genericStart = fullType.indexOf('<');
-        String basePart = genericStart > 0 ? fullType.substring(0, genericStart) : fullType;
-        int lastDot = basePart.lastIndexOf('.');
-        if (lastDot < 0) {
-            return fullType;
+        if (genericStart > 0) {
+            int genericEnd = fullType.lastIndexOf('>');
+            if (genericEnd > genericStart) {
+                String basePart = fullType.substring(0, genericStart);
+                String genericPart = fullType.substring(genericStart + 1, genericEnd);
+                
+                // Simplify base type
+                String simpleBase = simplifyTypeName(basePart);
+                
+                // Simplify generic arguments (handle nested generics and multiple args)
+                String simpleGeneric = simplifyGenericArguments(genericPart);
+                
+                return simpleBase + "<" + simpleGeneric + ">";
+            }
         }
-        return fullType.substring(lastDot + 1);
+        
+        return simplifyTypeName(fullType);
+    }
+    
+    /**
+     * Simplifies a single type name by extracting just the simple class name.
+     */
+    private static String simplifyTypeName(String typeName) {
+        if (typeName == null) return typeName;
+        typeName = typeName.trim();
+        int lastDot = typeName.lastIndexOf('.');
+        return lastDot >= 0 ? typeName.substring(lastDot + 1) : typeName;
+    }
+    
+    /**
+     * Simplifies generic arguments, handling nested generics and multiple arguments.
+     */
+    private static String simplifyGenericArguments(String genericPart) {
+        StringBuilder result = new StringBuilder();
+        int depth = 0;
+        int start = 0;
+        
+        for (int i = 0; i < genericPart.length(); i++) {
+            char c = genericPart.charAt(i);
+            if (c == '<') {
+                depth++;
+            } else if (c == '>') {
+                depth--;
+            } else if (c == ',' && depth == 0) {
+                // Found argument separator at top level
+                result.append(extractSimpleName(genericPart.substring(start, i).trim()));
+                result.append(", ");
+                start = i + 1;
+            }
+        }
+        
+        // Add last argument
+        result.append(extractSimpleName(genericPart.substring(start).trim()));
+        
+        return result.toString();
     }
 
     public static Builder builder() {
@@ -142,6 +194,30 @@ public final class UmlField {
 
         public Builder modifiers(Set<Modifier> modifiers) {
             this.modifiers = modifiers;
+            return this;
+        }
+
+        public Builder addModifier(Modifier modifier) {
+            if (this.modifiers == null) {
+                this.modifiers = EnumSet.noneOf(Modifier.class);
+            } else if (!(this.modifiers instanceof EnumSet)) {
+                this.modifiers = EnumSet.copyOf(this.modifiers);
+            }
+            this.modifiers.add(modifier);
+            return this;
+        }
+
+        public Builder isStatic(boolean isStatic) {
+            if (isStatic) {
+                return addModifier(Modifier.STATIC);
+            }
+            return this;
+        }
+
+        public Builder isFinal(boolean isFinal) {
+            if (isFinal) {
+                return addModifier(Modifier.FINAL);
+            }
             return this;
         }
 

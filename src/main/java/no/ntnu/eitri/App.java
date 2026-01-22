@@ -4,6 +4,13 @@ import no.ntnu.eitri.config.ConfigException;
 import no.ntnu.eitri.config.ConfigLoader;
 import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.config.LayoutDirection;
+import no.ntnu.eitri.model.UmlModel;
+import no.ntnu.eitri.parser.ParseException;
+import no.ntnu.eitri.parser.SourceParser;
+import no.ntnu.eitri.parser.java.JavaSourceParser;
+import no.ntnu.eitri.writer.DiagramWriter;
+import no.ntnu.eitri.writer.WriteException;
+import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -179,20 +186,59 @@ public class App implements Callable<Integer> {
                 System.out.println("Configuration: " + config);
             }
 
-            // TODO: Implement JavaParser integration (PHASE 3)
-            // TODO: Implement PlantUML writer (PHASE 3)
+            // Parse source files
+            SourceParser parser = new JavaSourceParser();
+            if (verbose) {
+                System.out.println("Parsing with " + parser.getName() + "...");
+            }
+
+            UmlModel model = parser.parse(config.getSourcePaths(), config);
+
+            if (verbose) {
+                System.out.println("Parsed " + model.getTypes().size() + " types, " 
+                        + model.getRelations().size() + " relations");
+            }
 
             if (dryRun) {
-                System.out.println("Dry run: Would process " + config.getSourcePaths().size() + " source path(s)");
-                System.out.println("         Output: " + config.getOutputPath());
+                System.out.println("Dry run: Parsed " + model.getTypes().size() + " types from " 
+                        + config.getSourcePaths().size() + " source path(s)");
+                System.out.println("         Would write to: " + config.getOutputPath());
+                
+                // In verbose mode, show rendered output
+                if (verbose) {
+                    DiagramWriter writer = new PlantUmlWriter();
+                    String rendered = writer.render(model, config);
+                    System.out.println("\n--- Generated PlantUML ---");
+                    System.out.println(rendered);
+                    System.out.println("--- End PlantUML ---\n");
+                }
                 return 0;
             }
 
-            System.err.println("Error: Parser and writer not yet implemented (PHASE 3).");
-            return 1;
+            // Write output
+            DiagramWriter writer = new PlantUmlWriter();
+            writer.write(model, config, config.getOutputPath());
+
+            System.out.println("Generated " + config.getOutputPath() + " with " 
+                    + model.getTypes().size() + " types and " 
+                    + model.getRelations().size() + " relations.");
+
+            return 0;
 
         } catch (ConfigException e) {
             System.err.println("Configuration error: " + e.getMessage());
+            return 1;
+        } catch (ParseException e) {
+            System.err.println("Parse error: " + e.getMessage());
+            if (verbose && e.getCause() != null) {
+                e.getCause().printStackTrace();
+            }
+            return 1;
+        } catch (WriteException e) {
+            System.err.println("Write error: " + e.getMessage());
+            if (verbose && e.getCause() != null) {
+                e.getCause().printStackTrace();
+            }
             return 1;
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());

@@ -49,13 +49,55 @@ public record UmlParameter(
         if (fullType == null || fullType.isBlank()) {
             return fullType;
         }
-        // Handle generics: keep everything after last dot before '<'
+        
+        // Handle generic types recursively
         int genericStart = fullType.indexOf('<');
-        String basePart = genericStart > 0 ? fullType.substring(0, genericStart) : fullType;
-        int lastDot = basePart.lastIndexOf('.');
-        if (lastDot < 0) {
-            return fullType;
+        if (genericStart > 0) {
+            int genericEnd = fullType.lastIndexOf('>');
+            if (genericEnd > genericStart) {
+                String basePart = fullType.substring(0, genericStart);
+                String genericPart = fullType.substring(genericStart + 1, genericEnd);
+                
+                // Simplify base type
+                String simpleBase = simplifyTypeName(basePart);
+                
+                // Simplify generic arguments (handle nested generics and multiple args)
+                String simpleGeneric = simplifyGenericArguments(genericPart);
+                
+                return simpleBase + "<" + simpleGeneric + ">";
+            }
         }
-        return fullType.substring(lastDot + 1);
+        
+        return simplifyTypeName(fullType);
+    }
+    
+    private static String simplifyTypeName(String typeName) {
+        if (typeName == null) return typeName;
+        typeName = typeName.trim();
+        int lastDot = typeName.lastIndexOf('.');
+        return lastDot >= 0 ? typeName.substring(lastDot + 1) : typeName;
+    }
+    
+    private static String simplifyGenericArguments(String genericPart) {
+        StringBuilder result = new StringBuilder();
+        int depth = 0;
+        int start = 0;
+        
+        for (int i = 0; i < genericPart.length(); i++) {
+            char c = genericPart.charAt(i);
+            if (c == '<') {
+                depth++;
+            } else if (c == '>') {
+                depth--;
+            } else if (c == ',' && depth == 0) {
+                result.append(extractSimpleName(genericPart.substring(start, i).trim()));
+                result.append(", ");
+                start = i + 1;
+            }
+        }
+        
+        result.append(extractSimpleName(genericPart.substring(start).trim()));
+        
+        return result.toString();
     }
 }

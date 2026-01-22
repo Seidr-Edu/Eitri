@@ -1,5 +1,6 @@
 package no.ntnu.eitri.model;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -9,16 +10,19 @@ import java.util.Objects;
 public record UmlStereotype(
         String name,
         Character spotChar,
-        String spotColor
+        String spotColor,
+        List<String> values  // Annotation values for display
 ) {
     /**
-     * Creates a stereotype with optional spot (icon letter and color).
+     * Creates a stereotype with optional spot (icon letter and color) and values.
      * @param name the stereotype name (e.g., "Singleton")
      * @param spotChar optional spot character (e.g., 'S')
      * @param spotColor optional spot color (e.g., "#FF0000")
+     * @param values optional annotation values
      */
     public UmlStereotype {
         Objects.requireNonNull(name, "Stereotype name cannot be null");
+        values = values != null ? List.copyOf(values) : List.of();
     }
 
     /**
@@ -26,7 +30,26 @@ public record UmlStereotype(
      * @param name the stereotype name
      */
     public UmlStereotype(String name) {
-        this(name, null, null);
+        this(name, null, null, List.of());
+    }
+
+    /**
+     * Creates a stereotype with spot but no values.
+     * @param name the stereotype name
+     * @param spotChar the spot character
+     * @param spotColor the spot color
+     */
+    public UmlStereotype(String name, Character spotChar, String spotColor) {
+        this(name, spotChar, spotColor, List.of());
+    }
+
+    /**
+     * Creates a stereotype with values but no spot.
+     * @param name the stereotype name
+     * @param values the annotation values
+     */
+    public UmlStereotype(String name, List<String> values) {
+        this(name, null, null, values);
     }
 
     /**
@@ -41,5 +64,13 @@ public record UmlStereotype(
         } else {
             return "<<" + name + ">>";
         }
+    }
+
+    /**
+     * Checks if this stereotype has annotation values.
+     * @return true if values are present
+     */
+    public boolean hasValues() {
+        return !values.isEmpty();
     }
 }

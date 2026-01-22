@@ -11,7 +11,12 @@ import java.util.stream.Collectors;
 public enum Modifier {
     STATIC("{static}"),
     ABSTRACT("{abstract}"),
-    FINAL(""); // Final doesn't have a PlantUML keyword; can be shown via readOnly or stereotype
+    FINAL(""),  // Final doesn't have a PlantUML keyword; can be shown via readOnly or stereotype
+    SYNCHRONIZED(""),
+    NATIVE(""),
+    DEFAULT(""),  // For default interface methods
+    VOLATILE(""),
+    TRANSIENT("");
 
     private final String plantUmlKeyword;
 
