@@ -199,7 +199,7 @@ class ConfigLoaderTest {
         @Test
         @DisplayName("load returns default config when no config files exist")
         void loadDefaultConfig() throws ConfigException {
-            // No .eitri.yaml in temp dir, no explicit config
+            // No .eitri.config.yaml in temp dir, no explicit config
             EitriConfig config = ConfigLoader.load(null);
 
             assertNotNull(config);

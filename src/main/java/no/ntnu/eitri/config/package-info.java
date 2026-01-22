@@ -16,7 +16,7 @@
  * <h2>Configuration Resolution Order</h2>
  * <ol>
  *   <li>Built-in defaults</li>
- *   <li>.eitri.yaml in working directory</li>
+ *   <li>.eitri.config.yaml in working directory</li>
  *   <li>Explicit --config file</li>
  *   <li>CLI flags (highest priority)</li>
  * </ol>

@@ -15,14 +15,14 @@ import java.util.Map;
  * Resolution order (later overrides earlier):
  * <ol>
  *   <li>Built-in defaults (new EitriConfig())</li>
- *   <li>.eitri.yaml in working directory (if exists)</li>
+ *   <li>.eitri.config.yaml in working directory (if exists)</li>
  *   <li>Explicit --config file (if specified)</li>
  *   <li>CLI flags (applied by caller)</li>
  * </ol>
  */
 public final class ConfigLoader {
 
-    public static final String DEFAULT_CONFIG_FILENAME = ".eitri.yaml";
+    public static final String DEFAULT_CONFIG_FILENAME = ".eitri.config.yaml";
 
     private ConfigLoader() {
         // Utility class
@@ -39,7 +39,7 @@ public final class ConfigLoader {
         // Start with defaults
         EitriConfig config = new EitriConfig();
 
-        // Try to load .eitri.yaml from working directory
+        // Try to load .eitri.config.yaml from working directory
         Path workingDirConfig = Path.of(System.getProperty("user.dir"), DEFAULT_CONFIG_FILENAME);
         if (Files.exists(workingDirConfig)) {
             EitriConfig workingConfig = loadFromYaml(workingDirConfig);

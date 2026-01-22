@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.logging.Logger;
 
 /**
  * Eitri - Java to PlantUML class diagram generator.
@@ -35,6 +36,8 @@ import java.util.concurrent.Callable;
         sortOptions = false
 )
 public class App implements Callable<Integer> {
+
+    private static final Logger LOGGER = Logger.getLogger(App.class.getName());
 
     // === Required Arguments ===
 
@@ -253,7 +256,22 @@ public class App implements Callable<Integer> {
      * Builds the final configuration by merging config file and CLI options.
      */
     private EitriConfig buildConfig() throws ConfigException {
-        // Load from files (defaults -> .eitri.yaml -> --config)
+        // Check for config sources and log
+        Path workingDirConfig = Path.of(System.getProperty("user.dir"), ConfigLoader.DEFAULT_CONFIG_FILENAME);
+        boolean hasWorkingDirConfig = Files.exists(workingDirConfig);
+        boolean hasExplicitConfig = configPath != null;
+
+        if (verbose) {
+            if (hasExplicitConfig) {
+                LOGGER.info("Loading configuration from: " + configPath);
+            } else if (hasWorkingDirConfig) {
+                LOGGER.info("Loading configuration from: " + workingDirConfig);
+            } else {
+                LOGGER.info("Using default configuration (no config file found)");
+            }
+        }
+
+        // Load from files (defaults -> .eitri.config.yaml -> --config)
         EitriConfig config = ConfigLoader.load(configPath);
 
         // Apply CLI overrides (highest priority)

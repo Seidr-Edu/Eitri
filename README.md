@@ -88,10 +88,10 @@ Run `java -jar eitri.jar --help` for full option list.
 
 ## ⚙️ YAML Configuration
 
-Create an `eitri.yaml` file for reusable settings:
+Create an `.eitri.config.yaml` file for reusable settings:
 
 ```yaml
-# eitri.yaml
+# .eitri.config.yaml
 diagramName: my-project
 direction: tb
 
