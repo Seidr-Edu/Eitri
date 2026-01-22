@@ -1,0 +1,312 @@
+package no.ntnu.eitri.model;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+/**
+ * A UML type element (class, interface, enum, annotation, record).
+ */
+public final class UmlType {
+    private final String id;              // Unique identifier (fully qualified name)
+    private final String name;            // Simple name
+    private final String displayName;     // Optional display name (for aliases)
+    private final String packageName;     // Package name
+    private final TypeKind kind;
+    private final Visibility visibility;
+    private final List<UmlStereotype> stereotypes;
+    private final List<String> tags;      // PlantUML $tags for hide/show
+    private final String style;           // Optional inline style (e.g., "#back:palegreen")
+    private final List<UmlGeneric> generics;
+    private final List<UmlField> fields;
+    private final List<UmlMethod> methods;
+    // TODO: Add nestedTypes for inner classes support
+
+    private UmlType(Builder builder) {
+        this.name = Objects.requireNonNull(builder.name, "Type name cannot be null");
+        this.packageName = builder.packageName != null ? builder.packageName : "";
+        this.id = builder.id != null ? builder.id : computeId(this.packageName, this.name);
+        this.displayName = builder.displayName;
+        this.kind = builder.kind != null ? builder.kind : TypeKind.CLASS;
+        this.visibility = builder.visibility != null ? builder.visibility : Visibility.PACKAGE;
+        this.stereotypes = builder.stereotypes != null ? List.copyOf(builder.stereotypes) : List.of();
+        this.tags = builder.tags != null ? List.copyOf(builder.tags) : List.of();
+        this.style = builder.style;
+        this.generics = builder.generics != null ? List.copyOf(builder.generics) : List.of();
+        this.fields = builder.fields != null ? List.copyOf(builder.fields) : List.of();
+        this.methods = builder.methods != null ? List.copyOf(builder.methods) : List.of();
+    }
+
+    private static String computeId(String packageName, String name) {
+        if (packageName == null || packageName.isBlank()) {
+            return name;
+        }
+        return packageName + "." + name;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public TypeKind getKind() {
+        return kind;
+    }
+
+    public Visibility getVisibility() {
+        return visibility;
+    }
+
+    public List<UmlStereotype> getStereotypes() {
+        return stereotypes;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public String getStyle() {
+        return style;
+    }
+
+    public List<UmlGeneric> getGenerics() {
+        return generics;
+    }
+
+    public List<UmlField> getFields() {
+        return fields;
+    }
+
+    public List<UmlMethod> getMethods() {
+        return methods;
+    }
+
+    /**
+     * Returns the alias to use in PlantUML references.
+     * If displayName is set, returns name (which acts as alias).
+     * Otherwise returns null (use name directly).
+     */
+    public String getAlias() {
+        return displayName != null ? name : null;
+    }
+
+    /**
+     * Returns the name to use in PlantUML declarations and references.
+     * This is either the alias (if displayName is set) or the simple name.
+     */
+    public String getReferenceName() {
+        // If display name is set, we use "DisplayName" as Alias pattern
+        // and reference by alias. Otherwise use simple name.
+        return name;
+    }
+
+    /**
+     * Renders the type declaration line for PlantUML.
+     * Format: [visibility][kind] ["DisplayName" as] Name[<generics>] [stereotypes] [style]
+     * Example: +abstract class "Order Handler" as OrderHandler<T> <<Aggregate>> #palegreen
+     */
+    public String toDeclarationPlantUml() {
+        StringBuilder sb = new StringBuilder();
+
+        // Visibility prefix
+        sb.append(visibility.toPlantUml());
+
+        // Type keyword
+        sb.append(kind.toPlantUml()).append(" ");
+
+        // Display name with alias
+        if (displayName != null) {
+            sb.append("\"").append(displayName).append("\" as ");
+        }
+
+        // Name
+        sb.append(name);
+
+        // Generics
+        if (!generics.isEmpty()) {
+            String genericStr = generics.stream()
+                    .map(UmlGeneric::toPlantUml)
+                    .collect(Collectors.joining(", "));
+            sb.append("<").append(genericStr).append(">");
+        }
+
+        // Stereotypes
+        for (UmlStereotype stereotype : stereotypes) {
+            sb.append(" ").append(stereotype.toPlantUml());
+        }
+
+        // Tags
+        for (String tag : tags) {
+            sb.append(" $").append(tag);
+        }
+
+        // Style
+        if (style != null && !style.isBlank()) {
+            sb.append(" ").append(style);
+        }
+
+        return sb.toString();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private String id;
+        private String name;
+        private String displayName;
+        private String packageName;
+        private TypeKind kind;
+        private Visibility visibility;
+        private List<UmlStereotype> stereotypes;
+        private List<String> tags;
+        private String style;
+        private List<UmlGeneric> generics;
+        private List<UmlField> fields;
+        private List<UmlMethod> methods;
+
+        private Builder() {}
+
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder displayName(String displayName) {
+            this.displayName = displayName;
+            return this;
+        }
+
+        public Builder packageName(String packageName) {
+            this.packageName = packageName;
+            return this;
+        }
+
+        public Builder kind(TypeKind kind) {
+            this.kind = kind;
+            return this;
+        }
+
+        public Builder visibility(Visibility visibility) {
+            this.visibility = visibility;
+            return this;
+        }
+
+        public Builder stereotypes(List<UmlStereotype> stereotypes) {
+            this.stereotypes = stereotypes;
+            return this;
+        }
+
+        public Builder addStereotype(UmlStereotype stereotype) {
+            if (this.stereotypes == null) {
+                this.stereotypes = new ArrayList<>();
+            }
+            this.stereotypes.add(stereotype);
+            return this;
+        }
+
+        public Builder addStereotype(String name) {
+            return addStereotype(new UmlStereotype(name));
+        }
+
+        public Builder tags(List<String> tags) {
+            this.tags = tags;
+            return this;
+        }
+
+        public Builder addTag(String tag) {
+            if (this.tags == null) {
+                this.tags = new ArrayList<>();
+            }
+            this.tags.add(tag);
+            return this;
+        }
+
+        public Builder style(String style) {
+            this.style = style;
+            return this;
+        }
+
+        public Builder generics(List<UmlGeneric> generics) {
+            this.generics = generics;
+            return this;
+        }
+
+        public Builder addGeneric(UmlGeneric generic) {
+            if (this.generics == null) {
+                this.generics = new ArrayList<>();
+            }
+            this.generics.add(generic);
+            return this;
+        }
+
+        public Builder addGeneric(String identifier) {
+            return addGeneric(new UmlGeneric(identifier));
+        }
+
+        public Builder fields(List<UmlField> fields) {
+            this.fields = fields;
+            return this;
+        }
+
+        public Builder addField(UmlField field) {
+            if (this.fields == null) {
+                this.fields = new ArrayList<>();
+            }
+            this.fields.add(field);
+            return this;
+        }
+
+        public Builder methods(List<UmlMethod> methods) {
+            this.methods = methods;
+            return this;
+        }
+
+        public Builder addMethod(UmlMethod method) {
+            if (this.methods == null) {
+                this.methods = new ArrayList<>();
+            }
+            this.methods.add(method);
+            return this;
+        }
+
+        public UmlType build() {
+            return new UmlType(this);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UmlType that)) return false;
+        return id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "UmlType{" + id + "}";
+    }
+}
