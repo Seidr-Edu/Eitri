@@ -1,174 +1,114 @@
-# PlantUML Class Diagram Syntax — Ultra-Compact Patterns (Agent Context)
-
-> Source: official PlantUML class diagram [docs](https://plantuml.com/class-diagram).
+Source: _PlantUML Language Reference Guide v1.2025.0 – Class Diagram_
 
 ---
 
-## 0) Wrapper
+# PlantUML Class Diagram — Agent Ruleset (Compact)
+
+## 0. File Structure
 
 ```
-@startuml
-' ...
+@startuml [name]
+  statements...
 @enduml
 ```
 
 ---
 
-## 1) Declare elements (types)
+## 1. Element Declarations
 
 ```
-class C
-interface I
-enum E
-abstract class A
-annotation Ann
-entity Ent
-exception Ex
-struct S
-protocol P
-record R
-dataclass D
-metaclass M
-stereotype ST
-circle O         ' or: ()
-diamond Dm       ' or: <>
+class X
+abstract class X
+interface X
+enum X
+annotation X
+struct X
+protocol X
+entity X
+exception X
+metaclass X
+circle X | () X
+diamond X | <> X
 ```
 
----
-
-## 2) Names, quotes, aliases, stereotypes, tags
+**Alias**
 
 ```
-class "Display Name"
 class "Display Name" as Alias
-class Alias as "Display Name"
-
-class C <<Stereotype>>
-class C $tag1 $tag2
 ```
+
+> If alias is used → **always reference by alias**
 
 ---
 
-## 3) Class body + members
-
-### Inline member (uses `:`)
+## 2. Class Body (Fields / Methods)
 
 ```
-C : fieldName : Type
-C : methodName(arg:Type) : Return
-```
-
-### Block body
-
-```
-class C {
-  fieldName : Type
-  methodName(arg:Type) : Return
+class X {
+  field
+  method()
 }
 ```
 
-### Force field/method parsing
+**Visibility**
 
 ```
-C : {field} name()
-C : {method} name
++ public
+- private
+# protected
+~ package
 ```
 
----
-
-## 4) Visibility + escape
+**Static / Abstract**
 
 ```
-class C {
-  -privateField
-  #protectedField
-  ~packageField
-  +publicField
-  -privateMethod()
-  #protectedMethod()
-  ~packageMethod()
-  +publicMethod()
-  \~literalTildeName()   ' escape leading ~ + - # if literal
-}
+{static} field
+{abstract} method()
+{classifier} == {static}
 ```
 
-### Disable attribute icons
+**Force type**
 
 ```
-skinparam classAttributeIconSize 0
+{field} text
+{method} text()
 ```
 
----
-
-## 5) Static / abstract member modifiers
+**Grouping separators**
 
 ```
-class C {
-  {static} COUNT : int
-  {classifier} ID : String
-  {abstract} run()
-}
+--  ..  ==  __
 ```
 
 ---
 
-## 6) Section separators (member grouping)
+## 3. Relations (Core)
 
 ```
-class C {
-  == Section ==
-  --
-  ..
-  __
-}
+Inheritance        A <|-- B
+Implementation     A <|.. B
+Composition        A *-- B
+Aggregation        A o-- B
+Association        A -- B
+Dependency         A --> B
+Weak dependency    A ..> B
+```
+
+**Dotted line**: replace `--` with `..`
+
+---
+
+## 4. Relation Labels & Cardinality
+
+```
+A "1" -- "many" B : label
+A -- B : acts >
+A -- B : < owns
 ```
 
 ---
 
-## 7) Relationships (arrows)
-
-### Core relationship operators
-
-```
-A <|-- B   ' inheritance
-A <|.. B   ' realization (implements)
-A *-- B    ' composition
-A o-- B    ' aggregation
-A --> B    ' association / directed relation
-A ..> B    ' dependency (dotted)
-```
-
-### Variants shown in docs (visual semantics)
-
-```
-A #-- B
-A x-- B
-A }-- B
-A +-- B
-A ^-- B
-```
-
-### Label
-
-```
-A --> B : label
-```
-
-### Cardinality (near ends)
-
-```
-A "1" --> "many" B
-A "0..1" *-- "1..*" B : contains
-```
-
-### Directional arrows in label text
-
-```
-A --> B : <reads
-A --> B : writes>
-```
-
-### Force layout direction on a link
+## 5. Direction & Layout
 
 ```
 A -left-> B
@@ -177,118 +117,9 @@ A -up-> B
 A -down-> B
 ```
 
-### Horizontal links (short form)
+Short forms: `-l- -r- -u- -d-`
 
-```
-A o- B
-A *- B
-```
-
-### Link style options (example: thickness)
-
-```
-A -[thickness=2]-> B
-```
-
----
-
-## 8) Lollipop interfaces
-
-```
-bar ()- foo
-bar ()-- foo
-foo -() bar
-```
-
----
-
-## 9) Notes
-
-### On elements
-
-```
-note left of C : text
-note right of C : text
-note top of C
-  multiline
-end note
-note bottom of C
-  multiline
-end note
-```
-
-### Note attaches to last element (no “of X”)
-
-```
-note right : text
-```
-
-### Floating note + connect
-
-```
-note "free note" as N
-C .. N
-```
-
-### Note on link
-
-```
-A --> B
-note on link : text
-A --> B
-note right on link
-  multiline
-end note
-```
-
-### Note on fields/methods (left/right only; constraints apply)
-
-```
-class C {
-  +m()
-  note right of m : doc
-}
-```
-
-### Formatting inside notes (examples)
-
-```
-note right of C : <b>bold</b> <i>italic</i> <u>underline</u>
-note right of C : <color:red>colored</color> <size:18>big</size>
-note right of C : <img:some.png>
-```
-
----
-
-## 10) Packages / namespaces
-
-```
-package "My Package" {
-  class A
-}
-package "P" #DDDDDD {
-  class B
-}
-```
-
-### Package style
-
-```
-skinparam packageStyle rectangle
-package P <<Folder>> { class C }
-package Q <<Frame>>  { class D }
-```
-
-### Namespace separator control
-
-```
-set separator ::
-set separator none
-```
-
----
-
-## 11) Layout directives
+Global:
 
 ```
 left to right direction
@@ -296,54 +127,139 @@ left to right direction
 
 ---
 
-## 12) Generics display
+## 6. Advanced Relations
+
+**Association class**
 
 ```
-class Foo<T>
-skinparam genericDisplay old
+(A, B) .. AssocClass
+(A, B) .  AssocClass
+```
+
+**Qualified association**
+
+```
+A [Qualifier] -- B
+```
+
+**Self association**
+
+```
+X -- X
+```
+
+**Member-to-member**
+
+```
+A::field --> B::field
 ```
 
 ---
 
-## 13) Hide / show / remove / restore
+## 7. Lollipop Interface
 
-### Hide members
+```
+bar ()- foo
+foo -() bar
+```
+
+---
+
+## 8. Packages / Namespaces
+
+```
+package P {
+  class X
+}
+```
+
+Nested allowed.
+
+**Separator**
+
+```
+set separator ::
+class A::B::C
+```
+
+Disable auto-packages:
+
+```
+set separator none
+!pragma useIntermediatePackages false
+```
+
+---
+
+## 9. Notes
+
+**On elements**
+
+```
+note left of X : text
+note right/top/bottom of X
+```
+
+**Floating**
+
+```
+note "text" as N
+X .. N
+```
+
+**On members**
+
+```
+note right of X::field
+note right of X::"method(sig)"
+```
+
+**On links**
+
+```
+note on link
+note left/right/top/bottom on link
+```
+
+---
+
+## 10. Stereotypes
+
+```
+class X <<S>>
+package P <<Folder>>
+```
+
+Custom spot:
+
+```
+<< (C,#color) S >>
+```
+
+---
+
+## 11. Hide / Show / Remove
 
 ```
 hide empty members
-hide members
-hide fields
-hide methods
-hide circle
-hide stereotype
+hide fields | methods | members
+hide private | protected | package
+hide class | interface | enum
+hide <<S>>
+hide X
+remove X
 ```
 
-### Hide by visibility
+**Tags**
 
 ```
-hide private members
-hide protected members
-hide package members
-```
-
-### Hide/remove classes
-
-```
-hide ClassName
-remove ClassName
-```
-
-### Tags + wildcards + restore
-
-```
-remove *
-restore ClassName
+class X $tag
 hide $tag
-remove $tag
+remove *
 restore $tag
 ```
 
-### Unlinked elements
+**Unlinked**
 
 ```
 hide @unlinked
@@ -352,51 +268,134 @@ remove @unlinked
 
 ---
 
-## 14) Association to “same class” via diamond node
+## 12. Generics
 
 ```
-diamond Dm
-C "1" -- Dm
-Dm -- "many" C
+class X<T>
+class X<? extends Y>
 ```
 
----
-
-## 15) Multi-page splitting
+Disable:
 
 ```
-page 2x2
+skinparam genericDisplay old
 ```
 
 ---
 
-## 16) Group inheritance arrows
+## 13. Styling (Inline)
+
+**Relations**
 
 ```
-skinparam groupInheritance 2
+A -[#red,dashed,thickness=2]-> B
+A --> B #line:red;line.bold;text:red
+```
+
+**Classes**
+
+```
+class X #back:color;line:color;text:color
+class X #color ##[dashed]color
 ```
 
 ---
 
-### Copy-paste micro-template
+## 14. Skinparam (Global)
 
 ```
-@startuml
-left to right direction
-
-package app {
-  interface I
-  abstract class A
-  class C <<S>> $core {
-    +run()
-    -helper()
-    {static} COUNT : int
-  }
-
-  I <|.. C
-  A <|-- C
+skinparam class {
+  BackgroundColor color
+  BorderColor color
+  ArrowColor color
 }
-
-note right of C : Example
-@enduml
+skinparam stereotypeCBackgroundColor<<S>> color
 ```
+
+---
+
+## 15. Layout Control
+
+**Group**
+
+```
+together {
+  class A
+  class B
+}
+```
+
+**Hidden links**
+
+```
+A -[hidden]-> B
+```
+
+**Inheritance grouping**
+
+```
+skinparam groupInheritance N
+```
+
+---
+
+## 16. Diagram Orientation
+
+Graphviz (default):
+
+```
+top to bottom direction
+left to right direction
+```
+
+Smetana:
+
+```
+!pragma layout smetana
+```
+
+---
+
+## 17. Page Splitting
+
+```
+page HxV
+```
+
+---
+
+## 18. JSON Embedding
+
+```
+json X {
+  "k": "v"
+}
+```
+
+---
+
+## 19. Extends / Implements Keywords
+
+```
+class A extends B, C
+class A implements I
+```
+
+---
+
+## 20. Naming Rules
+
+- Non-letters → use quotes or alias
+- Names starting with `$` **cannot be hidden/removed** unless aliased or tagged
+
+---
+
+### Agent Guidance (Strict)
+
+- **Always prefer aliases** for complex names
+- **Never mix alias + raw name**
+- **Use minimal arrows**; rely on layout engine
+- **Hide aggressively** for large diagrams
+- **One concept per relation**
+
+---

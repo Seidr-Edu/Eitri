@@ -1,0 +1,79 @@
+@startuml compact-example
+left to right direction
+skinparam groupInheritance 2
+skinparam classAttributeIconSize 10
+hide empty methods
+hide empty attributes
+' hide circle
+
+package "shop.core" #DDDDDD {
+  interface Repository<T>
+
+  #abstract class BaseEntity {
+    +id : Long {readOnly}
+    +{abstract} validate()
+  }
+
+  +class Customer << (C,#6AA84F) AggregateRoot >> {
+    +name : String
+    +getId() : Long
+    --
+    - password : String
+  }
+
+  +class Order #palegreen ##[dashed]green {
+    +status : Status
+    +addItem(p: Product, qty: int)
+    {static} create(c: Customer)
+  }
+
+  +enum Status {
+    NEW
+    PAID
+    SHIPPED
+  }
+}
+
+package "shop.catalog" <<Folder>> {
+  ~class Product {
+    +sku : String
+    +price : Money
+  }
+}
+
+' inheritance / realization
+Repository <|.. Order
+BaseEntity <|-- Customer
+BaseEntity <|-- Order
+
+' associations + multiplicity + label
+Customer "1" o-- "0..*" Order : places >
+Order *-- "1..*" Product : contains >
+
+' association class
+(Customer, Product) .. LineItem
+~class LineItem {
+  +quantity : int
+}
+
+' dependency
+Order --> Repository : persists via >
+
+' member-to-member relation
+Order::status --> Status::PAID : transitions
+
+' qualified association
+Order [orderId: Long] --> Customer
+
+' lollipop interface
+Repository ()- Order
+
+' notes
+note top of Order : Aggregate\nroot\nlifecycle
+note right of Customer::name
+Must be non-empty
+end note
+
+' layout helper
+Order -[hidden]-> Customer
+@enduml

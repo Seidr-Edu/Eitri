@@ -6,14 +6,13 @@ Java code parser that forges PlantUML diagrams from Java source code.
 
 ## Overview
 
-A small CLI tool that parses a Java source directory and automatically generates a PlantUML class diagram (.puml) without compiling or running the project.
-This tool uses JavaParser to statically analyze .java files and extract:
+A CLI tool that parses a Java source directory and automatically generates a PlantUML class diagram (.puml) without compiling or running the project.
+This tool uses JavaParser to statically analyze .java files and extract as much class structure information as possible, including:
 
-- Classes, interfaces, enums
-- Fields and methods
-- extends / implements relationships
-- Basic associations between user‑defined types
-- Generics and common JDK types are filtered out to avoid diagram noise.
+- Classes, interfaces, enums, annotations, records
+- Fields, methods, constructors
+- Inheritance (extends, implements)
+- Relationships (associations, dependencies, aggregations, compositions)
 
 ## Dependencies
 
@@ -21,7 +20,7 @@ This tool uses JavaParser to statically analyze .java files and extract:
 
 ## 📦 Build
 
-Make sure you have Java 17+ and Maven installed.
+Make sure you have Java 25 and Maven installed.
 Install graphviz (for rendering diagrams from PlantUML) if you want to visualize the output.
 
 ```bash
@@ -44,10 +43,8 @@ Generate a PlantUML diagram from any Java project’s source directory:
 
 ```bash
 java -jar target/eitri-1.0-SNAPSHOT-jar-with-dependencies.jar \
- --src /path/to/project/src/main/java \
- --out /path/to/output/diagram.puml
---src : Path to the root Java source folder
---out : Output .puml file
+ --src : Path to the root Java source folder \
+ --out : Output .puml file
 ```
 
 You can open the .puml in any PlantUML viewer (IntelliJ plugin, VS Code plugin, plantuml.jar, etc.).
@@ -78,13 +75,3 @@ echo "Skipping $name (no src/main/java)"
 fi
 done
 ```
-
-## 📝 Notes
-
-- The tool works without compiling the Java project
-- No dependency resolution required
-- Output diagrams intentionally exclude:
-  - JDK types (String, List, Set, Map, etc.)
-  - primitives
-  - generic type details (Set<String> → Set)
-- You can customize filtering or relationships in App.java
