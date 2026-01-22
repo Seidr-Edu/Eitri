@@ -473,7 +473,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
                 .type(type)
                 .visibility(visibility)
                 .isStatic(isStatic)
-                .isFinal(isFinal);
+                .isFinal(isFinal)
+                .readOnly(isFinal);  // Mark final fields as read-only in PlantUML
 
         // Add annotations
         for (AnnotationExpr ann : field.getAnnotations()) {

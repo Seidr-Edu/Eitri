@@ -40,6 +40,7 @@ public final class EitriConfig {
     private boolean showMultiplicities = true;
     private boolean showLabels = true;
     private boolean showGhostTypes = false;  // Show placeholder types for unresolved references
+    private boolean showReadOnly = true;  // Show {readOnly} on final fields
 
     // === Relation Filtering (individual toggles) ===
     private boolean showInheritance = true;
@@ -229,6 +230,14 @@ public final class EitriConfig {
         this.showGhostTypes = showGhostTypes;
     }
 
+    public boolean isShowReadOnly() {
+        return showReadOnly;
+    }
+
+    public void setShowReadOnly(boolean showReadOnly) {
+        this.showReadOnly = showReadOnly;
+    }
+
     public boolean isShowInheritance() {
         return showInheritance;
     }
@@ -414,6 +423,11 @@ public final class EitriConfig {
 
         public Builder showGhostTypes(boolean show) {
             config.setShowGhostTypes(show);
+            return this;
+        }
+
+        public Builder showReadOnly(boolean show) {
+            config.setShowReadOnly(show);
             return this;
         }
 

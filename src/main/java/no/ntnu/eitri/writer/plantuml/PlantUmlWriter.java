@@ -254,7 +254,7 @@ public class PlantUmlWriter implements DiagramWriter {
         if (!config.isHideFields()) {
             for (UmlField field : type.getFields()) {
                 if (shouldRenderMember(field.getVisibility(), config)) {
-                    sb.append("    ").append(field.toPlantUml()).append("\n");
+                    sb.append("    ").append(field.toPlantUml(config.isShowReadOnly())).append("\n");
                 }
             }
         }

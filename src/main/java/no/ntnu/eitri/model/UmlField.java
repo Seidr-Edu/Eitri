@@ -71,6 +71,15 @@ public final class UmlField {
      * Example: -name : String {readOnly}
      */
     public String toPlantUml() {
+        return toPlantUml(true);
+    }
+
+    /**
+     * Renders this field for PlantUML class body with configurable readOnly display.
+     * @param showReadOnly whether to append {readOnly} for final fields
+     * @return PlantUML field representation
+     */
+    public String toPlantUml(boolean showReadOnly) {
         StringBuilder sb = new StringBuilder();
 
         // Visibility
@@ -86,7 +95,7 @@ public final class UmlField {
         sb.append(name).append(" : ").append(typeSimpleName);
 
         // ReadOnly constraint
-        if (readOnly) {
+        if (readOnly && showReadOnly) {
             sb.append(" {readOnly}");
         }
 
