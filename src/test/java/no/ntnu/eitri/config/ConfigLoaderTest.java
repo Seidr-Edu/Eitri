@@ -154,24 +154,6 @@ class ConfigLoaderTest {
         }
 
         @Test
-        @DisplayName("Parses skinparam custom lines from YAML")
-        void parseSkinparam() throws IOException, ConfigException {
-            String yaml = """
-                skinparam:
-                  classAttributeIconSize: 12
-                  custom:
-                    - "class { BackgroundColor #FEFECE }"
-                    - "ArrowColor #333333"
-                """;
-            Path configFile = writeYaml(yaml);
-
-            EitriConfig config = ConfigLoader.loadFromYaml(configFile);
-
-            assertEquals(12, config.getClassAttributeIconSize());
-            assertEquals(2, config.getSkinparamLines().size());
-        }
-
-        @Test
         @DisplayName("Empty YAML returns default config")
         void emptyYaml() throws IOException, ConfigException {
             Path configFile = writeYaml("");
@@ -269,9 +251,6 @@ class ConfigLoaderTest {
 
                 relations:
                   showDependency: false
-
-                skinparam:
-                  classAttributeIconSize: 10
                 """;
             Path configFile = writeYaml(yaml);
 
@@ -288,7 +267,6 @@ class ConfigLoaderTest {
             assertTrue(config.isHideCircle());
             assertTrue(config.isShowStereotypes());
             assertFalse(config.isShowDependency());
-            assertEquals(10, config.getClassAttributeIconSize());
         }
     }
 

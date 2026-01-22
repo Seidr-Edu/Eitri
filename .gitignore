@@ -28,3 +28,4 @@ repos/*
 target
 
 generated/*.puml
+.eitri.config.yaml

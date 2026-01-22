@@ -1,0 +1,42 @@
+output:
+  name: eitri-diagram
+
+layout:
+  direction: tb
+
+# Visibility filtering
+visibility:
+  hidePrivate: false
+  hideProtected: false
+  hidePackage: false
+
+# Member filtering
+members:
+  hideFields: false
+  hideMethods: false
+  hideEmptyMembers: true
+
+# Relation filtering
+relations:
+  showInheritance: true
+  showImplements: true
+  showComposition: true
+  showAggregation: true
+  showAssociation: true
+  showDependency: false # Often too noisy
+
+# Display
+display:
+  hideCircle: false
+  hideUnlinked: false
+  showStereotypes: true
+  showGenerics: true
+  showNotes: true
+  showMultiplicities: true
+  showLabels: true
+  showGhostTypes: true
+  showReadOnly: true
+
+layout:
+  groupInheritance: 2 
+  classAttributeIconSize: 8

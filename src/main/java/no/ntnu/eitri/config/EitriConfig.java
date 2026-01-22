@@ -489,6 +489,19 @@ public final class EitriConfig {
                 ", diagramName='" + diagramName + '\'' +
                 ", direction=" + direction +
                 ", hidePrivate=" + hidePrivate +
+                ", hideProtected=" + hideProtected +
+                ", hidePackage=" + hidePackage +
+                ", hideFields=" + hideFields +
+                ", hideMethods=" + hideMethods +
+                ", hideCircle=" + hideCircle +
+                ", hideUnlinked=" + hideUnlinked +
+                ", showStereotypes=" + showStereotypes +
+                ", showGenerics=" + showGenerics +
+                ", showNotes=" + showNotes +
+                ", showMultiplicities=" + showMultiplicities +
+                ", showLabels=" + showLabels +
+                ", showGhostTypes=" + showGhostTypes +
+                ", showReadOnly=" + showReadOnly +
                 ", hideEmptyMembers=" + hideEmptyMembers +
                 ", verbose=" + verbose +
                 '}';
