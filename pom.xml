@@ -18,11 +18,11 @@
     </properties>
 
   <dependencies>
-    <!-- JUnit 5 for testing -->
+    <!-- JUnit 6 for testing -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>5.11.0</version>
+      <version>6.0.2</version>
       <scope>test</scope>
     </dependency>
 
@@ -31,6 +31,20 @@
       <groupId>com.github.javaparser</groupId>
       <artifactId>javaparser-symbol-solver-core</artifactId>
       <version>3.28.0</version>
+    </dependency>
+
+    <!-- Picocli for CLI argument parsing -->
+    <dependency>
+      <groupId>info.picocli</groupId>
+      <artifactId>picocli</artifactId>
+      <version>4.7.7</version>
+    </dependency>
+
+    <!-- SnakeYAML for config file parsing -->
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>2.5</version>
     </dependency>
   </dependencies>
 

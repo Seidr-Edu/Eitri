@@ -9,5 +9,6 @@
 	},
 	"files.watcherExclude": {
 		"**/repos/**": true
-	}
+	},
+	"java.configuration.updateBuildConfiguration": "interactive"
 }
