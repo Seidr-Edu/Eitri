@@ -82,71 +82,81 @@ public final class ConfigLoader {
     // Property Registry - Single Source of Truth
     // ========================================================================
 
+    private static final String SECTION_VISIBILITY = "visibility";
+    private static final String SECTION_MEMBERS = "members";
+    private static final String SECTION_DISPLAY = "display";
+    private static final String SECTION_RELATIONS = "relations";
+    private static final String SECTION_LAYOUT = "layout";
+    private static final String SECTION_RUNTIME = "runtime";
+    private static final String SECTION_INPUT = "input";
+    private static final String SECTION_OUTPUT = "output";
+    private static final String SECTION_SKINPARAM = "skinparam";
+
     @SuppressWarnings("null")
     private static final List<BoolProp> BOOL_PROPS = List.of(
             // Visibility
-            new BoolProp("visibility", "hidePrivate",
+            new BoolProp(SECTION_VISIBILITY, "hidePrivate",
                     EitriConfig::isHidePrivate, EitriConfig::setHidePrivate, false),
-            new BoolProp("visibility", "hideProtected",
+            new BoolProp(SECTION_VISIBILITY, "hideProtected",
                     EitriConfig::isHideProtected, EitriConfig::setHideProtected, false),
-            new BoolProp("visibility", "hidePackage",
+            new BoolProp(SECTION_VISIBILITY, "hidePackage",
                     EitriConfig::isHidePackage, EitriConfig::setHidePackage, false),
 
             // Members
-            new BoolProp("members", "hideFields",
+            new BoolProp(SECTION_MEMBERS, "hideFields",
                     EitriConfig::isHideFields, EitriConfig::setHideFields, false),
-            new BoolProp("members", "hideMethods",
+            new BoolProp(SECTION_MEMBERS, "hideMethods",
                     EitriConfig::isHideMethods, EitriConfig::setHideMethods, false),
-            new BoolProp("members", "hideEmptyMembers",
+            new BoolProp(SECTION_MEMBERS, "hideEmptyMembers",
                     EitriConfig::isHideEmptyMembers, EitriConfig::setHideEmptyMembers, true),
 
             // Display
-            new BoolProp("display", "hideCircle",
+            new BoolProp(SECTION_DISPLAY, "hideCircle",
                     EitriConfig::isHideCircle, EitriConfig::setHideCircle, false),
-            new BoolProp("display", "hideUnlinked",
+            new BoolProp(SECTION_DISPLAY, "hideUnlinked",
                     EitriConfig::isHideUnlinked, EitriConfig::setHideUnlinked, false),
-            new BoolProp("display", "showStereotypes",
+            new BoolProp(SECTION_DISPLAY, "showStereotypes",
                     EitriConfig::isShowStereotypes, EitriConfig::setShowStereotypes, true),
-            new BoolProp("display", "showGenerics",
+            new BoolProp(SECTION_DISPLAY, "showGenerics",
                     EitriConfig::isShowGenerics, EitriConfig::setShowGenerics, true),
-            new BoolProp("display", "showNotes",
+            new BoolProp(SECTION_DISPLAY, "showNotes",
                     EitriConfig::isShowNotes, EitriConfig::setShowNotes, false),
-            new BoolProp("display", "showMultiplicities",
+            new BoolProp(SECTION_DISPLAY, "showMultiplicities",
                     EitriConfig::isShowMultiplicities, EitriConfig::setShowMultiplicities, true),
-            new BoolProp("display", "showLabels",
+            new BoolProp(SECTION_DISPLAY, "showLabels",
                     EitriConfig::isShowLabels, EitriConfig::setShowLabels, true),
-            new BoolProp("display", "showReadOnly",
+            new BoolProp(SECTION_DISPLAY, "showReadOnly",
                     EitriConfig::isShowReadOnly, EitriConfig::setShowReadOnly, true),
-            new BoolProp("display", "showVoidReturnTypes",
+            new BoolProp(SECTION_DISPLAY, "showVoidReturnTypes",
                     EitriConfig::isShowVoidReturnTypes, EitriConfig::setShowVoidReturnTypes, true),
 
             // Relations
-            new BoolProp("relations", "showInheritance",
+            new BoolProp(SECTION_RELATIONS, "showInheritance",
                     EitriConfig::isShowInheritance, EitriConfig::setShowInheritance, true),
-            new BoolProp("relations", "showImplements",
+            new BoolProp(SECTION_RELATIONS, "showImplements",
                     EitriConfig::isShowImplements, EitriConfig::setShowImplements, true),
-            new BoolProp("relations", "showComposition",
+            new BoolProp(SECTION_RELATIONS, "showComposition",
                     EitriConfig::isShowComposition, EitriConfig::setShowComposition, true),
-            new BoolProp("relations", "showAggregation",
+            new BoolProp(SECTION_RELATIONS, "showAggregation",
                     EitriConfig::isShowAggregation, EitriConfig::setShowAggregation, true),
-            new BoolProp("relations", "showAssociation",
+            new BoolProp(SECTION_RELATIONS, "showAssociation",
                     EitriConfig::isShowAssociation, EitriConfig::setShowAssociation, true),
-            new BoolProp("relations", "showDependency",
+            new BoolProp(SECTION_RELATIONS, "showDependency",
                     EitriConfig::isShowDependency, EitriConfig::setShowDependency, true),
 
             // Runtime
-            new BoolProp("runtime", "verbose",
+            new BoolProp(SECTION_RUNTIME, "verbose",
                     EitriConfig::isVerbose, EitriConfig::setVerbose, false),
-            new BoolProp("runtime", "dryRun",
+            new BoolProp(SECTION_RUNTIME, "dryRun",
                     EitriConfig::isDryRun, EitriConfig::setDryRun, false)
     );
 
     @SuppressWarnings("null")
     private static final List<IntProp> INT_PROPS = List.of(
             // Layout section
-            new IntProp("layout", "groupInheritance",
+            new IntProp(SECTION_LAYOUT, "groupInheritance",
                     EitriConfig::getGroupInheritance, EitriConfig::setGroupInheritance),
-            new IntProp("layout", "classAttributeIconSize",
+            new IntProp(SECTION_LAYOUT, "classAttributeIconSize",
                     EitriConfig::getClassAttributeIconSize, EitriConfig::setClassAttributeIconSize)
     );
 
@@ -246,7 +256,7 @@ public final class ConfigLoader {
 
     @SuppressWarnings("unchecked")
     private static void mapInputSection(Map<String, Object> data, EitriConfig config) {
-        Map<String, Object> input = (Map<String, Object>) data.get("input");
+        Map<String, Object> input = (Map<String, Object>) data.get(SECTION_INPUT);
         if (input == null) return;
 
         List<String> sources = (List<String>) input.get("sources");
@@ -257,7 +267,7 @@ public final class ConfigLoader {
 
     @SuppressWarnings("unchecked")
     private static void mapOutputSection(Map<String, Object> data, EitriConfig config) {
-        Map<String, Object> output = (Map<String, Object>) data.get("output");
+        Map<String, Object> output = (Map<String, Object>) data.get(SECTION_OUTPUT);
         if (output == null) return;
 
         if (output.containsKey("file")) {
@@ -270,7 +280,7 @@ public final class ConfigLoader {
 
     @SuppressWarnings("unchecked")
     private static void mapLayoutDirection(Map<String, Object> data, EitriConfig config) {
-        Map<String, Object> layout = (Map<String, Object>) data.get("layout");
+        Map<String, Object> layout = (Map<String, Object>) data.get(SECTION_LAYOUT);
         if (layout != null && layout.containsKey("direction")) {
             config.setDirection(LayoutDirection.fromString((String) layout.get("direction")));
         }
@@ -278,7 +288,7 @@ public final class ConfigLoader {
 
     @SuppressWarnings("unchecked")
     private static void mapSkinparamCustom(Map<String, Object> data, EitriConfig config) {
-        Map<String, Object> skinparam = (Map<String, Object>) data.get("skinparam");
+        Map<String, Object> skinparam = (Map<String, Object>) data.get(SECTION_SKINPARAM);
         if (skinparam == null) return;
 
         List<String> custom = (List<String>) skinparam.get("custom");
