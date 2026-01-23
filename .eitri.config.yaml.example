@@ -3,6 +3,8 @@ output:
 
 layout:
   direction: tb
+  groupInheritance: 2
+  classAttributeIconSize: 8
 
 # Visibility filtering
 visibility:
@@ -36,7 +38,4 @@ display:
   showLabels: true
   showGhostTypes: true
   showReadOnly: true
-
-layout:
-  groupInheritance: 2 
-  classAttributeIconSize: 8
+  showVoidReturnTypes: true

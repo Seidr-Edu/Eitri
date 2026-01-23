@@ -41,6 +41,7 @@ public final class EitriConfig {
     private boolean showLabels = true;
     private boolean showGhostTypes = false;  // Show placeholder types for unresolved references
     private boolean showReadOnly = true;  // Show {readOnly} on final fields
+    private boolean showVoidReturnTypes = true; // Show return type for void methods
 
     // === Relation Filtering (individual toggles) ===
     private boolean showInheritance = true;
@@ -232,6 +233,14 @@ public final class EitriConfig {
 
     public boolean isShowReadOnly() {
         return showReadOnly;
+    }
+
+    public boolean isShowVoidReturnTypes() {
+        return showVoidReturnTypes;
+    }
+
+    public void setShowVoidReturnTypes(boolean showVoidReturnTypes) {
+        this.showVoidReturnTypes = showVoidReturnTypes;
     }
 
     public void setShowReadOnly(boolean showReadOnly) {
@@ -431,6 +440,11 @@ public final class EitriConfig {
             return this;
         }
 
+        public Builder showVoidReturnTypes(boolean show) {
+            config.setShowVoidReturnTypes(show);
+            return this;
+        }
+
         public Builder showInheritance(boolean show) {
             config.setShowInheritance(show);
             return this;
@@ -502,6 +516,7 @@ public final class EitriConfig {
                 ", showLabels=" + showLabels +
                 ", showGhostTypes=" + showGhostTypes +
                 ", showReadOnly=" + showReadOnly +
+                ", showVoidReturnTypes=" + showVoidReturnTypes +
                 ", hideEmptyMembers=" + hideEmptyMembers +
                 ", verbose=" + verbose +
                 '}';

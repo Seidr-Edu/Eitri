@@ -92,12 +92,20 @@ public final class UmlMethod {
     }
 
     /**
+     * Renders this method for PlantUML class body with default settings (show void).
+     */
+    public String toPlantUml() {
+        return toPlantUml(true);
+    }
+
+    /**
      * Renders this method for PlantUML class body.
      * Format: [visibility][{modifiers}] name(params) [: ReturnType]
      * Example: +{abstract} calculate(x: int, y: int) : double
      * Example: +Customer(name: String) -- constructor, no return type shown
-     */
-    public String toPlantUml() {
+     * @param showVoidReturnTypes whether to show ': void' for methods with void return type 
+    */
+    public String toPlantUml(boolean showVoidReturnTypes) {
         StringBuilder sb = new StringBuilder();
 
         // Visibility
@@ -112,8 +120,10 @@ public final class UmlMethod {
         // Signature
         sb.append(getSignature());
 
-        // Return type (skip for constructors and void)
-        if (!constructor && !"void".equals(returnTypeSimpleName)) {
+        // Return type (skip for constructors; optionally skip void)
+        boolean showReturnType = !constructor
+                && (showVoidReturnTypes || !"void".equals(returnTypeSimpleName));
+        if (showReturnType) {
             sb.append(" : ").append(returnTypeSimpleName);
         }
 

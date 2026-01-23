@@ -261,7 +261,7 @@ public class PlantUmlWriter implements DiagramWriter {
         if (!config.isHideMethods()) {
             for (UmlMethod method : type.getMethods()) {
                 if (shouldRenderMember(method.getVisibility(), config)) {
-                    sb.append("    ").append(method.toPlantUml()).append("\n");
+                    sb.append("    ").append(method.toPlantUml(config.isShowVoidReturnTypes())).append("\n");
                 }
             }
         }

@@ -93,7 +93,7 @@ class UmlMethodTest {
                     .visibility(Visibility.PRIVATE)
                     .build();
 
-            assertEquals("-init()", method.toPlantUml());
+            assertEquals("-init() : void", method.toPlantUml());
         }
 
         @Test
@@ -118,7 +118,7 @@ class UmlMethodTest {
                     .visibility(Visibility.PACKAGE)
                     .build();
 
-            assertEquals("~helper()", method.toPlantUml());
+            assertEquals("~helper() : void", method.toPlantUml());
         }
 
         @Test
@@ -144,7 +144,7 @@ class UmlMethodTest {
                     .modifiers(Modifier.of(Modifier.ABSTRACT))
                     .build();
 
-            assertEquals("+{abstract} execute()", method.toPlantUml());
+            assertEquals("+{abstract} execute() : void", method.toPlantUml());
         }
 
         @Test

@@ -115,8 +115,10 @@ public final class ConfigLoader {
                     EitriConfig::isShowMultiplicities, EitriConfig::setShowMultiplicities, true),
             new BoolProp("display", "showLabels",
                     EitriConfig::isShowLabels, EitriConfig::setShowLabels, true),
-            new BoolProp("members", "showReadOnly",
+            new BoolProp("display", "showReadOnly",
                     EitriConfig::isShowReadOnly, EitriConfig::setShowReadOnly, true),
+            new BoolProp("display", "showVoidReturnTypes",
+                    EitriConfig::isShowVoidReturnTypes, EitriConfig::setShowVoidReturnTypes, true),
 
             // Relations
             new BoolProp("relations", "showInheritance",
