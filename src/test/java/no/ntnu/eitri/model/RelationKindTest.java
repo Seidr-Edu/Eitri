@@ -77,4 +77,39 @@ class RelationKindTest {
         assertFalse(RelationKind.AGGREGATION.isDotted());
         assertFalse(RelationKind.ASSOCIATION.isDotted());
     }
+
+    @Test
+    @DisplayName("NESTED renders as +--")
+    void nestedArrow() {
+        assertEquals("+--", RelationKind.NESTED.toArrowSymbol());
+    }
+
+    @Test
+    @DisplayName("NESTED is not a hierarchy relation")
+    void nestedNotHierarchy() {
+        assertFalse(RelationKind.NESTED.isHierarchy());
+    }
+
+    @Test
+    @DisplayName("NESTED is a nesting relation")
+    void nestedIsNesting() {
+        assertTrue(RelationKind.NESTED.isNesting());
+    }
+
+    @Test
+    @DisplayName("Non-NESTED relations are not nesting")
+    void nonNestedNotNesting() {
+        assertFalse(RelationKind.EXTENDS.isNesting());
+        assertFalse(RelationKind.IMPLEMENTS.isNesting());
+        assertFalse(RelationKind.COMPOSITION.isNesting());
+        assertFalse(RelationKind.AGGREGATION.isNesting());
+        assertFalse(RelationKind.ASSOCIATION.isNesting());
+        assertFalse(RelationKind.DEPENDENCY.isNesting());
+    }
+
+    @Test
+    @DisplayName("NESTED uses solid line")
+    void nestedSolidLine() {
+        assertFalse(RelationKind.NESTED.isDotted());
+    }
 }

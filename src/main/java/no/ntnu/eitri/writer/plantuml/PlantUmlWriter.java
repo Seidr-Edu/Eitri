@@ -227,6 +227,7 @@ public class PlantUmlWriter implements DiagramWriter {
             case AGGREGATION -> config.isShowAggregation();
             case ASSOCIATION -> config.isShowAssociation();
             case DEPENDENCY -> config.isShowDependency();
+            case NESTED -> true;  // Always show nesting relations
         };
     }
 

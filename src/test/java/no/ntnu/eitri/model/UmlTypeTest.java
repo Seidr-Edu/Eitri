@@ -264,4 +264,78 @@ class UmlTypeTest {
             assertEquals(expected, type.toDeclarationPlantUml());
         }
     }
+
+    @Nested
+    @DisplayName("Nested type support")
+    class NestedTypeSupport {
+
+        @Test
+        @DisplayName("Top-level type has no outer type")
+        void topLevelTypeHasNoOuter() {
+            UmlType type = UmlType.builder()
+                    .name("TopLevel")
+                    .packageName("com.example")
+                    .build();
+
+            assertNull(type.getOuterTypeId());
+            assertFalse(type.isNested());
+        }
+
+        @Test
+        @DisplayName("Nested type has outer type ID")
+        void nestedTypeHasOuterId() {
+            UmlType nested = UmlType.builder()
+                    .id("com.example.Outer$Inner")
+                    .name("Inner")
+                    .packageName("com.example")
+                    .outerTypeId("com.example.Outer")
+                    .build();
+
+            assertEquals("com.example.Outer", nested.getOuterTypeId());
+            assertTrue(nested.isNested());
+        }
+
+        @Test
+        @DisplayName("Nested type ID uses dollar sign convention")
+        void nestedTypeIdUsesDollar() {
+            UmlType nested = UmlType.builder()
+                    .id("com.example.Container$Nested")
+                    .name("Nested")
+                    .packageName("com.example")
+                    .outerTypeId("com.example.Container")
+                    .build();
+
+            assertEquals("com.example.Container$Nested", nested.getId());
+        }
+
+        @Test
+        @DisplayName("Deeply nested types use multiple dollar signs")
+        void deeplyNestedTypeId() {
+            UmlType deepNested = UmlType.builder()
+                    .id("com.example.A$B$C")
+                    .name("C")
+                    .packageName("com.example")
+                    .outerTypeId("com.example.A$B")
+                    .build();
+
+            assertEquals("com.example.A$B$C", deepNested.getId());
+            assertEquals("com.example.A$B", deepNested.getOuterTypeId());
+            assertTrue(deepNested.isNested());
+        }
+
+        @Test
+        @DisplayName("Static nested type with stereotype")
+        void staticNestedType() {
+            UmlType staticNested = UmlType.builder()
+                    .id("com.example.Outer$StaticNested")
+                    .name("StaticNested")
+                    .packageName("com.example")
+                    .outerTypeId("com.example.Outer")
+                    .addStereotype("static")
+                    .build();
+
+            String decl = staticNested.toDeclarationPlantUml();
+            assertTrue(decl.contains("<<static>>"));
+        }
+    }
 }

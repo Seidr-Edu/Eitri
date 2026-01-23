@@ -91,6 +91,32 @@ class UmlRelationTest {
             String result = relation.toPlantUml("OrderService", "Repository");
             assertEquals("OrderService ..> Repository", result);
         }
+
+        @Test
+        @DisplayName("NESTED: Outer +-- Inner : nested")
+        void nestedRelation() {
+            UmlRelation relation = UmlRelation.nestedRelation(
+                    "com.example.Outer",
+                    "com.example.Outer$Inner"
+            );
+
+            String result = relation.toPlantUml("Outer", "Inner");
+            assertEquals("Outer +-- Inner : nested", result);
+        }
+
+        @Test
+        @DisplayName("NESTED relation has correct kind and label")
+        void nestedRelationProperties() {
+            UmlRelation relation = UmlRelation.nestedRelation(
+                    "com.example.Container",
+                    "com.example.Container$Nested"
+            );
+
+            assertEquals(RelationKind.NESTED, relation.getKind());
+            assertEquals("nested", relation.getLabel());
+            assertEquals("com.example.Container", relation.getFromTypeId());
+            assertEquals("com.example.Container$Nested", relation.getToTypeId());
+        }
     }
 
     @Nested

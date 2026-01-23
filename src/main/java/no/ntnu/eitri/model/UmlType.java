@@ -21,7 +21,7 @@ public final class UmlType {
     private final List<UmlGeneric> generics;
     private final List<UmlField> fields;
     private final List<UmlMethod> methods;
-    // TODO: Add nestedTypes for inner classes support
+    private final String outerTypeId;  // FQN of enclosing type for nested types
 
     private UmlType(Builder builder) {
         this.name = Objects.requireNonNull(builder.name, "Type name cannot be null");
@@ -36,6 +36,7 @@ public final class UmlType {
         this.generics = builder.generics != null ? List.copyOf(builder.generics) : List.of();
         this.fields = builder.fields != null ? List.copyOf(builder.fields) : List.of();
         this.methods = builder.methods != null ? List.copyOf(builder.methods) : List.of();
+        this.outerTypeId = builder.outerTypeId;
     }
 
     private static String computeId(String packageName, String name) {
@@ -91,6 +92,22 @@ public final class UmlType {
 
     public List<UmlMethod> getMethods() {
         return methods;
+    }
+
+    /**
+     * Returns the FQN of the enclosing type, or null if this is a top-level type.
+     * @return the outer type ID, or null
+     */
+    public String getOuterTypeId() {
+        return outerTypeId;
+    }
+
+    /**
+     * Checks if this is a nested type (inner class, static nested class, etc.).
+     * @return true if this type is nested within another type
+     */
+    public boolean isNested() {
+        return outerTypeId != null;
     }
 
     /**
@@ -177,6 +194,7 @@ public final class UmlType {
         private List<UmlGeneric> generics;
         private List<UmlField> fields;
         private List<UmlMethod> methods;
+        private String outerTypeId;
 
         private Builder() {}
 
@@ -285,6 +303,11 @@ public final class UmlType {
                 this.methods = new ArrayList<>();
             }
             this.methods.add(method);
+            return this;
+        }
+
+        public Builder outerTypeId(String outerTypeId) {
+            this.outerTypeId = outerTypeId;
             return this;
         }
 

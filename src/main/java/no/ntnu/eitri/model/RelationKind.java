@@ -39,7 +39,13 @@ public enum RelationKind {
      * Dependency: A depends on B (method param, return type, local usage).
      * PlantUML: A ..> B
      */
-    DEPENDENCY("..>");
+    DEPENDENCY("..>"),
+
+    /**
+     * Nesting: A contains nested type B (inner class, static nested class, etc.).
+     * PlantUML: A +-- B : nested
+     */
+    NESTED("+--");
 
     private final String arrowSymbol;
 
@@ -72,5 +78,13 @@ public enum RelationKind {
      */
     public boolean isHierarchy() {
         return this == EXTENDS || this == IMPLEMENTS;
+    }
+
+    /**
+     * Whether this is a nesting relation.
+     * @return true if nesting relation
+     */
+    public boolean isNesting() {
+        return this == NESTED;
     }
 }

@@ -232,9 +232,7 @@ public class ParseContext {
      */
     private boolean isStdlibType(String fqn) {
         for (String prefix : STDLIB_PREFIXES) {
-            if (fqn.startsWith(prefix)) {
-                return true;
-            }
+            if (fqn.startsWith(prefix)) return true;
         }
         return false;
     }
@@ -370,6 +368,7 @@ public class ParseContext {
             case AGGREGATION -> 3;
             case ASSOCIATION -> 2;
             case DEPENDENCY -> 1;
+            case NESTED -> 7;  // Nesting is structural, highest priority
         };
     }
 

@@ -176,6 +176,14 @@ public final class UmlRelation {
         return builder().fromTypeId(fromId).toTypeId(toId).kind(RelationKind.ASSOCIATION).label(label).build();
     }
 
+    /**
+     * Convenience factory for nested type relation.
+     * Creates a relation from outer type to nested type with "nested" label.
+     */
+    public static UmlRelation nestedRelation(String outerId, String nestedId) {
+        return builder().fromTypeId(outerId).toTypeId(nestedId).kind(RelationKind.NESTED).label("nested").build();
+    }
+
     public static final class Builder {
         private String fromTypeId;
         private String toTypeId;
