@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -180,40 +181,40 @@ public class App implements Callable<Integer> {
             List<String> errors = validateConfig(config);
             if (!errors.isEmpty()) {
                 for (String error : errors) {
-                    System.err.println("Error: " + error);
+                    LOGGER.log(Level.SEVERE, "Error: {0}", error);
                 }
                 return 1;
             }
 
             if (verbose) {
-                System.out.println("Configuration: " + config);
+                LOGGER.log(Level.INFO, "Configuration: {0}", config);
             }
 
             // Parse source files
             SourceParser parser = new JavaSourceParser();
             if (verbose) {
-                System.out.println("Parsing with " + parser.getName() + "...");
+                LOGGER.log(Level.INFO, "Parsing with {0}...", parser.getName());
             }
 
             UmlModel model = parser.parse(config.getSourcePaths(), config);
 
             if (verbose) {
-                System.out.println("Parsed " + model.getTypes().size() + " types, " 
-                        + model.getRelations().size() + " relations");
+                LOGGER.log(Level.INFO, "Parsed {0} types, {1} relations", 
+                        new Object[]{model.getTypes().size(), model.getRelations().size()});
             }
 
             if (dryRun) {
-                System.out.println("Dry run: Parsed " + model.getTypes().size() + " types from " 
-                        + config.getSourcePaths().size() + " source path(s)");
-                System.out.println("         Would write to: " + config.getOutputPath());
+                LOGGER.log(Level.INFO, "Dry run: Parsed {0} types from {1} source path(s)", 
+                        new Object[]{model.getTypes().size(), config.getSourcePaths().size()});
+                LOGGER.log(Level.INFO, "         Would write to: {0}", config.getOutputPath());
                 
                 // In verbose mode, show rendered output
                 if (verbose) {
                     DiagramWriter writer = new PlantUmlWriter();
                     String rendered = writer.render(model, config);
-                    System.out.println("\n--- Generated PlantUML ---");
-                    System.out.println(rendered);
-                    System.out.println("--- End PlantUML ---\n");
+                    LOGGER.info("\n--- Generated PlantUML ---");
+                    LOGGER.info(rendered);
+                    LOGGER.info("--- End PlantUML ---\n");
                 }
                 return 0;
             }
@@ -222,29 +223,28 @@ public class App implements Callable<Integer> {
             DiagramWriter writer = new PlantUmlWriter();
             writer.write(model, config, config.getOutputPath());
 
-            System.out.println("Generated " + config.getOutputPath() + " with " 
-                    + model.getTypes().size() + " types and " 
-                    + model.getRelations().size() + " relations.");
+            LOGGER.log(Level.INFO, "Generated {0} with {1} types and {2} relations.", 
+                    new Object[]{config.getOutputPath(), model.getTypes().size(), model.getRelations().size()});
 
             return 0;
 
         } catch (ConfigException e) {
-            System.err.println("Configuration error: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Configuration error: {0}", e.getMessage());
             return 1;
         } catch (ParseException e) {
-            System.err.println("Parse error: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Parse error: {0}", e.getMessage());
             if (verbose && e.getCause() != null) {
                 e.getCause().printStackTrace();
             }
             return 1;
         } catch (WriteException e) {
-            System.err.println("Write error: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Write error: {0}", e.getMessage());
             if (verbose && e.getCause() != null) {
                 e.getCause().printStackTrace();
             }
             return 1;
         } catch (Exception e) {
-            System.err.println("Unexpected error: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Unexpected error: {0}", e.getMessage());
             if (verbose) {
                 e.printStackTrace();
             }
@@ -263,9 +263,9 @@ public class App implements Callable<Integer> {
 
         if (verbose) {
             if (hasExplicitConfig) {
-                LOGGER.info("Loading configuration from: " + configPath);
+                LOGGER.log(Level.INFO, "Loading configuration from: {0}", configPath);
             } else if (hasWorkingDirConfig) {
-                LOGGER.info("Loading configuration from: " + workingDirConfig);
+                LOGGER.log(Level.INFO, "Loading configuration from: {0}", workingDirConfig);
             } else {
                 LOGGER.info("Using default configuration (no config file found)");
             }

@@ -32,9 +32,10 @@ import java.util.logging.Logger;
  */
 public class JavaSourceParser implements SourceParser {
 
+    private static final String JAVA_EXTENSION = ".java";
     private static final Logger LOGGER = Logger.getLogger(JavaSourceParser.class.getName());
     private static final String NAME = "JavaParser";
-    private static final List<String> EXTENSIONS = List.of(".java");
+    private static final List<String> EXTENSIONS = List.of(JAVA_EXTENSION);
 
     @Override
     public String getName() {

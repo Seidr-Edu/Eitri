@@ -326,13 +326,10 @@ public final class ConfigLoader {
         // Boolean properties (generic handling based on merge strategy)
         for (BoolProp prop : BOOL_PROPS) {
             boolean sourceValue = prop.getter().test(source);
-            switch (prop.mergeStrategy()) {
-                case OVERRIDE_IF_TRUE -> {
-                    if (sourceValue) prop.setter().accept(target, true);
-                }
-                case OVERRIDE_IF_FALSE -> {
-                    if (!sourceValue) prop.setter().accept(target, false);
-                }
+            if (prop.mergeStrategy() == MergeStrategy.OVERRIDE_IF_TRUE && sourceValue) {
+                prop.setter().accept(target, true);
+            } else if (prop.mergeStrategy() == MergeStrategy.OVERRIDE_IF_FALSE && !sourceValue) {
+                prop.setter().accept(target, false);
             }
         }
 
@@ -356,7 +353,7 @@ public final class ConfigLoader {
         if (value instanceof String s) {
             try {
                 return Integer.parseInt(s);
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException _) {
                 return 0;
             }
         }
