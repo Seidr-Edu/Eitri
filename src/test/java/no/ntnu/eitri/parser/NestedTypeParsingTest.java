@@ -36,7 +36,7 @@ class NestedTypeParsingTest {
         JavaSymbolSolver symbolSolver = new JavaSymbolSolver(typeSolver);
         ParserConfiguration config = new ParserConfiguration()
                 .setSymbolResolver(symbolSolver)
-                .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
+                .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_25);
         parser = new JavaParser(config);
     }
 

@@ -67,7 +67,7 @@ public class JavaSourceParser implements SourceParser {
         // Configure parser
         ParserConfiguration parserConfig = new ParserConfiguration()
                 .setSymbolResolver(new JavaSymbolSolver(typeSolver))
-                .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
+                .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_25);
 
         StaticJavaParser.setConfiguration(parserConfig);
 
