@@ -6,6 +6,7 @@ import java.util.Objects;
  * A note attached to a UML element or floating.
  */
 public final class UmlNote {
+    private static final String NOTE = "note";
     private final String text;
     private final String targetTypeId;      // Attached to a type (optional)
     private final String targetMember;      // Attached to a member (optional, e.g., "fieldName" or "methodName()")
@@ -69,19 +70,19 @@ public final class UmlNote {
 
         if (isFloating()) {
             // Floating note
-            sb.append("note \"").append(escapeText(text)).append("\" as N");
+            sb.append(NOTE).append(" \"").append(escapeText(text)).append("\" as N");
         } else if (isMemberNote()) {
             // Note on member
-            sb.append("note ").append(position.toPlantUml()).append(" of ");
+            sb.append(NOTE).append(" ").append(position.toPlantUml()).append(" of ");
             sb.append(targetTypeName).append("::").append(targetMember);
             sb.append("\n").append(text).append("\nend note");
         } else {
             // Note on type - simple single-line form if text is short
             if (!text.contains("\n") && text.length() < 40) {
-                sb.append("note ").append(position.toPlantUml()).append(" of ");
+                sb.append(NOTE).append(" ").append(position.toPlantUml()).append(" of ");
                 sb.append(targetTypeName).append(" : ").append(text);
             } else {
-                sb.append("note ").append(position.toPlantUml()).append(" of ");
+                sb.append(NOTE).append(" ").append(position.toPlantUml()).append(" of ");
                 sb.append(targetTypeName);
                 sb.append("\n").append(text).append("\nend note");
             }

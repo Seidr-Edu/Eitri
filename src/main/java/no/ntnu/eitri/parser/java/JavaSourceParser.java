@@ -78,7 +78,7 @@ public class JavaSourceParser implements SourceParser {
         List<Path> javaFiles = collectJavaFiles(sourcePaths);
 
         if (config.isVerbose()) {
-            LOGGER.info("Found " + javaFiles.size() + " Java files to parse");
+            LOGGER.log(Level.INFO, "Found {0} Java files to parse", javaFiles.size());
         }
 
         // Parse each file
@@ -98,15 +98,15 @@ public class JavaSourceParser implements SourceParser {
                 context.addWarning("Failed to parse file: " + javaFile + " - " + e.getMessage());
                 failed++;
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Unexpected error parsing " + javaFile, e);
+                LOGGER.info(() -> "Unexpected error parsing " + javaFile + " - " + e.getMessage());
                 context.addWarning("Unexpected error parsing: " + javaFile + " - " + e.getMessage());
                 failed++;
             }
         }
 
         if (config.isVerbose()) {
-            LOGGER.info("Parsed " + parsed + " files successfully" + (failed > 0 ? ", " + failed + " failed" : ""));
-            LOGGER.info("Found " + context.getTypeCount() + " types, " + context.getRelationCount() + " relations");
+            LOGGER.log(Level.INFO, "Parsed {0} files successfully{1}", new Object[]{parsed, (failed > 0 ? ", " + failed + " failed" : "")});
+            LOGGER.log(Level.INFO, "Found {0} types, {1} relations", new Object[]{context.getTypeCount(), context.getRelationCount()});
         }
 
         // Detect relations
@@ -114,9 +114,9 @@ public class JavaSourceParser implements SourceParser {
         relationDetector.detectRelations();
 
         if (config.isVerbose()) {
-            LOGGER.info("Detected " + context.getRelationCount() + " total relations (including detected)");
+            LOGGER.log(Level.INFO, "Detected {0} total relations (including detected)", context.getRelationCount());
             if (!context.getWarnings().isEmpty()) {
-                LOGGER.info("Collected " + context.getWarnings().size() + " warnings");
+                LOGGER.log(Level.INFO, "Collected {0} warnings", context.getWarnings().size());
             }
         }
 
@@ -136,7 +136,7 @@ public class JavaSourceParser implements SourceParser {
             }
 
             if (Files.isRegularFile(sourcePath)) {
-                if (sourcePath.toString().endsWith(".java")) {
+                if (sourcePath.toString().endsWith(JAVA_EXTENSION)) {
                     javaFiles.add(sourcePath);
                 }
             } else if (Files.isDirectory(sourcePath)) {
@@ -144,7 +144,7 @@ public class JavaSourceParser implements SourceParser {
                     Files.walkFileTree(sourcePath, new SimpleFileVisitor<>() {
                         @Override
                         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                            if (file.toString().endsWith(".java")) {
+                            if (file.toString().endsWith(JAVA_EXTENSION)) {
                                 javaFiles.add(file);
                             }
                             return FileVisitResult.CONTINUE;
@@ -152,7 +152,7 @@ public class JavaSourceParser implements SourceParser {
 
                         @Override
                         public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                            LOGGER.warning("Failed to access file: " + file);
+                            LOGGER.log(Level.WARNING, "Failed to access file: {0}", file);
                             return FileVisitResult.CONTINUE;
                         }
                     });

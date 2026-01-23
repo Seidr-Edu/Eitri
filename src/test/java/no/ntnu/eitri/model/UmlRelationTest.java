@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for UmlRelation and its PlantUML rendering.
  */
 class UmlRelationTest {
-
+    
     @Nested
     @DisplayName("Arrow symbol mapping")
     class ArrowSymbolMapping {

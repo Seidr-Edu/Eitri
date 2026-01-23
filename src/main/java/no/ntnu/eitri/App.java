@@ -406,7 +406,7 @@ public class App implements Callable<Integer> {
                 // Try to create parent directories
                 try {
                     Files.createDirectories(parent);
-                } catch (Exception e) {
+                } catch (Exception _) {
                     errors.add("Cannot create output directory: " + parent);
                 }
             }

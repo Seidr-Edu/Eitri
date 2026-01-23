@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for UmlType and its PlantUML rendering.
  */
 class UmlTypeTest {
-
+    
     @Nested
     @DisplayName("ID computation")
     class IdComputation {
