@@ -279,7 +279,7 @@ public class PlantUmlWriter implements DiagramWriter {
                                  Map<String, String> typeNames, StringBuilder sb) {
         String fromName = typeNames.getOrDefault(relation.getFromTypeId(), relation.getFromTypeId());
         String toName = typeNames.getOrDefault(relation.getToTypeId(), relation.getToTypeId());
-        sb.append(relation.toPlantUml(fromName, toName));
+        sb.append(relation.toPlantUml(fromName, toName, config.isShowLabels(), config.isShowMultiplicities()));
         sb.append("\n");
     }
 }

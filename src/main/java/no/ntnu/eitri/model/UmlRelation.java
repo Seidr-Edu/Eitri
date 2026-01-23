@@ -67,7 +67,7 @@ public final class UmlRelation {
     }
 
     /**
-     * Renders this relation for PlantUML.
+     * Renders this relation for PlantUML with all options enabled.
      * <p>
      * For hierarchy relations (EXTENDS, IMPLEMENTS), renders as:
      *   parentType arrowSymbol childType : label
@@ -83,6 +83,28 @@ public final class UmlRelation {
      * @return the PlantUML relation line
      */
     public String toPlantUml(String fromTypeName, String toTypeName) {
+        return toPlantUml(fromTypeName, toTypeName, true, true);
+    }
+
+    /**
+     * Renders this relation for PlantUML with configurable options.
+     * <p>
+     * For hierarchy relations (EXTENDS, IMPLEMENTS), renders as:
+     *   parentType arrowSymbol childType : label
+     * <p>
+     * For other relations, renders as:
+     *   fromType "fromMult" arrowSymbol "toMult" toType : label
+     * <p>
+     * For member-to-member relations:
+     *   FromType::member --> ToType::member : label
+     *
+     * @param fromTypeName the simple name/alias of the from type
+     * @param toTypeName the simple name/alias of the to type
+     * @param showLabels whether to include labels in the output
+     * @param showMultiplicities whether to include multiplicities in the output
+     * @return the PlantUML relation line
+     */
+    public String toPlantUml(String fromTypeName, String toTypeName, boolean showLabels, boolean showMultiplicities) {
         StringBuilder sb = new StringBuilder();
 
         // Build left side
@@ -107,7 +129,7 @@ public final class UmlRelation {
         } else {
             // Left side with multiplicity
             sb.append(leftSide);
-            if (!kind.isHierarchy() && fromMultiplicity != null) {
+            if (showMultiplicities && !kind.isHierarchy() && fromMultiplicity != null) {
                 sb.append(" \"").append(fromMultiplicity).append("\"");
             }
 
@@ -115,14 +137,14 @@ public final class UmlRelation {
             sb.append(" ").append(kind.toArrowSymbol()).append(" ");
 
             // Right side with multiplicity
-            if (!kind.isHierarchy() && toMultiplicity != null) {
+            if (showMultiplicities && !kind.isHierarchy() && toMultiplicity != null) {
                 sb.append("\"").append(toMultiplicity).append("\" ");
             }
             sb.append(rightSide);
         }
 
         // Label
-        if (label != null && !label.isBlank()) {
+        if (showLabels && label != null && !label.isBlank()) {
             sb.append(" : ").append(label);
         }
 
