@@ -687,6 +687,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
                 .name(className)  // Constructor has class name
                 .returnType("")    // No return type for constructors
                 .visibility(visibility)
+                .constructor(true)
                 .addAnnotation("constructor");
 
         // Extract parameters with FQN types
