@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Root container for the entire UML model.
@@ -53,7 +52,7 @@ public final class UmlModel {
         return types.values().stream()
                 .sorted(Comparator.comparing(UmlType::getPackageName)
                         .thenComparing(UmlType::getName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -94,7 +93,7 @@ public final class UmlModel {
                         .thenComparing(r -> r.getKind().ordinal())
                         .thenComparing(UmlRelation::getFromTypeId)
                         .thenComparing(UmlRelation::getToTypeId))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -115,7 +114,7 @@ public final class UmlModel {
                 .filter(pkg -> pkg != null && !pkg.isBlank())
                 .distinct()
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -127,7 +126,7 @@ public final class UmlModel {
         return types.values().stream()
                 .filter(t -> packageName.equals(t.getPackageName()))
                 .sorted(Comparator.comparing(UmlType::getName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -138,7 +137,7 @@ public final class UmlModel {
         return types.values().stream()
                 .filter(t -> t.getPackageName() == null || t.getPackageName().isBlank())
                 .sorted(Comparator.comparing(UmlType::getName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static Builder builder() {

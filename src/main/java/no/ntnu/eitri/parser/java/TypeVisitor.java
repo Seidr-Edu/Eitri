@@ -37,7 +37,6 @@ import no.ntnu.eitri.parser.ParseContext;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * AST visitor for extracting type declarations from Java source.
@@ -55,6 +54,9 @@ import java.util.stream.Collectors;
  * The naming is computed using JavaParser's parent chain.
  */
 public class TypeVisitor extends VoidVisitorAdapter<Void> {
+
+    private static final String STATIC_STEREOTYPE = "static";
+    private static final String ABSTRACT_STEREOTYPE = "abstract";
 
     private final ParseContext context;
 
@@ -179,12 +181,12 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
 
         // Add modifiers as stereotypes for abstract classes
         if (n.isAbstract() && kind == TypeKind.CLASS) {
-            builder.addStereotype("abstract");
+            builder.addStereotype(ABSTRACT_STEREOTYPE);
         }
 
         // Add static stereotype for static nested types
         if (isStaticNested(n, kind)) {
-            builder.addStereotype("static");
+            builder.addStereotype(STATIC_STEREOTYPE);
         }
 
         // Extract generics
@@ -199,8 +201,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
 
         // Extract fields
         for (FieldDeclaration field : n.getFields()) {
-            for (VariableDeclarator var : field.getVariables()) {
-                builder.addField(extractField(field, var));
+            for (VariableDeclarator varDec : field.getVariables()) {
+                builder.addField(extractField(field, varDec));
             }
         }
 
@@ -246,7 +248,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
             } else {
                 resolvedFqn = toType.getNameAsString();
             }
-        } catch (Exception e) {
+        } catch (Exception _) {
             // Symbol resolution failed, use simple name as fallback
             resolvedFqn = toType.getNameAsString();
         }
@@ -282,7 +284,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
 
         // Add static stereotype for nested enums (implicitly static)
         if (isStaticNested(n, TypeKind.ENUM)) {
-            builder.addStereotype("static");
+            builder.addStereotype(STATIC_STEREOTYPE);
         }
 
         // Extract annotations
@@ -304,8 +306,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
 
         // Extract regular fields
         for (FieldDeclaration field : n.getFields()) {
-            for (VariableDeclarator var : field.getVariables()) {
-                builder.addField(extractField(field, var));
+            for (VariableDeclarator varDec : field.getVariables()) {
+                builder.addField(extractField(field, varDec));
             }
         }
 
@@ -360,7 +362,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
 
         // Add static stereotype for nested annotations (implicitly static)
         if (isStaticNested(n, TypeKind.ANNOTATION)) {
-            builder.addStereotype("static");
+            builder.addStereotype(STATIC_STEREOTYPE);
         }
 
         // Extract meta-annotations
@@ -421,7 +423,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
 
         // Add static stereotype for nested records (implicitly static)
         if (isStaticNested(n, TypeKind.RECORD)) {
-            builder.addStereotype("static");
+            builder.addStereotype(STATIC_STEREOTYPE);
         }
 
         // Extract generics
@@ -496,7 +498,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         String identifier = tp.getNameAsString();
         List<String> boundsList = tp.getTypeBound().stream()
                 .map(ClassOrInterfaceType::asString)
-                .collect(Collectors.toList());
+                .toList();
 
         if (boundsList.isEmpty()) {
             return new UmlGeneric(identifier);
@@ -516,7 +518,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         if (ann instanceof NormalAnnotationExpr normal) {
             List<String> values = normal.getPairs().stream()
                     .map(MemberValuePair::toString)
-                    .collect(Collectors.toList());
+                    .toList();
             return new UmlStereotype(name, values);
         } else if (ann instanceof SingleMemberAnnotationExpr single) {
             return new UmlStereotype(name, List.of(single.getMemberValue().toString()));
@@ -537,7 +539,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         try {
             ResolvedType resolved = type.resolve();
             return resolveTypeToFqnString(resolved, type.asString());
-        } catch (Exception e) {
+        } catch (Exception _) {
             // Symbol resolution failed, fall back to source representation
             return type.asString();
         }
@@ -588,9 +590,9 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
     /**
      * Extract a UmlField from a field declaration.
      */
-    private UmlField extractField(FieldDeclaration field, VariableDeclarator var) {
-        String name = var.getNameAsString();
-        String type = resolveTypeFqn(var.getType());  // FQN for relation detection
+    private UmlField extractField(FieldDeclaration field, VariableDeclarator varDec) {
+        String name = varDec.getNameAsString();
+        String type = resolveTypeFqn(varDec.getType());  // FQN for relation detection
         Visibility visibility = extractVisibility(field);
 
         boolean isStatic = field.isStatic();
@@ -610,7 +612,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         }
 
         // Extract initializer if present (for default values)
-        var.getInitializer().ifPresent(init -> {
+        varDec.getInitializer().ifPresent(init -> {
             // Store as annotation for display purposes
             String initStr = init.toString();
             if (initStr.length() <= 50) {  // Truncate long initializers
@@ -641,6 +643,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
                 .isAbstract(isAbstract);
 
         // Extract modifiers
+        @SuppressWarnings("null")
         EnumSet<no.ntnu.eitri.model.Modifier> modifiers = EnumSet.noneOf(no.ntnu.eitri.model.Modifier.class);
         if (isStatic) modifiers.add(no.ntnu.eitri.model.Modifier.STATIC);
         if (isAbstract) modifiers.add(no.ntnu.eitri.model.Modifier.ABSTRACT);
@@ -660,9 +663,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         });
 
         // Extract thrown exceptions with FQN
-        method.getThrownExceptions().forEach(exc -> {
-            builder.addThrownException(resolveTypeFqn(exc));
-        });
+        method.getThrownExceptions().forEach(exc -> builder.addThrownException(resolveTypeFqn(exc)));
 
         // Add annotations as stereotypes in method
         for (AnnotationExpr ann : method.getAnnotations()) {
@@ -698,9 +699,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         });
 
         // Extract thrown exceptions with FQN
-        ctor.getThrownExceptions().forEach(exc -> {
-            builder.addThrownException(resolveTypeFqn(exc));
-        });
+        ctor.getThrownExceptions().forEach(exc -> builder.addThrownException(resolveTypeFqn(exc)));
 
         return builder.build();
     }

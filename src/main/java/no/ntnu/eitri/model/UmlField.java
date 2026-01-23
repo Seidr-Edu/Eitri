@@ -206,6 +206,7 @@ public final class UmlField {
             return this;
         }
 
+        @SuppressWarnings("null")
         public Builder addModifier(Modifier modifier) {
             if (this.modifiers == null) {
                 this.modifiers = EnumSet.noneOf(Modifier.class);

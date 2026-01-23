@@ -79,7 +79,7 @@ public class PlantUmlWriter implements DiagramWriter {
             renderTo(model, config, sw);
         } catch (IOException e) {
             // StringWriter doesn't throw IOException
-            throw new RuntimeException("Unexpected IO error", e);
+            throw new WriteException("Unexpected IO error", e);
         }
         
         return sw.toString();
@@ -126,7 +126,7 @@ public class PlantUmlWriter implements DiagramWriter {
         // Build type lookup map (FQN -> reference name)
         Map<String, String> typeNames = new HashMap<>();
         for (UmlType type : model.getTypes()) {
-            typeNames.put(type.getId(), type.getReferenceName());
+            typeNames.put(type.getId(), type.getName());
         }
 
         // Render types grouped by package
@@ -208,10 +208,7 @@ public class PlantUmlWriter implements DiagramWriter {
      */
     private boolean shouldRenderType(UmlType type, EitriConfig config, Set<String> linkedTypes) {
         // Check hideUnlinked
-        if (config.isHideUnlinked() && !linkedTypes.contains(type.getId())) {
-            return false;
-        }
-        return true;
+        return !config.isHideUnlinked() || linkedTypes.contains(type.getId());
     }
 
     /**

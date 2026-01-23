@@ -120,16 +120,6 @@ public final class UmlType {
     }
 
     /**
-     * Returns the name to use in PlantUML declarations and references.
-     * This is either the alias (if displayName is set) or the simple name.
-     */
-    public String getReferenceName() {
-        // If display name is set, we use "DisplayName" as Alias pattern
-        // and reference by alias. Otherwise use simple name.
-        return name;
-    }
-
-    /**
      * Renders the type declaration line for PlantUML.
      * Format: [visibility][kind] ["DisplayName" as] Name[<generics>] [stereotypes] [style]
      * Example: +abstract class "Order Handler" as OrderHandler<T> <<Aggregate>> #palegreen

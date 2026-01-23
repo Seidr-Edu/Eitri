@@ -52,6 +52,7 @@ public enum Modifier {
      * Creates an empty mutable set of modifiers.
      * @return empty EnumSet
      */
+    @SuppressWarnings("null")
     public static Set<Modifier> none() {
         return EnumSet.noneOf(Modifier.class);
     }
@@ -59,7 +60,7 @@ public enum Modifier {
     /**
      * Creates a set containing the given modifiers.
      * @param modifiers the modifiers to include
-     * @return EnumSet with the given modifiers
+     * @return Set with the given modifiers
      */
     public static Set<Modifier> of(Modifier... modifiers) {
         if (modifiers.length == 0) {

@@ -234,7 +234,8 @@ public final class UmlMethod {
             this.modifiers = modifiers;
             return this;
         }
-
+        
+        @SuppressWarnings("null")
         public Builder addModifier(Modifier modifier) {
             if (this.modifiers == null) {
                 this.modifiers = EnumSet.noneOf(Modifier.class);
