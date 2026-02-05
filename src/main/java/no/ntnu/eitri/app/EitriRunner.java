@@ -1,5 +1,7 @@
-package no.ntnu.eitri.runner;
+package no.ntnu.eitri.app;
 
+import no.ntnu.eitri.app.registry.ParserRegistry;
+import no.ntnu.eitri.app.registry.WriterRegistry;
 import no.ntnu.eitri.cli.CliOptions;
 import no.ntnu.eitri.config.ConfigException;
 import no.ntnu.eitri.config.ConfigResolution;
@@ -7,11 +9,9 @@ import no.ntnu.eitri.config.ConfigService;
 import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseException;
-import no.ntnu.eitri.parser.ParserRegistry;
 import no.ntnu.eitri.parser.SourceParser;
 import no.ntnu.eitri.writer.DiagramWriter;
 import no.ntnu.eitri.writer.WriteException;
-import no.ntnu.eitri.writer.WriterRegistry;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -143,7 +143,7 @@ public class EitriRunner {
     private String detectSourceExtension(EitriConfig config) {
         for (Path sourcePath : config.getSourcePaths()) {
             if (sourcePath == null) continue;
-            
+
             if (Files.isRegularFile(sourcePath)) {
                 String extension = extensionFromPath(sourcePath);
                 if (extension != null) {

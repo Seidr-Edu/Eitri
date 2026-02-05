@@ -1,5 +1,6 @@
-package no.ntnu.eitri.parser;
+package no.ntnu.eitri.app.registry;
 
+import no.ntnu.eitri.parser.SourceParser;
 import no.ntnu.eitri.parser.java.JavaSourceParser;
 import no.ntnu.eitri.util.ExtensionNormalizer;
 
@@ -29,7 +30,7 @@ public final class ParserRegistry {
     public Optional<SourceParser> getByExtension(String extension) {
         String normalized = ExtensionNormalizer.normalizeExtension(extension);
         if (normalized == null) return Optional.empty();
-        
+
         Supplier<SourceParser> supplier = byExtension.get(normalized);
         return supplier == null ? Optional.empty() : Optional.of(supplier.get());
     }
@@ -62,5 +63,4 @@ public final class ParserRegistry {
             byExtension.put(normalized, supplier);
         }
     }
-
 }
