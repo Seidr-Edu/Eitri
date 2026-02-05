@@ -75,17 +75,6 @@ public final class ConfigValidator {
         }
 
         Path parent = config.getOutputPath().getParent();
-        if (parent != null && !Files.exists(parent)) {
-            try {
-                Files.createDirectories(parent);
-            } catch (Exception _) {
-                result.add(ValidationError.error(
-                        "OUTPUT_DIR_CREATE_FAILED",
-                        "Cannot create output directory: " + parent,
-                        FIELD_OUTPUT_PATH
-                ));
-            }
-        }
         if (parent != null && Files.exists(parent) && !Files.isWritable(parent)) {
             result.add(ValidationError.error(
                     "OUTPUT_DIR_NOT_WRITABLE",

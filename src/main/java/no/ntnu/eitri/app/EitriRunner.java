@@ -7,6 +7,7 @@ import no.ntnu.eitri.config.ConfigException;
 import no.ntnu.eitri.config.ConfigResolution;
 import no.ntnu.eitri.config.ConfigService;
 import no.ntnu.eitri.config.EitriConfig;
+import no.ntnu.eitri.config.OutputPathInitializer;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseException;
 import no.ntnu.eitri.parser.SourceParser;
@@ -124,7 +125,8 @@ public class EitriRunner {
         }
     }
 
-    private void writeOutput(UmlModel model, EitriConfig config) throws WriteException {
+    private void writeOutput(UmlModel model, EitriConfig config) throws ConfigException, WriteException {
+        OutputPathInitializer.initialize(config.getOutputPath());
         DiagramWriter writer = resolveWriter(config);
         writer.write(model, config, config.getOutputPath());
 
