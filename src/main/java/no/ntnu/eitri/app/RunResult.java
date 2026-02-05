@@ -1,4 +1,4 @@
-package no.ntnu.eitri.runner;
+package no.ntnu.eitri.app;
 
 import java.nio.file.Path;
 

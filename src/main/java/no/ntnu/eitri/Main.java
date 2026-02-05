@@ -1,9 +1,9 @@
 package no.ntnu.eitri;
 
+import no.ntnu.eitri.app.EitriRunner;
+import no.ntnu.eitri.app.RunResult;
 import no.ntnu.eitri.cli.CliOptions;
 import no.ntnu.eitri.cli.ManifestVersionProvider;
-import no.ntnu.eitri.runner.EitriRunner;
-import no.ntnu.eitri.runner.RunResult;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;

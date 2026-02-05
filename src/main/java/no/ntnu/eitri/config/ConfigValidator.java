@@ -1,7 +1,7 @@
 package no.ntnu.eitri.config;
 
-import no.ntnu.eitri.parser.ParserRegistry;
-import no.ntnu.eitri.writer.WriterRegistry;
+import no.ntnu.eitri.app.registry.ParserRegistry;
+import no.ntnu.eitri.app.registry.WriterRegistry;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

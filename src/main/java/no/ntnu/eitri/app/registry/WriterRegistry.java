@@ -1,6 +1,7 @@
-package no.ntnu.eitri.writer;
+package no.ntnu.eitri.app.registry;
 
 import no.ntnu.eitri.util.ExtensionNormalizer;
+import no.ntnu.eitri.writer.DiagramWriter;
 import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
 
 import java.util.LinkedHashMap;
@@ -49,11 +50,10 @@ public final class WriterRegistry {
     private void register(Supplier<DiagramWriter> supplier, String extension) {
         String normalized = ExtensionNormalizer.normalizeExtension(extension);
         if (normalized == null) return;
-        
+
         if (defaultExtension == null) {
             defaultExtension = normalized;
         }
         byExtension.put(normalized, supplier);
     }
-
 }
