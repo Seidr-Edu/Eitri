@@ -1,5 +1,7 @@
 package no.ntnu.eitri.config;
 
+import no.ntnu.eitri.util.ExtensionNormalizer;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +13,8 @@ import java.util.List;
 public record EitriConfig(
         List<Path> sourcePaths,
         Path outputPath,
+        String parserExtension,
+        String writerExtension,
         String diagramName,
         LayoutDirection direction,
         int groupInheritance,
@@ -49,6 +53,8 @@ public record EitriConfig(
         direction = direction != null ? direction : LayoutDirection.TOP_TO_BOTTOM;
         groupInheritance = Math.max(0, groupInheritance);
         classAttributeIconSize = Math.max(0, classAttributeIconSize);
+        parserExtension = ExtensionNormalizer.normalizeExtension(parserExtension);
+        writerExtension = ExtensionNormalizer.normalizeExtension(writerExtension);
     }
 
     // Compatibility getters
@@ -58,6 +64,14 @@ public record EitriConfig(
 
     public Path getOutputPath() {
         return outputPath;
+    }
+
+    public String getParserExtension() {
+        return parserExtension;
+    }
+
+    public String getWriterExtension() {
+        return writerExtension;
     }
 
     public String getDiagramName() {
@@ -183,6 +197,8 @@ public record EitriConfig(
     public static final class Builder {
         private final List<Path> sourcePaths = new ArrayList<>();
         private Path outputPath;
+        private String parserExtension;
+        private String writerExtension;
         private String diagramName = "diagram";
         private LayoutDirection direction = LayoutDirection.TOP_TO_BOTTOM;
         private int groupInheritance = 0;
@@ -230,6 +246,16 @@ public record EitriConfig(
 
         public Builder outputPath(Path path) {
             this.outputPath = path;
+            return this;
+        }
+
+        public Builder parserExtension(String parserExtension) {
+            this.parserExtension = parserExtension;
+            return this;
+        }
+
+        public Builder writerExtension(String writerExtension) {
+            this.writerExtension = writerExtension;
             return this;
         }
 
@@ -392,6 +418,8 @@ public record EitriConfig(
             return new EitriConfig(
                     sourcePaths,
                     outputPath,
+                    parserExtension,
+                    writerExtension,
                     diagramName,
                     direction,
                     groupInheritance,
@@ -424,4 +452,5 @@ public record EitriConfig(
             );
         }
     }
+
 }

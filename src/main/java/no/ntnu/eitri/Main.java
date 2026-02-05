@@ -14,16 +14,16 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
- * Eitri - Java to PlantUML class diagram generator.
+ * Eitri - Class diagram generator.
  * <p>
- * A CLI tool that parses a Java source directory and generates a PlantUML
- * class diagram (.puml) without compiling or running the project.
+ * A CLI tool that parses a source directory and generates a UML
+ * class diagram without compiling or running the project.
  */
 @Command(
         name = "eitri",
         mixinStandardHelpOptions = true,
         versionProvider = ManifestVersionProvider.class,
-        description = "Generate PlantUML class diagrams from Java source code.",
+        description = "Generate UML class diagrams from source code.",
         sortOptions = false
 )
 public class Main implements Callable<Integer> {
@@ -32,7 +32,7 @@ public class Main implements Callable<Integer> {
 
     @Option(
             names = {"--src", "-s"},
-            description = "Path to Java source folder(s). Can be specified multiple times.",
+            description = "Path to source folder(s). Can be specified multiple times.",
             required = true,
             paramLabel = "<path>"
     )
@@ -40,11 +40,25 @@ public class Main implements Callable<Integer> {
 
     @Option(
             names = {"--out", "-o"},
-            description = "Output .puml file path.",
+            description = "Output UML file path.",
             required = true,
             paramLabel = "<file>"
     )
     private Path outputPath;
+
+    @Option(
+            names = "--parser",
+            description = "Parser extension id (e.g., .java).",
+            paramLabel = "<ext>"
+    )
+    private String parserExtension;
+
+    @Option(
+            names = "--writer",
+            description = "Writer extension id (e.g., .puml).",
+            paramLabel = "<ext>"
+    )
+    private String writerExtension;
 
     // === Config File ===
 
@@ -70,7 +84,15 @@ public class Main implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        CliOptions cliOptions = new CliOptions(sourcePaths, outputPath, configPath, verbose, dryRun);
+                CliOptions cliOptions = new CliOptions(
+                                sourcePaths,
+                                outputPath,
+                                configPath,
+                                parserExtension,
+                                writerExtension,
+                                verbose,
+                                dryRun
+                );
         EitriRunner runner = new EitriRunner();
         RunResult result = runner.run(cliOptions);
         return result.exitCode();
