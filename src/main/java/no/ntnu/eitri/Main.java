@@ -1,6 +1,7 @@
 package no.ntnu.eitri;
 
 import no.ntnu.eitri.cli.CliOptions;
+import no.ntnu.eitri.cli.ManifestVersionProvider;
 import no.ntnu.eitri.runner.EitriRunner;
 import no.ntnu.eitri.runner.RunResult;
 import picocli.CommandLine;
@@ -21,7 +22,7 @@ import java.util.concurrent.Callable;
 @Command(
         name = "eitri",
         mixinStandardHelpOptions = true,
-        version = "eitri 1.0-SNAPSHOT",
+        versionProvider = ManifestVersionProvider.class,
         description = "Generate PlantUML class diagrams from Java source code.",
         sortOptions = false
 )
