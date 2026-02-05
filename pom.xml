@@ -61,7 +61,7 @@
           </descriptorRefs>
           <archive>
             <manifest>
-              <mainClass>no.ntnu.eitri.App</mainClass>
+              <mainClass>no.ntnu.eitri.Main</mainClass>
             </manifest>
           </archive>
         </configuration>
