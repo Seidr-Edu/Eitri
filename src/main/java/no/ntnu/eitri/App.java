@@ -3,7 +3,6 @@ package no.ntnu.eitri;
 import no.ntnu.eitri.config.ConfigException;
 import no.ntnu.eitri.config.ConfigLoader;
 import no.ntnu.eitri.config.EitriConfig;
-import no.ntnu.eitri.config.LayoutDirection;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseException;
 import no.ntnu.eitri.parser.SourceParser;
@@ -66,97 +65,6 @@ public class App implements Callable<Integer> {
             paramLabel = "<file>"
     )
     private Path configPath;
-
-    // === Layout Options ===
-
-    @Option(
-            names = {"--direction", "-d"},
-            description = "Layout direction: 'tb' (top-to-bottom) or 'lr' (left-to-right). Default: tb",
-            paramLabel = "<dir>"
-    )
-    private String direction;
-
-    @Option(
-            names = "--group-inheritance",
-            description = "Group N+ inheritance arrows together. Default: 0 (disabled)",
-            paramLabel = "<n>"
-    )
-    private Integer groupInheritance;
-
-    @Option(
-            names = "--name",
-            description = "Diagram name in @startuml. Default: diagram",
-            paramLabel = "<name>"
-    )
-    private String diagramName;
-
-    // === Visibility Filtering ===
-
-    @Option(names = "--hide-private", description = "Hide private members.")
-    private Boolean hidePrivate;
-
-    @Option(names = "--hide-protected", description = "Hide protected members.")
-    private Boolean hideProtected;
-
-    @Option(names = "--hide-package", description = "Hide package-private members.")
-    private Boolean hidePackage;
-
-    // === Member Filtering ===
-
-    @Option(names = "--hide-fields", description = "Hide all fields.")
-    private Boolean hideFields;
-
-    @Option(names = "--hide-methods", description = "Hide all methods.")
-    private Boolean hideMethods;
-
-    @Option(names = "--hide-empty-members", description = "Hide empty member compartments. Default: true")
-    private Boolean hideEmptyMembers;
-
-    @Option(names = "--show-empty-members", description = "Show empty member compartments.")
-    private Boolean showEmptyMembers;
-
-    // === Display Options ===
-
-    @Option(names = "--hide-circle", description = "Hide type icons (C/I/E circles).")
-    private Boolean hideCircle;
-
-    @Option(names = "--hide-unlinked", description = "Hide types with no relations.")
-    private Boolean hideUnlinked;
-
-    @Option(names = "--no-stereotypes", description = "Hide stereotypes.")
-    private Boolean noStereotypes;
-
-    @Option(names = "--no-generics", description = "Hide generic type parameters.")
-    private Boolean noGenerics;
-
-    @Option(names = "--show-notes", description = "Include Javadoc as notes.")
-    private Boolean showNotes;
-
-    @Option(names = "--no-multiplicities", description = "Hide relation multiplicities.")
-    private Boolean noMultiplicities;
-
-    @Option(names = "--no-labels", description = "Hide relation labels.")
-    private Boolean noLabels;
-
-    // === Relation Filtering ===
-
-    @Option(names = "--hide-inheritance", description = "Hide extends relations.")
-    private Boolean hideInheritance;
-
-    @Option(names = "--hide-implements", description = "Hide implements relations.")
-    private Boolean hideImplements;
-
-    @Option(names = "--hide-composition", description = "Hide composition relations.")
-    private Boolean hideComposition;
-
-    @Option(names = "--hide-aggregation", description = "Hide aggregation relations.")
-    private Boolean hideAggregation;
-
-    @Option(names = "--hide-association", description = "Hide association relations.")
-    private Boolean hideAssociation;
-
-    @Option(names = "--hide-dependency", description = "Hide dependency relations.")
-    private Boolean hideDependency;
 
     // === Runtime Options ===
 
@@ -290,85 +198,6 @@ public class App implements Callable<Integer> {
             config.addSourcePath(src);
         }
         config.setOutputPath(outputPath);
-
-        // Layout
-        if (direction != null) {
-            config.setDirection(LayoutDirection.fromString(direction));
-        }
-        if (groupInheritance != null) {
-            config.setGroupInheritance(groupInheritance);
-        }
-        if (diagramName != null) {
-            config.setDiagramName(diagramName);
-        }
-
-        // Visibility
-        if (Boolean.TRUE.equals(hidePrivate)) {
-            config.setHidePrivate(true);
-        }
-        if (Boolean.TRUE.equals(hideProtected)) {
-            config.setHideProtected(true);
-        }
-        if (Boolean.TRUE.equals(hidePackage)) {
-            config.setHidePackage(true);
-        }
-
-        // Members
-        if (Boolean.TRUE.equals(hideFields)) {
-            config.setHideFields(true);
-        }
-        if (Boolean.TRUE.equals(hideMethods)) {
-            config.setHideMethods(true);
-        }
-        if (hideEmptyMembers != null) {
-            config.setHideEmptyMembers(hideEmptyMembers);
-        }
-        if (Boolean.TRUE.equals(showEmptyMembers)) {
-            config.setHideEmptyMembers(false);
-        }
-
-        // Display
-        if (Boolean.TRUE.equals(hideCircle)) {
-            config.setHideCircle(true);
-        }
-        if (Boolean.TRUE.equals(hideUnlinked)) {
-            config.setHideUnlinked(true);
-        }
-        if (Boolean.TRUE.equals(noStereotypes)) {
-            config.setShowStereotypes(false);
-        }
-        if (Boolean.TRUE.equals(noGenerics)) {
-            config.setShowGenerics(false);
-        }
-        if (Boolean.TRUE.equals(showNotes)) {
-            config.setShowNotes(true);
-        }
-        if (Boolean.TRUE.equals(noMultiplicities)) {
-            config.setShowMultiplicities(false);
-        }
-        if (Boolean.TRUE.equals(noLabels)) {
-            config.setShowLabels(false);
-        }
-
-        // Relations
-        if (Boolean.TRUE.equals(hideInheritance)) {
-            config.setShowInheritance(false);
-        }
-        if (Boolean.TRUE.equals(hideImplements)) {
-            config.setShowImplements(false);
-        }
-        if (Boolean.TRUE.equals(hideComposition)) {
-            config.setShowComposition(false);
-        }
-        if (Boolean.TRUE.equals(hideAggregation)) {
-            config.setShowAggregation(false);
-        }
-        if (Boolean.TRUE.equals(hideAssociation)) {
-            config.setShowAssociation(false);
-        }
-        if (Boolean.TRUE.equals(hideDependency)) {
-            config.setShowDependency(false);
-        }
 
         // Runtime
         config.setVerbose(verbose);
