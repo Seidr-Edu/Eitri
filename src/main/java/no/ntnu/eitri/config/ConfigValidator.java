@@ -1,5 +1,8 @@
 package no.ntnu.eitri.config;
 
+import no.ntnu.eitri.parser.ParserRegistry;
+import no.ntnu.eitri.writer.WriterRegistry;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -10,6 +13,8 @@ public final class ConfigValidator {
 
     private static final String FIELD_SOURCE_PATHS = "sourcePaths";
     private static final String FIELD_OUTPUT_PATH = "outputPath";
+    private static final String FIELD_PARSER_EXTENSION = "parserExtension";
+    private static final String FIELD_WRITER_EXTENSION = "writerExtension";
 
     private ConfigValidator() {
         // Utility class
@@ -26,6 +31,8 @@ public final class ConfigValidator {
 
         validateSourcePaths(config, result);
         validateOutputPath(config, result);
+        validateParserExtension(config, result);
+        validateWriterExtension(config, result);
 
         return result;
     }
@@ -84,6 +91,34 @@ public final class ConfigValidator {
                     "OUTPUT_DIR_NOT_WRITABLE",
                     "Output directory is not writable: " + parent,
                     FIELD_OUTPUT_PATH
+            ));
+        }
+    }
+
+    private static void validateParserExtension(EitriConfig config, ValidationResult result) {
+        if (config.getParserExtension() == null) return;
+
+        ParserRegistry registry = ParserRegistry.defaultRegistry();
+        if (!registry.supports(config.getParserExtension())) {
+            result.add(ValidationError.error(
+                    "PARSER_EXTENSION_UNSUPPORTED",
+                    "Unsupported parser extension: " + config.getParserExtension()
+                            + ". Supported: " + registry.getSupportedExtensions(),
+                    FIELD_PARSER_EXTENSION
+            ));
+        }
+    }
+
+    private static void validateWriterExtension(EitriConfig config, ValidationResult result) {
+        if (config.getWriterExtension() == null) return;
+        
+        WriterRegistry registry = WriterRegistry.defaultRegistry();
+        if (!registry.supports(config.getWriterExtension())) {
+            result.add(ValidationError.error(
+                    "WRITER_EXTENSION_UNSUPPORTED",
+                    "Unsupported writer extension: " + config.getWriterExtension()
+                            + ". Supported: " + registry.getSupportedExtensions(),
+                    FIELD_WRITER_EXTENSION
             ));
         }
     }

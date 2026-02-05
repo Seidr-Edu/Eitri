@@ -270,6 +270,12 @@ public final class ConfigLoader {
         if (sources != null) {
             sources.forEach(src -> builder.addSourcePath(Path.of(src)));
         }
+
+        if (input.containsKey("parserExtension")) {
+            builder.parserExtension((String) input.get("parserExtension"));
+        } else if (input.containsKey("parser")) {
+            builder.parserExtension((String) input.get("parser"));
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -282,6 +288,11 @@ public final class ConfigLoader {
         }
         if (output.containsKey("name")) {
             builder.diagramName((String) output.get("name"));
+        }
+        if (output.containsKey("writerExtension")) {
+            builder.writerExtension((String) output.get("writerExtension"));
+        } else if (output.containsKey("writer")) {
+            builder.writerExtension((String) output.get("writer"));
         }
     }
 

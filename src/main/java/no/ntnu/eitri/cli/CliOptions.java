@@ -6,7 +6,15 @@ import java.util.List;
 /**
  * Immutable container for CLI options passed to the application.
  */
-public record CliOptions(List<Path> sourcePaths, Path outputPath, Path configPath, boolean verbose, boolean dryRun) {
+public record CliOptions(
+        List<Path> sourcePaths,
+        Path outputPath,
+        Path configPath,
+        String parserExtension,
+        String writerExtension,
+        boolean verbose,
+        boolean dryRun
+) {
     public CliOptions {
         sourcePaths = sourcePaths != null ? List.copyOf(sourcePaths) : List.of();
     }

@@ -42,6 +42,12 @@ public final class ConfigMerger {
         if (source.getOutputPath() != null) {
             target.outputPath(source.getOutputPath());
         }
+        if (source.getParserExtension() != null) {
+            target.parserExtension(source.getParserExtension());
+        }
+        if (source.getWriterExtension() != null) {
+            target.writerExtension(source.getWriterExtension());
+        }
 
         // Override-if-non-default properties
         if (!"diagram".equals(source.getDiagramName())) {

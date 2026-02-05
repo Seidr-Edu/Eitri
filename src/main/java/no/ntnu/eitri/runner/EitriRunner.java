@@ -7,12 +7,14 @@ import no.ntnu.eitri.config.ConfigService;
 import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseException;
+import no.ntnu.eitri.parser.ParserRegistry;
 import no.ntnu.eitri.parser.SourceParser;
-import no.ntnu.eitri.parser.java.JavaSourceParser;
 import no.ntnu.eitri.writer.DiagramWriter;
 import no.ntnu.eitri.writer.WriteException;
-import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
+import no.ntnu.eitri.writer.WriterRegistry;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,9 +72,7 @@ public class EitriRunner {
     }
 
     private void logResolvedConfig(ConfigResolution resolution, EitriConfig config) {
-        if (!config.isVerbose()) {
-            return;
-        }
+        if (!config.isVerbose()) return;
 
         if (resolution.configFileUsed() != null) {
             LOGGER.log(Level.INFO, "Using configuration file: {0}", resolution.configFileUsed());
@@ -83,7 +83,7 @@ public class EitriRunner {
     }
 
     private UmlModel parseSources(EitriConfig config) throws ParseException {
-        SourceParser parser = new JavaSourceParser();
+        SourceParser parser = resolveParser(config);
         if (config.isVerbose()) {
             LOGGER.log(Level.INFO, "Parsing with {0}...", parser.getName());
         }
@@ -104,19 +104,65 @@ public class EitriRunner {
         LOGGER.log(Level.INFO, "         Would write to: {0}", config.getOutputPath());
 
         if (config.isVerbose()) {
-            DiagramWriter writer = new PlantUmlWriter();
+            DiagramWriter writer = resolveWriter(config);
             String rendered = writer.render(model, config);
-            LOGGER.info("\n--- Generated PlantUML ---");
+            LOGGER.info("\n--- Generated ---");
             LOGGER.info(rendered);
-            LOGGER.info("--- End PlantUML ---\n");
+            LOGGER.info("--- End ---\n");
         }
     }
 
     private void writeOutput(UmlModel model, EitriConfig config) throws WriteException {
-        DiagramWriter writer = new PlantUmlWriter();
+        DiagramWriter writer = resolveWriter(config);
         writer.write(model, config, config.getOutputPath());
 
         LOGGER.log(Level.INFO, "Generated {0} with {1} types and {2} relations.",
                 new Object[]{config.getOutputPath(), model.getTypes().size(), model.getRelations().size()});
+    }
+
+    private SourceParser resolveParser(EitriConfig config) {
+        ParserRegistry registry = ParserRegistry.defaultRegistry();
+        String extension = config.getParserExtension();
+        if (extension == null) extension = detectSourceExtension(config);
+        if (extension == null) extension = registry.getDefaultExtension();
+        String resolvedExtension = extension;
+        return registry.getByExtension(resolvedExtension)
+                .orElseThrow(() -> new ParseException("No parser registered for extension: " + resolvedExtension));
+    }
+
+    private DiagramWriter resolveWriter(EitriConfig config) {
+        WriterRegistry registry = WriterRegistry.defaultRegistry();
+        String extension = config.getWriterExtension();
+        if (extension == null) extension = extensionFromPath(config.getOutputPath());
+        if (extension == null) extension = registry.getDefaultExtension();
+        String resolvedExtension = extension;
+        return registry.getByExtension(resolvedExtension)
+                .orElseThrow(() -> new WriteException("No writer registered for extension: " + resolvedExtension, config.getOutputPath()));
+    }
+
+    private String detectSourceExtension(EitriConfig config) {
+        for (Path sourcePath : config.getSourcePaths()) {
+            if (sourcePath == null) continue;
+            
+            if (Files.isRegularFile(sourcePath)) {
+                String extension = extensionFromPath(sourcePath);
+                if (extension != null) {
+                    return extension;
+                }
+            }
+        }
+        return null;
+    }
+
+    private String extensionFromPath(Path path) {
+        if (path == null || path.getFileName() == null) {
+            return null;
+        }
+        String name = path.getFileName().toString();
+        int idx = name.lastIndexOf('.');
+        if (idx < 0 || idx == name.length() - 1) {
+            return null;
+        }
+        return name.substring(idx).toLowerCase();
     }
 }

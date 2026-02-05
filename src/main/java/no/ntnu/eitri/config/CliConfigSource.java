@@ -26,6 +26,13 @@ public final class CliConfigSource implements ConfigSource {
             builder.outputPath(cliOptions.outputPath());
         }
 
+        if (cliOptions.parserExtension() != null) {
+            builder.parserExtension(cliOptions.parserExtension());
+        }
+        if (cliOptions.writerExtension() != null) {
+            builder.writerExtension(cliOptions.writerExtension());
+        }
+
         builder.verbose(cliOptions.verbose());
         builder.dryRun(cliOptions.dryRun());
 

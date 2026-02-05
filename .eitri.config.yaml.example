@@ -1,5 +1,10 @@
 output:
+  file: diagram.puml
   name: eitri-diagram
+  writerExtension: .puml
+
+input:
+  parserExtension: .java
 
 layout:
   direction: tb
