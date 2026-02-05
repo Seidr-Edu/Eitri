@@ -2,8 +2,8 @@ package no.ntnu.eitri.config;
 
 import no.ntnu.eitri.cli.CliOptions;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,12 +21,27 @@ public final class ConfigService {
     public ConfigResolution resolve(CliOptions cliOptions) throws ConfigException {
         Path configFileUsed = resolveConfigFileUsed(cliOptions.configPath());
 
-        EitriConfig config = ConfigLoader.load(cliOptions.configPath());
-        applyCliOverrides(config, cliOptions);
+        List<ConfigSource> sources = new ArrayList<>();
+        Path workingDirConfig = Path.of(System.getProperty("user.dir"), ConfigLoader.DEFAULT_CONFIG_FILENAME);
+        if (configFileUsed != null && configFileUsed.equals(workingDirConfig)) {
+            sources.add(new YamlConfigSource(workingDirConfig));
+        }
 
-        List<String> errors = ConfigValidator.validate(config);
-        if (!errors.isEmpty()) {
-            throw new ConfigException(String.join("\n", errors));
+        if (cliOptions.configPath() != null) {
+            if (!java.nio.file.Files.exists(cliOptions.configPath())) {
+                throw new ConfigException("Config file not found: " + cliOptions.configPath());
+            }
+            sources.add(new YamlConfigSource(cliOptions.configPath()));
+        }
+
+        sources.add(new CliConfigSource(cliOptions));
+
+        ConfigMerger merger = new ConfigMerger();
+        EitriConfig config = merger.merge(sources);
+
+        ValidationResult validation = ConfigValidator.validate(config);
+        if (!validation.isValid()) {
+            throw new ConfigException(validation.formatMessages());
         }
 
         return new ConfigResolution(config, configFileUsed);
@@ -38,20 +53,10 @@ public final class ConfigService {
         }
 
         Path workingDirConfig = Path.of(System.getProperty("user.dir"), ConfigLoader.DEFAULT_CONFIG_FILENAME);
-        if (Files.exists(workingDirConfig)) {
+        if (java.nio.file.Files.exists(workingDirConfig)) {
             return workingDirConfig;
         }
 
         return null;
-    }
-
-    private void applyCliOverrides(EitriConfig config, CliOptions cliOptions) {
-        for (Path src : cliOptions.sourcePaths()) {
-            config.addSourcePath(src);
-        }
-        config.setOutputPath(cliOptions.outputPath());
-
-        config.setVerbose(cliOptions.verbose());
-        config.setDryRun(cliOptions.dryRun());
     }
 }

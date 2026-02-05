@@ -63,8 +63,8 @@ class SelfParseTest {
             // We expect around 25-35 types based on the codebase
             assertTrue(model.getTypes().size() >= 20, 
                     "Expected at least 20 types, got " + model.getTypes().size());
-            assertTrue(model.getTypes().size() <= 50, 
-                    "Expected at most 50 types, got " + model.getTypes().size());
+            assertTrue(model.getTypes().size() <= 60, 
+                    "Expected at most 60 types, got " + model.getTypes().size());
         }
 
         @Test
