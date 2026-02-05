@@ -17,7 +17,7 @@ import java.util.function.ToIntFunction;
  * <p>
  * Resolution order (later overrides earlier):
  * <ol>
- *   <li>Built-in defaults (new EitriConfig())</li>
+ *   <li>Built-in defaults (EitriConfig.builder().build())</li>
  *   <li>.eitri.config.yaml in working directory (if exists)</li>
  *   <li>Explicit --config file (if specified)</li>
  *   <li>CLI flags (applied by caller)</li>
@@ -49,19 +49,19 @@ public final class ConfigLoader {
      * Descriptor for a boolean configuration property.
      * Captures YAML location, getter/setter, default value, and merge strategy.
      */
-    record BoolProp(
+        record BoolProp(
             String section,
             String key,
             Predicate<EitriConfig> getter,
-            BiConsumer<EitriConfig, Boolean> setter,
+            BiConsumer<EitriConfig.Builder, Boolean> setter,
             boolean defaultValue,
             MergeStrategy mergeStrategy
-    ) {
+        ) {
         /** Convenience constructor that derives merge strategy from default value */
         BoolProp(String section, String key,
-                 Predicate<EitriConfig> getter,
-                 BiConsumer<EitriConfig, Boolean> setter,
-                 boolean defaultValue) {
+             Predicate<EitriConfig> getter,
+             BiConsumer<EitriConfig.Builder, Boolean> setter,
+             boolean defaultValue) {
             this(section, key, getter, setter, defaultValue,
                     defaultValue ? MergeStrategy.OVERRIDE_IF_FALSE : MergeStrategy.OVERRIDE_IF_TRUE);
         }
@@ -71,12 +71,12 @@ public final class ConfigLoader {
      * Descriptor for an integer configuration property.
      * Uses OVERRIDE_IF_POSITIVE merge strategy (override if source > 0).
      */
-    record IntProp(
+        record IntProp(
             String section,
             String key,
             ToIntFunction<EitriConfig> getter,
-            BiConsumer<EitriConfig, Integer> setter
-    ) {}
+            BiConsumer<EitriConfig.Builder, Integer> setter
+        ) {}
 
     // ========================================================================
     // Property Registry - Single Source of Truth
@@ -95,69 +95,69 @@ public final class ConfigLoader {
     @SuppressWarnings("null")
     private static final List<BoolProp> BOOL_PROPS = List.of(
             // Visibility
-            new BoolProp(SECTION_VISIBILITY, "hidePrivate",
-                    EitriConfig::isHidePrivate, EitriConfig::setHidePrivate, false),
-            new BoolProp(SECTION_VISIBILITY, "hideProtected",
-                    EitriConfig::isHideProtected, EitriConfig::setHideProtected, false),
-            new BoolProp(SECTION_VISIBILITY, "hidePackage",
-                    EitriConfig::isHidePackage, EitriConfig::setHidePackage, false),
+                        new BoolProp(SECTION_VISIBILITY, "hidePrivate",
+                            EitriConfig::isHidePrivate, EitriConfig.Builder::hidePrivate, false),
+                        new BoolProp(SECTION_VISIBILITY, "hideProtected",
+                            EitriConfig::isHideProtected, EitriConfig.Builder::hideProtected, false),
+                        new BoolProp(SECTION_VISIBILITY, "hidePackage",
+                            EitriConfig::isHidePackage, EitriConfig.Builder::hidePackage, false),
 
             // Members
-            new BoolProp(SECTION_MEMBERS, "hideFields",
-                    EitriConfig::isHideFields, EitriConfig::setHideFields, false),
-            new BoolProp(SECTION_MEMBERS, "hideMethods",
-                    EitriConfig::isHideMethods, EitriConfig::setHideMethods, false),
-            new BoolProp(SECTION_MEMBERS, "hideEmptyMembers",
-                    EitriConfig::isHideEmptyMembers, EitriConfig::setHideEmptyMembers, true),
+                    new BoolProp(SECTION_MEMBERS, "hideFields",
+                        EitriConfig::isHideFields, EitriConfig.Builder::hideFields, false),
+                    new BoolProp(SECTION_MEMBERS, "hideMethods",
+                        EitriConfig::isHideMethods, EitriConfig.Builder::hideMethods, false),
+                    new BoolProp(SECTION_MEMBERS, "hideEmptyMembers",
+                        EitriConfig::isHideEmptyMembers, EitriConfig.Builder::hideEmptyMembers, true),
 
             // Display
-            new BoolProp(SECTION_DISPLAY, "hideCircle",
-                    EitriConfig::isHideCircle, EitriConfig::setHideCircle, false),
-            new BoolProp(SECTION_DISPLAY, "hideUnlinked",
-                    EitriConfig::isHideUnlinked, EitriConfig::setHideUnlinked, false),
-            new BoolProp(SECTION_DISPLAY, "showStereotypes",
-                    EitriConfig::isShowStereotypes, EitriConfig::setShowStereotypes, true),
-            new BoolProp(SECTION_DISPLAY, "showGenerics",
-                    EitriConfig::isShowGenerics, EitriConfig::setShowGenerics, true),
-            new BoolProp(SECTION_DISPLAY, "showNotes",
-                    EitriConfig::isShowNotes, EitriConfig::setShowNotes, false),
-            new BoolProp(SECTION_DISPLAY, "showMultiplicities",
-                    EitriConfig::isShowMultiplicities, EitriConfig::setShowMultiplicities, true),
-            new BoolProp(SECTION_DISPLAY, "showLabels",
-                    EitriConfig::isShowLabels, EitriConfig::setShowLabels, true),
-            new BoolProp(SECTION_DISPLAY, "showReadOnly",
-                    EitriConfig::isShowReadOnly, EitriConfig::setShowReadOnly, true),
-            new BoolProp(SECTION_DISPLAY, "showVoidReturnTypes",
-                    EitriConfig::isShowVoidReturnTypes, EitriConfig::setShowVoidReturnTypes, true),
+                    new BoolProp(SECTION_DISPLAY, "hideCircle",
+                        EitriConfig::isHideCircle, EitriConfig.Builder::hideCircle, false),
+                    new BoolProp(SECTION_DISPLAY, "hideUnlinked",
+                        EitriConfig::isHideUnlinked, EitriConfig.Builder::hideUnlinked, false),
+                    new BoolProp(SECTION_DISPLAY, "showStereotypes",
+                        EitriConfig::isShowStereotypes, EitriConfig.Builder::showStereotypes, true),
+                    new BoolProp(SECTION_DISPLAY, "showGenerics",
+                        EitriConfig::isShowGenerics, EitriConfig.Builder::showGenerics, true),
+                    new BoolProp(SECTION_DISPLAY, "showNotes",
+                        EitriConfig::isShowNotes, EitriConfig.Builder::showNotes, false),
+                    new BoolProp(SECTION_DISPLAY, "showMultiplicities",
+                        EitriConfig::isShowMultiplicities, EitriConfig.Builder::showMultiplicities, true),
+                    new BoolProp(SECTION_DISPLAY, "showLabels",
+                        EitriConfig::isShowLabels, EitriConfig.Builder::showLabels, true),
+                    new BoolProp(SECTION_DISPLAY, "showReadOnly",
+                        EitriConfig::isShowReadOnly, EitriConfig.Builder::showReadOnly, true),
+                    new BoolProp(SECTION_DISPLAY, "showVoidReturnTypes",
+                        EitriConfig::isShowVoidReturnTypes, EitriConfig.Builder::showVoidReturnTypes, true),
 
             // Relations
-            new BoolProp(SECTION_RELATIONS, "showInheritance",
-                    EitriConfig::isShowInheritance, EitriConfig::setShowInheritance, true),
-            new BoolProp(SECTION_RELATIONS, "showImplements",
-                    EitriConfig::isShowImplements, EitriConfig::setShowImplements, true),
-            new BoolProp(SECTION_RELATIONS, "showComposition",
-                    EitriConfig::isShowComposition, EitriConfig::setShowComposition, true),
-            new BoolProp(SECTION_RELATIONS, "showAggregation",
-                    EitriConfig::isShowAggregation, EitriConfig::setShowAggregation, true),
-            new BoolProp(SECTION_RELATIONS, "showAssociation",
-                    EitriConfig::isShowAssociation, EitriConfig::setShowAssociation, true),
-            new BoolProp(SECTION_RELATIONS, "showDependency",
-                    EitriConfig::isShowDependency, EitriConfig::setShowDependency, true),
+                    new BoolProp(SECTION_RELATIONS, "showInheritance",
+                        EitriConfig::isShowInheritance, EitriConfig.Builder::showInheritance, true),
+                    new BoolProp(SECTION_RELATIONS, "showImplements",
+                        EitriConfig::isShowImplements, EitriConfig.Builder::showImplements, true),
+                    new BoolProp(SECTION_RELATIONS, "showComposition",
+                        EitriConfig::isShowComposition, EitriConfig.Builder::showComposition, true),
+                    new BoolProp(SECTION_RELATIONS, "showAggregation",
+                        EitriConfig::isShowAggregation, EitriConfig.Builder::showAggregation, true),
+                    new BoolProp(SECTION_RELATIONS, "showAssociation",
+                        EitriConfig::isShowAssociation, EitriConfig.Builder::showAssociation, true),
+                    new BoolProp(SECTION_RELATIONS, "showDependency",
+                        EitriConfig::isShowDependency, EitriConfig.Builder::showDependency, true),
 
             // Runtime
-            new BoolProp(SECTION_RUNTIME, "verbose",
-                    EitriConfig::isVerbose, EitriConfig::setVerbose, false),
-            new BoolProp(SECTION_RUNTIME, "dryRun",
-                    EitriConfig::isDryRun, EitriConfig::setDryRun, false)
+                    new BoolProp(SECTION_RUNTIME, "verbose",
+                        EitriConfig::isVerbose, EitriConfig.Builder::verbose, false),
+                    new BoolProp(SECTION_RUNTIME, "dryRun",
+                        EitriConfig::isDryRun, EitriConfig.Builder::dryRun, false)
     );
 
     @SuppressWarnings("null")
     private static final List<IntProp> INT_PROPS = List.of(
             // Layout section
-            new IntProp(SECTION_LAYOUT, "groupInheritance",
-                    EitriConfig::getGroupInheritance, EitriConfig::setGroupInheritance),
-            new IntProp(SECTION_LAYOUT, "classAttributeIconSize",
-                    EitriConfig::getClassAttributeIconSize, EitriConfig::setClassAttributeIconSize)
+                    new IntProp(SECTION_LAYOUT, "groupInheritance",
+                        EitriConfig::getGroupInheritance, EitriConfig.Builder::groupInheritance),
+                    new IntProp(SECTION_LAYOUT, "classAttributeIconSize",
+                        EitriConfig::getClassAttributeIconSize, EitriConfig.Builder::classAttributeIconSize)
     );
 
     // ========================================================================
@@ -166,6 +166,14 @@ public final class ConfigLoader {
 
     private ConfigLoader() {
         // Utility class
+    }
+
+    static List<BoolProp> boolProps() {
+        return BOOL_PROPS;
+    }
+
+    static List<IntProp> intProps() {
+        return INT_PROPS;
     }
 
     // ========================================================================
@@ -180,23 +188,22 @@ public final class ConfigLoader {
      * @throws ConfigException if config file exists but cannot be parsed
      */
     public static EitriConfig load(Path explicitConfigPath) throws ConfigException {
-        EitriConfig config = new EitriConfig();
+        ConfigMerger merger = new ConfigMerger();
 
-        // Try to load .eitri.config.yaml from working directory
+        List<ConfigSource> sources = new java.util.ArrayList<>();
         Path workingDirConfig = Path.of(System.getProperty("user.dir"), DEFAULT_CONFIG_FILENAME);
         if (Files.exists(workingDirConfig)) {
-            merge(config, loadFromYaml(workingDirConfig));
+            sources.add(new YamlConfigSource(workingDirConfig));
         }
 
-        // Load explicit config if specified
         if (explicitConfigPath != null) {
             if (!Files.exists(explicitConfigPath)) {
                 throw new ConfigException("Config file not found: " + explicitConfigPath);
             }
-            merge(config, loadFromYaml(explicitConfigPath));
+            sources.add(new YamlConfigSource(explicitConfigPath));
         }
 
-        return config;
+        return merger.merge(sources);
     }
 
     /**
@@ -210,7 +217,7 @@ public final class ConfigLoader {
         try (InputStream in = Files.newInputStream(path)) {
             Yaml yaml = new Yaml();
             Map<String, Object> data = yaml.load(in);
-            return data == null ? new EitriConfig() : mapToConfig(data);
+            return data == null ? EitriConfig.builder().build() : mapToConfig(data);
         } catch (IOException e) {
             throw new ConfigException("Failed to read config file: " + path, e);
         } catch (Exception e) {
@@ -227,19 +234,19 @@ public final class ConfigLoader {
      */
     @SuppressWarnings("unchecked")
     private static EitriConfig mapToConfig(Map<String, Object> data) {
-        EitriConfig config = new EitriConfig();
+        EitriConfig.Builder builder = EitriConfig.builder();
 
         // Special cases: complex/additive properties
-        mapInputSection(data, config);
-        mapOutputSection(data, config);
-        mapLayoutDirection(data, config);
-        mapSkinparamCustom(data, config);
+        mapInputSection(data, builder);
+        mapOutputSection(data, builder);
+        mapLayoutDirection(data, builder);
+        mapSkinparamCustom(data, builder);
 
         // Boolean properties (generic handling)
         for (BoolProp prop : BOOL_PROPS) {
             Map<String, Object> section = (Map<String, Object>) data.get(prop.section());
             if (section != null && section.containsKey(prop.key())) {
-                prop.setter().accept(config, toBool(section.get(prop.key())));
+                prop.setter().accept(builder, toBool(section.get(prop.key())));
             }
         }
 
@@ -247,100 +254,59 @@ public final class ConfigLoader {
         for (IntProp prop : INT_PROPS) {
             Map<String, Object> section = (Map<String, Object>) data.get(prop.section());
             if (section != null && section.containsKey(prop.key())) {
-                prop.setter().accept(config, toInt(section.get(prop.key())));
+                prop.setter().accept(builder, toInt(section.get(prop.key())));
             }
         }
 
-        return config;
+        return builder.build();
     }
 
     @SuppressWarnings("unchecked")
-    private static void mapInputSection(Map<String, Object> data, EitriConfig config) {
+    private static void mapInputSection(Map<String, Object> data, EitriConfig.Builder builder) {
         Map<String, Object> input = (Map<String, Object>) data.get(SECTION_INPUT);
         if (input == null) return;
 
         List<String> sources = (List<String>) input.get("sources");
         if (sources != null) {
-            sources.forEach(src -> config.addSourcePath(Path.of(src)));
+            sources.forEach(src -> builder.addSourcePath(Path.of(src)));
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static void mapOutputSection(Map<String, Object> data, EitriConfig config) {
+    private static void mapOutputSection(Map<String, Object> data, EitriConfig.Builder builder) {
         Map<String, Object> output = (Map<String, Object>) data.get(SECTION_OUTPUT);
         if (output == null) return;
 
         if (output.containsKey("file")) {
-            config.setOutputPath(Path.of((String) output.get("file")));
+            builder.outputPath(Path.of((String) output.get("file")));
         }
         if (output.containsKey("name")) {
-            config.setDiagramName((String) output.get("name"));
+            builder.diagramName((String) output.get("name"));
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static void mapLayoutDirection(Map<String, Object> data, EitriConfig config) {
+    private static void mapLayoutDirection(Map<String, Object> data, EitriConfig.Builder builder) {
         Map<String, Object> layout = (Map<String, Object>) data.get(SECTION_LAYOUT);
         if (layout != null && layout.containsKey("direction")) {
-            config.setDirection(LayoutDirection.fromString((String) layout.get("direction")));
+            builder.direction(LayoutDirection.fromString((String) layout.get("direction")));
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static void mapSkinparamCustom(Map<String, Object> data, EitriConfig config) {
+    private static void mapSkinparamCustom(Map<String, Object> data, EitriConfig.Builder builder) {
         Map<String, Object> skinparam = (Map<String, Object>) data.get(SECTION_SKINPARAM);
         if (skinparam == null) return;
 
         List<String> custom = (List<String>) skinparam.get("custom");
         if (custom != null) {
-            custom.forEach(config::addSkinparamLine);
+            custom.forEach(builder::addSkinparamLine);
         }
     }
 
     // ========================================================================
     // Config Merging
     // ========================================================================
-
-    /**
-     * Merges source config into target using property descriptors.
-     * Merge strategy is determined by each property's default value.
-     */
-    private static void merge(EitriConfig target, EitriConfig source) {
-        // Additive properties
-        source.getSourcePaths().forEach(target::addSourcePath);
-        source.getSkinparamLines().forEach(target::addSkinparamLine);
-
-        // Override-if-non-null properties
-        if (source.getOutputPath() != null) {
-            target.setOutputPath(source.getOutputPath());
-        }
-
-        // Override-if-non-default properties
-        if (!"diagram".equals(source.getDiagramName())) {
-            target.setDiagramName(source.getDiagramName());
-        }
-        if (source.getDirection() != LayoutDirection.TOP_TO_BOTTOM) {
-            target.setDirection(source.getDirection());
-        }
-
-        // Boolean properties (generic handling based on merge strategy)
-        for (BoolProp prop : BOOL_PROPS) {
-            boolean sourceValue = prop.getter().test(source);
-            if (prop.mergeStrategy() == MergeStrategy.OVERRIDE_IF_TRUE && sourceValue) {
-                prop.setter().accept(target, true);
-            } else if (prop.mergeStrategy() == MergeStrategy.OVERRIDE_IF_FALSE && !sourceValue) {
-                prop.setter().accept(target, false);
-            }
-        }
-
-        // Integer properties (override if positive)
-        for (IntProp prop : INT_PROPS) {
-            int sourceValue = prop.getter().applyAsInt(source);
-            if (sourceValue > 0) {
-                prop.setter().accept(target, sourceValue);
-            }
-        }
-    }
 
     // ========================================================================
     // Type Conversion Helpers

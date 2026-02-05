@@ -20,28 +20,28 @@ class EitriConfigTest {
         @Test
         @DisplayName("Direction defaults to TOP_TO_BOTTOM")
         void defaultDirection() {
-            EitriConfig config = new EitriConfig();
+            EitriConfig config = EitriConfig.builder().build();
             assertEquals(LayoutDirection.TOP_TO_BOTTOM, config.getDirection());
         }
 
         @Test
         @DisplayName("Diagram name defaults to 'diagram'")
         void defaultDiagramName() {
-            EitriConfig config = new EitriConfig();
+            EitriConfig config = EitriConfig.builder().build();
             assertEquals("diagram", config.getDiagramName());
         }
 
         @Test
         @DisplayName("hideEmptyMembers defaults to true")
         void defaultHideEmptyMembers() {
-            EitriConfig config = new EitriConfig();
+            EitriConfig config = EitriConfig.builder().build();
             assertTrue(config.isHideEmptyMembers());
         }
 
         @Test
         @DisplayName("Visibility filters default to false")
         void defaultVisibilityFilters() {
-            EitriConfig config = new EitriConfig();
+            EitriConfig config = EitriConfig.builder().build();
             assertFalse(config.isHidePrivate());
             assertFalse(config.isHideProtected());
             assertFalse(config.isHidePackage());
@@ -50,7 +50,7 @@ class EitriConfigTest {
         @Test
         @DisplayName("All relation types shown by default")
         void defaultRelationsShown() {
-            EitriConfig config = new EitriConfig();
+            EitriConfig config = EitriConfig.builder().build();
             assertTrue(config.isShowInheritance());
             assertTrue(config.isShowImplements());
             assertTrue(config.isShowComposition());
@@ -62,7 +62,7 @@ class EitriConfigTest {
         @Test
         @DisplayName("Stereotypes and generics shown by default")
         void defaultDisplayOptions() {
-            EitriConfig config = new EitriConfig();
+            EitriConfig config = EitriConfig.builder().build();
             assertTrue(config.isShowStereotypes());
             assertTrue(config.isShowGenerics());
             assertTrue(config.isShowMultiplicities());
@@ -72,7 +72,7 @@ class EitriConfigTest {
         @Test
         @DisplayName("Notes hidden by default")
         void defaultNotesHidden() {
-            EitriConfig config = new EitriConfig();
+            EitriConfig config = EitriConfig.builder().build();
             assertFalse(config.isShowNotes());
         }
     }
@@ -157,29 +157,32 @@ class EitriConfigTest {
 
     @Nested
     @DisplayName("Setters validation")
-    class SettersValidation {
+    class BuilderValidation {
 
         @Test
-        @DisplayName("setGroupInheritance clamps negative values to 0")
+        @DisplayName("groupInheritance clamps negative values to 0")
         void groupInheritanceNegative() {
-            EitriConfig config = new EitriConfig();
-            config.setGroupInheritance(-5);
+            EitriConfig config = EitriConfig.builder()
+                    .groupInheritance(-5)
+                    .build();
             assertEquals(0, config.getGroupInheritance());
         }
 
         @Test
-        @DisplayName("setDiagramName defaults to 'diagram' for null")
+        @DisplayName("diagramName defaults to 'diagram' for null")
         void diagramNameNull() {
-            EitriConfig config = new EitriConfig();
-            config.setDiagramName(null);
+            EitriConfig config = EitriConfig.builder()
+                    .diagramName(null)
+                    .build();
             assertEquals("diagram", config.getDiagramName());
         }
 
         @Test
-        @DisplayName("setSourcePaths handles null")
+        @DisplayName("sourcePaths handles null")
         void sourcePathsNull() {
-            EitriConfig config = new EitriConfig();
-            config.setSourcePaths(null);
+            EitriConfig config = EitriConfig.builder()
+                    .sourcePaths(null)
+                    .build();
             assertNotNull(config.getSourcePaths());
             assertTrue(config.getSourcePaths().isEmpty());
         }
