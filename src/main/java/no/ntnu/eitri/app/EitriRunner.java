@@ -11,6 +11,7 @@ import no.ntnu.eitri.config.OutputPathInitializer;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseException;
 import no.ntnu.eitri.parser.SourceParser;
+import no.ntnu.eitri.util.PathExtension;
 import no.ntnu.eitri.writer.DiagramWriter;
 import no.ntnu.eitri.writer.WriteException;
 
@@ -145,7 +146,7 @@ public class EitriRunner {
 
     private DiagramWriter resolveWriter(EitriConfig config) {
         String extension = config.getWriterExtension();
-        if (extension == null) extension = extensionFromPath(config.getOutputPath());
+        if (extension == null) extension = PathExtension.fromPath(config.getOutputPath());
         if (extension == null) extension = writerRegistry.getDefaultExtension();
         String resolvedExtension = extension;
         return writerRegistry.getByExtension(resolvedExtension)
@@ -157,24 +158,12 @@ public class EitriRunner {
             if (sourcePath == null) continue;
 
             if (Files.isRegularFile(sourcePath)) {
-                String extension = extensionFromPath(sourcePath);
+                String extension = PathExtension.fromPath(sourcePath);
                 if (extension != null) {
                     return extension;
                 }
             }
         }
         return null;
-    }
-
-    private String extensionFromPath(Path path) {
-        if (path == null || path.getFileName() == null) {
-            return null;
-        }
-        String name = path.getFileName().toString();
-        int idx = name.lastIndexOf('.');
-        if (idx < 0 || idx == name.length() - 1) {
-            return null;
-        }
-        return name.substring(idx).toLowerCase();
     }
 }
