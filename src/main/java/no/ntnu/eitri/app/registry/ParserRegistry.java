@@ -7,6 +7,7 @@ import no.ntnu.eitri.util.ExtensionNormalizer;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -23,7 +24,8 @@ public final class ParserRegistry {
 
     public static ParserRegistry defaultRegistry() {
         ParserRegistry registry = new ParserRegistry();
-        registry.register(JavaSourceParser::new, new JavaSourceParser().getSupportedExtensions());
+        registry.registerFromServiceLoader();
+        registry.registerBuiltIns();
         return registry;
     }
 
@@ -60,7 +62,18 @@ public final class ParserRegistry {
             if (defaultExtension == null) {
                 defaultExtension = normalized;
             }
-            byExtension.put(normalized, supplier);
+            byExtension.putIfAbsent(normalized, supplier);
         }
+    }
+
+    private void registerFromServiceLoader() {
+        ServiceLoader<SourceParser> loader = ServiceLoader.load(SourceParser.class);
+        for (SourceParser parser : loader) {
+            register(() -> parser, parser.getSupportedExtensions());
+        }
+    }
+
+    private void registerBuiltIns() {
+        register(JavaSourceParser::new, new JavaSourceParser().getSupportedExtensions());
     }
 }

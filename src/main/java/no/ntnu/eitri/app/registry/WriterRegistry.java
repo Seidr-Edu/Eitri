@@ -7,6 +7,7 @@ import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -23,7 +24,8 @@ public final class WriterRegistry {
 
     public static WriterRegistry defaultRegistry() {
         WriterRegistry registry = new WriterRegistry();
-        registry.register(PlantUmlWriter::new, new PlantUmlWriter().getFileExtension());
+        registry.registerFromServiceLoader();
+        registry.registerBuiltIns();
         return registry;
     }
 
@@ -54,6 +56,17 @@ public final class WriterRegistry {
         if (defaultExtension == null) {
             defaultExtension = normalized;
         }
-        byExtension.put(normalized, supplier);
+        byExtension.putIfAbsent(normalized, supplier);
+    }
+
+    private void registerFromServiceLoader() {
+        ServiceLoader<DiagramWriter> loader = ServiceLoader.load(DiagramWriter.class);
+        for (DiagramWriter writer : loader) {
+            register(() -> writer, writer.getFileExtension());
+        }
+    }
+
+    private void registerBuiltIns() {
+        register(PlantUmlWriter::new, new PlantUmlWriter().getFileExtension());
     }
 }
