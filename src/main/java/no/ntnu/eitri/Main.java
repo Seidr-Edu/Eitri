@@ -85,13 +85,13 @@ public class Main implements Callable<Integer> {
     @Override
     public Integer call() {
                 CliOptions cliOptions = new CliOptions(
-                                sourcePaths,
-                                outputPath,
-                                configPath,
-                                parserExtension,
-                                writerExtension,
-                                verbose,
-                                dryRun
+                        sourcePaths,
+                        outputPath,
+                        configPath,
+                        parserExtension,
+                        writerExtension,
+                        verbose,
+                        dryRun
                 );
         EitriRunner runner = new EitriRunner();
         RunResult result = runner.run(cliOptions);
