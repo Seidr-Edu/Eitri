@@ -62,13 +62,13 @@ public class EitriRunner {
         } catch (ParseException e) {
             LOGGER.log(Level.SEVERE, "Parse error: {0}", e.getMessage());
             if (cliOptions.verbose() && e.getCause() != null) {
-                e.getCause().printStackTrace();
+                LOGGER.log(Level.SEVERE, "Cause:", e.getCause());
             }
             return new RunResult(1, e.getMessage(), 0, 0, null, cliOptions.dryRun());
         } catch (WriteException e) {
             LOGGER.log(Level.SEVERE, "Write error: {0}", e.getMessage());
             if (cliOptions.verbose() && e.getCause() != null) {
-                e.getCause().printStackTrace();
+                LOGGER.log(Level.SEVERE, "Cause:", e.getCause());
             }
             return new RunResult(1, e.getMessage(), 0, 0, null, cliOptions.dryRun());
         } catch (Exception e) {
