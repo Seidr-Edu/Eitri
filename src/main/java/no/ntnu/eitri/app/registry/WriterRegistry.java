@@ -59,6 +59,7 @@ public final class WriterRegistry {
         byExtension.putIfAbsent(normalized, supplier);
     }
 
+    @SuppressWarnings("null")
     private void registerFromServiceLoader() {
         ServiceLoader<DiagramWriter> loader = ServiceLoader.load(DiagramWriter.class);
         for (DiagramWriter writer : loader) {
