@@ -53,23 +53,7 @@ public class JavaSourceParser implements SourceParser {
             throw new ParseException("No source paths provided");
         }
 
-        // Configure symbol solver
-        CombinedTypeSolver typeSolver = new CombinedTypeSolver();
-        typeSolver.add(new ReflectionTypeSolver(false));  // JDK types only, no jrt module
-
-        // Add each source path as a type solver
-        for (Path sourcePath : sourcePaths) {
-            if (Files.isDirectory(sourcePath)) {
-                typeSolver.add(new JavaParserTypeSolver(sourcePath));
-            }
-        }
-
-        // Configure parser
-        ParserConfiguration parserConfig = new ParserConfiguration()
-                .setSymbolResolver(new JavaSymbolSolver(typeSolver))
-                .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_25);
-
-        StaticJavaParser.setConfiguration(parserConfig);
+        configureParser(sourcePaths);
 
         // Create parse context
         ParseContext context = new ParseContext(config);
@@ -86,23 +70,9 @@ public class JavaSourceParser implements SourceParser {
         int parsed = 0;
         int failed = 0;
 
-        for (Path javaFile : javaFiles) {
-            try {
-                CompilationUnit cu = StaticJavaParser.parse(javaFile);
-                cu.accept(typeVisitor, null);
-                parsed++;
-            } catch (IOException e) {
-                context.addWarning("Failed to read file: " + javaFile + " - " + e.getMessage());
-                failed++;
-            } catch (com.github.javaparser.ParseProblemException e) {
-                context.addWarning("Failed to parse file: " + javaFile + " - " + e.getMessage());
-                failed++;
-            } catch (Exception e) {
-                LOGGER.info(() -> "Unexpected error parsing " + javaFile + " - " + e.getMessage());
-                context.addWarning("Unexpected error parsing: " + javaFile + " - " + e.getMessage());
-                failed++;
-            }
-        }
+        ParseStats stats = parseFiles(javaFiles, typeVisitor, context);
+        parsed = stats.parsed();
+        failed = stats.failed();
 
         if (config.isVerbose()) {
             LOGGER.log(Level.INFO, "Parsed {0} files successfully{1}", new Object[]{parsed, (failed > 0 ? ", " + failed + " failed" : "")});
@@ -131,37 +101,94 @@ public class JavaSourceParser implements SourceParser {
         List<Path> javaFiles = new ArrayList<>();
 
         for (Path sourcePath : sourcePaths) {
-            if (!Files.exists(sourcePath)) {
-                throw new ParseException("Source path does not exist: " + sourcePath);
-            }
-
-            if (Files.isRegularFile(sourcePath)) {
-                if (sourcePath.toString().endsWith(JAVA_EXTENSION)) {
-                    javaFiles.add(sourcePath);
-                }
-            } else if (Files.isDirectory(sourcePath)) {
-                try {
-                    Files.walkFileTree(sourcePath, new SimpleFileVisitor<>() {
-                        @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                            if (file.toString().endsWith(JAVA_EXTENSION)) {
-                                javaFiles.add(file);
-                            }
-                            return FileVisitResult.CONTINUE;
-                        }
-
-                        @Override
-                        public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                            LOGGER.log(Level.WARNING, "Failed to access file: {0}", file);
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
-                } catch (IOException e) {
-                    throw new ParseException("Failed to walk source path: " + sourcePath, e);
-                }
-            }
+            collectFromSourcePath(sourcePath, javaFiles);
         }
 
         return javaFiles;
     }
+
+    private void configureParser(List<Path> sourcePaths) {
+        CombinedTypeSolver typeSolver = new CombinedTypeSolver();
+        typeSolver.add(new ReflectionTypeSolver(false));  // JDK types only, no jrt module
+
+        for (Path sourcePath : sourcePaths) {
+            if (Files.isDirectory(sourcePath)) {
+                typeSolver.add(new JavaParserTypeSolver(sourcePath));
+            }
+        }
+
+        ParserConfiguration parserConfig = new ParserConfiguration()
+                .setSymbolResolver(new JavaSymbolSolver(typeSolver))
+                .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_25);
+
+        StaticJavaParser.setConfiguration(parserConfig);
+    }
+
+    private ParseStats parseFiles(List<Path> javaFiles, TypeVisitor typeVisitor, ParseContext context) {
+        int parsed = 0;
+        int failed = 0;
+
+        for (Path javaFile : javaFiles) {
+            try {
+                CompilationUnit cu = StaticJavaParser.parse(javaFile);
+                cu.accept(typeVisitor, null);
+                parsed++;
+            } catch (IOException e) {
+                context.addWarning("Failed to read file: " + javaFile + " - " + e.getMessage());
+                failed++;
+            } catch (com.github.javaparser.ParseProblemException e) {
+                context.addWarning("Failed to parse file: " + javaFile + " - " + e.getMessage());
+                failed++;
+            } catch (Exception e) {
+                LOGGER.info(() -> "Unexpected error parsing " + javaFile + " - " + e.getMessage());
+                context.addWarning("Unexpected error parsing: " + javaFile + " - " + e.getMessage());
+                failed++;
+            }
+        }
+
+        return new ParseStats(parsed, failed);
+    }
+
+    private void collectFromSourcePath(Path sourcePath, List<Path> javaFiles) throws ParseException {
+        if (!Files.exists(sourcePath)) {
+            throw new ParseException("Source path does not exist: " + sourcePath);
+        }
+
+        if (Files.isRegularFile(sourcePath)) {
+            addJavaFileIfMatches(sourcePath, javaFiles);
+            return;
+        }
+
+        if (Files.isDirectory(sourcePath)) {
+            walkDirectory(sourcePath, javaFiles);
+        }
+    }
+
+    private void addJavaFileIfMatches(Path file, List<Path> javaFiles) {
+        if (file.toString().endsWith(JAVA_EXTENSION)) {
+            javaFiles.add(file);
+        }
+    }
+
+    private void walkDirectory(Path sourcePath, List<Path> javaFiles) throws ParseException {
+        try {
+            Files.walkFileTree(sourcePath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    addJavaFileIfMatches(file, javaFiles);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                    LOGGER.log(Level.WARNING, "Failed to access file: {0}", file);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new ParseException("Failed to walk source path: " + sourcePath, e);
+        }
+    }
+
+    private record ParseStats(int parsed, int failed) {}
 }
