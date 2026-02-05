@@ -37,6 +37,7 @@ public class PlantUmlWriter implements DiagramWriter {
 
     private static final String NAME = "PlantUML";
     private static final String FILE_EXTENSION = ".puml";
+    private final PlantUmlRenderer renderer = new PlantUmlRenderer();
 
     @Override
     public String getName() {
@@ -245,14 +246,14 @@ public class PlantUmlWriter implements DiagramWriter {
      */
     private void renderType(UmlType type, EitriConfig config, StringBuilder sb) {
         // Type declaration line
-        sb.append(type.toDeclarationPlantUml());
+        sb.append(renderer.renderTypeDeclaration(type));
         sb.append(" {\n");
 
         // Fields
         if (!config.isHideFields()) {
             for (UmlField field : type.getFields()) {
                 if (shouldRenderMember(field.getVisibility(), config)) {
-                    sb.append("    ").append(field.toPlantUml(config.isShowReadOnly())).append("\n");
+                    sb.append("    ").append(renderer.renderField(field, config.isShowReadOnly())).append("\n");
                 }
             }
         }
@@ -261,7 +262,7 @@ public class PlantUmlWriter implements DiagramWriter {
         if (!config.isHideMethods()) {
             for (UmlMethod method : type.getMethods()) {
                 if (shouldRenderMember(method.getVisibility(), config)) {
-                    sb.append("    ").append(method.toPlantUml(config.isShowVoidReturnTypes())).append("\n");
+                    sb.append("    ").append(renderer.renderMethod(method, config.isShowVoidReturnTypes())).append("\n");
                 }
             }
         }
@@ -276,7 +277,7 @@ public class PlantUmlWriter implements DiagramWriter {
                                  Map<String, String> typeNames, StringBuilder sb) {
         String fromName = typeNames.getOrDefault(relation.getFromTypeId(), relation.getFromTypeId());
         String toName = typeNames.getOrDefault(relation.getToTypeId(), relation.getToTypeId());
-        sb.append(relation.toPlantUml(fromName, toName, config.isShowLabels(), config.isShowMultiplicities()));
+        sb.append(renderer.renderRelation(relation, fromName, toName, config.isShowLabels(), config.isShowMultiplicities()));
         sb.append("\n");
     }
 }

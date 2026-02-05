@@ -6,45 +6,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for RelationKind enum and arrow symbol rendering.
+ * Tests for RelationKind semantic behavior.
  */
 class RelationKindTest {
-
-    @Test
-    @DisplayName("EXTENDS renders as <|--")
-    void extendsArrow() {
-        assertEquals("<|--", RelationKind.EXTENDS.toArrowSymbol());
-    }
-
-    @Test
-    @DisplayName("IMPLEMENTS renders as <|..")
-    void implementsArrow() {
-        assertEquals("<|..", RelationKind.IMPLEMENTS.toArrowSymbol());
-    }
-
-    @Test
-    @DisplayName("COMPOSITION renders as *--")
-    void compositionArrow() {
-        assertEquals("*--", RelationKind.COMPOSITION.toArrowSymbol());
-    }
-
-    @Test
-    @DisplayName("AGGREGATION renders as o--")
-    void aggregationArrow() {
-        assertEquals("o--", RelationKind.AGGREGATION.toArrowSymbol());
-    }
-
-    @Test
-    @DisplayName("ASSOCIATION renders as --")
-    void associationArrow() {
-        assertEquals("--", RelationKind.ASSOCIATION.toArrowSymbol());
-    }
-
-    @Test
-    @DisplayName("DEPENDENCY renders as ..>")
-    void dependencyArrow() {
-        assertEquals("..>", RelationKind.DEPENDENCY.toArrowSymbol());
-    }
 
     @Test
     @DisplayName("EXTENDS and IMPLEMENTS are hierarchy relations")
@@ -76,12 +40,6 @@ class RelationKindTest {
         assertFalse(RelationKind.COMPOSITION.isDotted());
         assertFalse(RelationKind.AGGREGATION.isDotted());
         assertFalse(RelationKind.ASSOCIATION.isDotted());
-    }
-
-    @Test
-    @DisplayName("NESTED renders as +--")
-    void nestedArrow() {
-        assertEquals("+--", RelationKind.NESTED.toArrowSymbol());
     }
 
     @Test

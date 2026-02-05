@@ -64,44 +64,6 @@ public final class UmlField {
         return modifiers.contains(Modifier.FINAL);
     }
 
-    /**
-     * Renders this field for PlantUML class body.
-     * Format: [visibility][{modifiers}] name : Type [{readOnly}]
-     * Example: +{static} count : int
-     * Example: -name : String {readOnly}
-     */
-    public String toPlantUml() {
-        return toPlantUml(true);
-    }
-
-    /**
-     * Renders this field for PlantUML class body with configurable readOnly display.
-     * @param showReadOnly whether to append {readOnly} for final fields
-     * @return PlantUML field representation
-     */
-    public String toPlantUml(boolean showReadOnly) {
-        StringBuilder sb = new StringBuilder();
-
-        // Visibility
-        sb.append(visibility.toPlantUml());
-
-        // Modifiers
-        String modStr = Modifier.toPlantUml(modifiers);
-        if (!modStr.isEmpty()) {
-            sb.append(modStr).append(" ");
-        }
-
-        // Name and type
-        sb.append(name).append(" : ").append(typeSimpleName);
-
-        // ReadOnly constraint
-        if (readOnly && showReadOnly) {
-            sb.append(" {readOnly}");
-        }
-
-        return sb.toString();
-    }
-
     private static String extractSimpleName(String fullType) {
         if (fullType == null || fullType.isBlank()) {
             return fullType;
@@ -268,6 +230,9 @@ public final class UmlField {
 
     @Override
     public String toString() {
-        return toPlantUml();
+        return "UmlField{" +
+                "name='" + name + '\'' +
+                ", type='" + type + '\'' +
+                '}';
     }
 }

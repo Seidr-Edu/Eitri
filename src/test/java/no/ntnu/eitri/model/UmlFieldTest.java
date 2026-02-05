@@ -7,115 +7,59 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for UmlField and its PlantUML rendering.
+ * Tests for UmlField model behavior.
  */
 class UmlFieldTest {
 
     @Nested
-    @DisplayName("PlantUML rendering")
-    class PlantUmlRendering {
+    @DisplayName("Field defaults and modifiers")
+    class ModelBehavior {
 
         @Test
-        @DisplayName("Simple public field")
-        void publicField() {
+        @DisplayName("Default visibility is package")
+        void defaultVisibility() {
             UmlField field = UmlField.builder()
-                    .name("name")
-                    .type("String")
-                    .visibility(Visibility.PUBLIC)
-                    .build();
-
-            assertEquals("+name : String", field.toPlantUml());
-        }
-
-        @Test
-        @DisplayName("Private field")
-        void privateField() {
-            UmlField field = UmlField.builder()
-                    .name("count")
+                    .name("value")
                     .type("int")
-                    .visibility(Visibility.PRIVATE)
                     .build();
 
-            assertEquals("-count : int", field.toPlantUml());
+            assertEquals(Visibility.PACKAGE, field.getVisibility());
         }
 
         @Test
-        @DisplayName("Protected field")
-        void protectedField() {
-            UmlField field = UmlField.builder()
-                    .name("data")
-                    .type("byte[]")
-                    .visibility(Visibility.PROTECTED)
-                    .build();
-
-            assertEquals("#data : byte[]", field.toPlantUml());
-        }
-
-        @Test
-        @DisplayName("Package-private field")
-        void packageField() {
-            UmlField field = UmlField.builder()
-                    .name("helper")
-                    .type("Helper")
-                    .visibility(Visibility.PACKAGE)
-                    .build();
-
-            assertEquals("~helper : Helper", field.toPlantUml());
-        }
-
-        @Test
-        @DisplayName("Static field")
-        void staticField() {
+        @DisplayName("Static modifier sets isStatic")
+        void staticModifier() {
             UmlField field = UmlField.builder()
                     .name("instance")
                     .type("Singleton")
-                    .visibility(Visibility.PRIVATE)
-                    .modifiers(Modifier.of(Modifier.STATIC))
+                    .addModifier(Modifier.STATIC)
                     .build();
 
-            assertEquals("-{static} instance : Singleton", field.toPlantUml());
+            assertTrue(field.isStatic());
         }
 
         @Test
-        @DisplayName("ReadOnly field")
-        void readOnlyField() {
+        @DisplayName("Final modifier sets isFinal")
+        void finalModifier() {
+            UmlField field = UmlField.builder()
+                    .name("MAX")
+                    .type("int")
+                    .addModifier(Modifier.FINAL)
+                    .build();
+
+            assertTrue(field.isFinal());
+        }
+
+        @Test
+        @DisplayName("ReadOnly flag preserved")
+        void readOnlyFlag() {
             UmlField field = UmlField.builder()
                     .name("id")
                     .type("Long")
-                    .visibility(Visibility.PUBLIC)
                     .readOnly(true)
                     .build();
 
-            assertEquals("+id : Long {readOnly}", field.toPlantUml());
-        }
-
-        @Test
-        @DisplayName("Static final field shows both modifiers")
-        void staticFinalField() {
-            UmlField field = UmlField.builder()
-                    .name("MAX_SIZE")
-                    .type("int")
-                    .visibility(Visibility.PUBLIC)
-                    .modifiers(Modifier.of(Modifier.STATIC, Modifier.FINAL))
-                    .readOnly(true)
-                    .build();
-
-            // Static shows, final doesn't have PlantUML keyword, but readOnly does
-            String result = field.toPlantUml();
-            assertTrue(result.contains("{static}"));
-            assertTrue(result.contains("{readOnly}"));
-        }
-
-        @Test
-        @DisplayName("Generic field type simplifies")
-        void genericFieldType() {
-            UmlField field = UmlField.builder()
-                    .name("items")
-                    .type("java.util.List<String>")
-                    .visibility(Visibility.PRIVATE)
-                    .build();
-
-            assertEquals("-items : List<String>", field.toPlantUml());
+            assertTrue(field.isReadOnly());
         }
     }
 

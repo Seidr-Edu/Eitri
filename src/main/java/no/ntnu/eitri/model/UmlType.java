@@ -3,7 +3,6 @@ package no.ntnu.eitri.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * A UML type element (class, interface, enum, annotation, record).
@@ -108,63 +107,6 @@ public final class UmlType {
      */
     public boolean isNested() {
         return outerTypeId != null;
-    }
-
-    /**
-     * Returns the alias to use in PlantUML references.
-     * If displayName is set, returns name (which acts as alias).
-     * Otherwise returns null (use name directly).
-     */
-    public String getAlias() {
-        return displayName != null ? name : null;
-    }
-
-    /**
-     * Renders the type declaration line for PlantUML.
-     * Format: [visibility][kind] ["DisplayName" as] Name[<generics>] [stereotypes] [style]
-     * Example: +abstract class "Order Handler" as OrderHandler<T> <<Aggregate>> #palegreen
-     */
-    public String toDeclarationPlantUml() {
-        StringBuilder sb = new StringBuilder();
-
-        // Visibility prefix
-        sb.append(visibility.toPlantUml());
-
-        // Type keyword
-        sb.append(kind.toPlantUml()).append(" ");
-
-        // Display name with alias
-        if (displayName != null) {
-            sb.append("\"").append(displayName).append("\" as ");
-        }
-
-        // Name
-        sb.append(name);
-
-        // Generics
-        if (!generics.isEmpty()) {
-            String genericStr = generics.stream()
-                    .map(UmlGeneric::toPlantUml)
-                    .collect(Collectors.joining(", "));
-            sb.append("<").append(genericStr).append(">");
-        }
-
-        // Stereotypes
-        for (UmlStereotype stereotype : stereotypes) {
-            sb.append(" ").append(stereotype.toPlantUml());
-        }
-
-        // Tags
-        for (String tag : tags) {
-            sb.append(" $").append(tag);
-        }
-
-        // Style
-        if (style != null && !style.isBlank()) {
-            sb.append(" ").append(style);
-        }
-
-        return sb.toString();
     }
 
     public static Builder builder() {
