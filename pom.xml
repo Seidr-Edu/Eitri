@@ -62,7 +62,12 @@
           <archive>
             <manifest>
               <mainClass>no.ntnu.eitri.Main</mainClass>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
             </manifest>
+            <manifestEntries>
+              <Eitri-Description>${project.description}</Eitri-Description>
+            </manifestEntries>
           </archive>
         </configuration>
         <executions>
