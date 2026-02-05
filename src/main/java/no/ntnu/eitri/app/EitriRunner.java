@@ -15,6 +15,7 @@ import no.ntnu.eitri.writer.WriteException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,6 +25,17 @@ import java.util.logging.Logger;
 public class EitriRunner {
 
     private static final Logger LOGGER = Logger.getLogger(EitriRunner.class.getName());
+    private final ParserRegistry parserRegistry;
+    private final WriterRegistry writerRegistry;
+
+    public EitriRunner() {
+        this(ParserRegistry.defaultRegistry(), WriterRegistry.defaultRegistry());
+    }
+
+    public EitriRunner(ParserRegistry parserRegistry, WriterRegistry writerRegistry) {
+        this.parserRegistry = Objects.requireNonNull(parserRegistry, "parserRegistry");
+        this.writerRegistry = Objects.requireNonNull(writerRegistry, "writerRegistry");
+    }
 
     public RunResult run(CliOptions cliOptions) {
         try {
@@ -121,22 +133,20 @@ public class EitriRunner {
     }
 
     private SourceParser resolveParser(EitriConfig config) {
-        ParserRegistry registry = ParserRegistry.defaultRegistry();
         String extension = config.getParserExtension();
         if (extension == null) extension = detectSourceExtension(config);
-        if (extension == null) extension = registry.getDefaultExtension();
+        if (extension == null) extension = parserRegistry.getDefaultExtension();
         String resolvedExtension = extension;
-        return registry.getByExtension(resolvedExtension)
+        return parserRegistry.getByExtension(resolvedExtension)
                 .orElseThrow(() -> new ParseException("No parser registered for extension: " + resolvedExtension));
     }
 
     private DiagramWriter resolveWriter(EitriConfig config) {
-        WriterRegistry registry = WriterRegistry.defaultRegistry();
         String extension = config.getWriterExtension();
         if (extension == null) extension = extensionFromPath(config.getOutputPath());
-        if (extension == null) extension = registry.getDefaultExtension();
+        if (extension == null) extension = writerRegistry.getDefaultExtension();
         String resolvedExtension = extension;
-        return registry.getByExtension(resolvedExtension)
+        return writerRegistry.getByExtension(resolvedExtension)
                 .orElseThrow(() -> new WriteException("No writer registered for extension: " + resolvedExtension, config.getOutputPath()));
     }
 
