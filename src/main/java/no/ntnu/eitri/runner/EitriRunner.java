@@ -58,7 +58,7 @@ public class EitriRunner {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Unexpected error: {0}", e.getMessage());
             if (cliOptions.verbose()) {
-                e.printStackTrace();
+                LOGGER.log(Level.SEVERE, "Stack trace:", e);
             }
             return new RunResult(1, e.getMessage(), 0, 0, null, cliOptions.dryRun());
         }
