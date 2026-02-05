@@ -2,6 +2,7 @@ package no.ntnu.eitri.config;
 
 import no.ntnu.eitri.cli.CliOptions;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,15 +24,13 @@ public final class ConfigService {
 
         List<ConfigSource> sources = new ArrayList<>();
         Path workingDirConfig = Path.of(System.getProperty("user.dir"), ConfigLoader.DEFAULT_CONFIG_FILENAME);
-        if (configFileUsed != null && configFileUsed.equals(workingDirConfig)) {
-            sources.add(new YamlConfigSource(workingDirConfig));
-        }
-
         if (cliOptions.configPath() != null) {
-            if (!java.nio.file.Files.exists(cliOptions.configPath())) {
+            if (!Files.exists(cliOptions.configPath())) {
                 throw new ConfigException("Config file not found: " + cliOptions.configPath());
             }
             sources.add(new YamlConfigSource(cliOptions.configPath()));
+        } else if (Files.exists(workingDirConfig)) {
+            sources.add(new YamlConfigSource(workingDirConfig));
         }
 
         sources.add(new CliConfigSource(cliOptions));
@@ -53,7 +52,7 @@ public final class ConfigService {
         }
 
         Path workingDirConfig = Path.of(System.getProperty("user.dir"), ConfigLoader.DEFAULT_CONFIG_FILENAME);
-        if (java.nio.file.Files.exists(workingDirConfig)) {
+        if (Files.exists(workingDirConfig)) {
             return workingDirConfig;
         }
 
