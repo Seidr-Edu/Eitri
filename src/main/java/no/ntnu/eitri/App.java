@@ -1,7 +1,7 @@
 package no.ntnu.eitri;
 
 import no.ntnu.eitri.config.ConfigException;
-import no.ntnu.eitri.config.ConfigLoader;
+import no.ntnu.eitri.cli.CliOptions;
 import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseException;
@@ -10,11 +10,12 @@ import no.ntnu.eitri.parser.java.JavaSourceParser;
 import no.ntnu.eitri.writer.DiagramWriter;
 import no.ntnu.eitri.writer.WriteException;
 import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
+import no.ntnu.eitri.config.ConfigResolution;
+import no.ntnu.eitri.config.ConfigService;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,58 +83,19 @@ public class App implements Callable<Integer> {
     @Override
     public Integer call() {
         try {
-            // Load and merge configuration
-            EitriConfig config = buildConfig();
+            ConfigResolution resolution = resolveConfig();
+            EitriConfig config = resolution.config();
 
-            // Validate inputs
-            List<String> errors = validateConfig(config);
-            if (!errors.isEmpty()) {
-                for (String error : errors) {
-                    LOGGER.log(Level.SEVERE, "Error: {0}", error);
-                }
-                return 1;
-            }
+            logResolvedConfig(resolution, config);
 
-            if (verbose) {
-                LOGGER.log(Level.INFO, "Configuration: {0}", config);
-            }
-
-            // Parse source files
-            SourceParser parser = new JavaSourceParser();
-            if (verbose) {
-                LOGGER.log(Level.INFO, "Parsing with {0}...", parser.getName());
-            }
-
-            UmlModel model = parser.parse(config.getSourcePaths(), config);
-
-            if (verbose) {
-                LOGGER.log(Level.INFO, "Parsed {0} types, {1} relations", 
-                        new Object[]{model.getTypes().size(), model.getRelations().size()});
-            }
+            UmlModel model = parseSources(config);
 
             if (dryRun) {
-                LOGGER.log(Level.INFO, "Dry run: Parsed {0} types from {1} source path(s)", 
-                        new Object[]{model.getTypes().size(), config.getSourcePaths().size()});
-                LOGGER.log(Level.INFO, "         Would write to: {0}", config.getOutputPath());
-                
-                // In verbose mode, show rendered output
-                if (verbose) {
-                    DiagramWriter writer = new PlantUmlWriter();
-                    String rendered = writer.render(model, config);
-                    LOGGER.info("\n--- Generated PlantUML ---");
-                    LOGGER.info(rendered);
-                    LOGGER.info("--- End PlantUML ---\n");
-                }
+                runDryRun(model, config);
                 return 0;
             }
 
-            // Write output
-            DiagramWriter writer = new PlantUmlWriter();
-            writer.write(model, config, config.getOutputPath());
-
-            LOGGER.log(Level.INFO, "Generated {0} with {1} types and {2} relations.", 
-                    new Object[]{config.getOutputPath(), model.getTypes().size(), model.getRelations().size()});
-
+            writeOutput(model, config);
             return 0;
 
         } catch (ConfigException e) {
@@ -160,90 +122,60 @@ public class App implements Callable<Integer> {
         }
     }
 
-    /**
-     * Builds the final configuration by merging config file and CLI options.
-     */
-    private EitriConfig buildConfig() throws ConfigException {
-        // Check for config sources and log
-        Path workingDirConfig = Path.of(System.getProperty("user.dir"), ConfigLoader.DEFAULT_CONFIG_FILENAME);
-        boolean hasWorkingDirConfig = Files.exists(workingDirConfig);
-        boolean hasExplicitConfig = configPath != null;
+    private ConfigResolution resolveConfig() throws ConfigException {
+        CliOptions cliOptions = new CliOptions(sourcePaths, outputPath, configPath, verbose, dryRun);
+        ConfigService configService = new ConfigService();
+        return configService.resolve(cliOptions);
+    }
+
+    private void logResolvedConfig(ConfigResolution resolution, EitriConfig config) {
+        if (!verbose) {
+            return;
+        }
+
+        if (resolution.configFileUsed() != null) {
+            LOGGER.log(Level.INFO, "Using configuration file: {0}", resolution.configFileUsed());
+        } else {
+            LOGGER.info("Using default configuration (no config file found)");
+        }
+        LOGGER.log(Level.INFO, "Configuration: {0}", config);
+    }
+
+    private UmlModel parseSources(EitriConfig config) throws ParseException {
+        SourceParser parser = new JavaSourceParser();
+        if (verbose) {
+            LOGGER.log(Level.INFO, "Parsing with {0}...", parser.getName());
+        }
+
+        UmlModel model = parser.parse(config.getSourcePaths(), config);
 
         if (verbose) {
-            if (hasExplicitConfig) {
-                LOGGER.log(Level.INFO, "Loading configuration from: {0}", configPath);
-            } else if (hasWorkingDirConfig) {
-                LOGGER.log(Level.INFO, "Loading configuration from: {0}", workingDirConfig);
-            } else {
-                LOGGER.info("Using default configuration (no config file found)");
-            }
+            LOGGER.log(Level.INFO, "Parsed {0} types, {1} relations",
+                    new Object[]{model.getTypes().size(), model.getRelations().size()});
         }
 
-        // Load from files (defaults -> .eitri.config.yaml -> --config)
-        EitriConfig config = ConfigLoader.load(configPath);
-
-        // Apply CLI overrides (highest priority)
-        applyCliOverrides(config);
-
-        return config;
+        return model;
     }
 
-    /**
-     * Applies command-line options to the configuration.
-     * CLI options have highest priority and override file-based config.
-     */
-    private void applyCliOverrides(EitriConfig config) {
-        // Required options
-        for (Path src : sourcePaths) {
-            config.addSourcePath(src);
-        }
-        config.setOutputPath(outputPath);
+    private void runDryRun(UmlModel model, EitriConfig config) {
+        LOGGER.log(Level.INFO, "Dry run: Parsed {0} types from {1} source path(s)",
+                new Object[]{model.getTypes().size(), config.getSourcePaths().size()});
+        LOGGER.log(Level.INFO, "         Would write to: {0}", config.getOutputPath());
 
-        // Runtime
-        config.setVerbose(verbose);
-        config.setDryRun(dryRun);
+        if (verbose) {
+            DiagramWriter writer = new PlantUmlWriter();
+            String rendered = writer.render(model, config);
+            LOGGER.info("\n--- Generated PlantUML ---");
+            LOGGER.info(rendered);
+            LOGGER.info("--- End PlantUML ---\n");
+        }
     }
 
-    /**
-     * Validates the configuration and returns a list of errors.
-     *
-     * @param config the configuration to validate
-     * @return list of error messages (empty if valid)
-     */
-    private List<String> validateConfig(EitriConfig config) {
-        List<String> errors = new ArrayList<>();
+    private void writeOutput(UmlModel model, EitriConfig config) throws WriteException {
+        DiagramWriter writer = new PlantUmlWriter();
+        writer.write(model, config, config.getOutputPath());
 
-        // Validate source paths
-        if (config.getSourcePaths().isEmpty()) {
-            errors.add("At least one source path (--src) is required.");
-        } else {
-            for (Path src : config.getSourcePaths()) {
-                if (!Files.exists(src)) {
-                    errors.add("Source path does not exist: " + src);
-                } else if (!Files.isDirectory(src)) {
-                    errors.add("Source path is not a directory: " + src);
-                }
-            }
-        }
-
-        // Validate output path
-        if (config.getOutputPath() == null) {
-            errors.add("Output path (--out) is required.");
-        } else {
-            Path parent = config.getOutputPath().getParent();
-            if (parent != null && !Files.exists(parent)) {
-                // Try to create parent directories
-                try {
-                    Files.createDirectories(parent);
-                } catch (Exception _) {
-                    errors.add("Cannot create output directory: " + parent);
-                }
-            }
-            if (parent != null && Files.exists(parent) && !Files.isWritable(parent)) {
-                errors.add("Output directory is not writable: " + parent);
-            }
-        }
-
-        return errors;
+        LOGGER.log(Level.INFO, "Generated {0} with {1} types and {2} relations.",
+                new Object[]{config.getOutputPath(), model.getTypes().size(), model.getRelations().size()});
     }
 }
