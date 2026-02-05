@@ -4,7 +4,6 @@ import java.util.Objects;
 
 /**
  * A method or constructor parameter in the UML model.
- * Immutable value type.
  */
 public record UmlParameter(
         String name,
@@ -32,17 +31,6 @@ public record UmlParameter(
      */
     public UmlParameter(String name, String type) {
         this(name, type, null);
-    }
-
-    /**
-     * Renders this parameter for PlantUML: "name: Type" or just "name" if type is void/empty.
-     * @return PlantUML parameter representation
-     */
-    public String toPlantUml() {
-        if (typeSimpleName == null || typeSimpleName.isBlank() || "void".equals(typeSimpleName)) {
-            return name;
-        }
-        return name + ": " + typeSimpleName;
     }
 
     private static String extractSimpleName(String fullType) {

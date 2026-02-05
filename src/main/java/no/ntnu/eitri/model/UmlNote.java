@@ -6,27 +6,16 @@ import java.util.Objects;
  * A note attached to a UML element or floating.
  */
 public final class UmlNote {
-    private static final String NOTE = "note";
     private final String text;
     private final String targetTypeId;      // Attached to a type (optional)
     private final String targetMember;      // Attached to a member (optional, e.g., "fieldName" or "methodName()")
     private final NotePosition position;    // Position relative to target
 
     public enum NotePosition {
-        LEFT("left"),
-        RIGHT("right"),
-        TOP("top"),
-        BOTTOM("bottom");
-
-        private final String plantUml;
-
-        NotePosition(String plantUml) {
-            this.plantUml = plantUml;
-        }
-
-        public String toPlantUml() {
-            return plantUml;
-        }
+        LEFT,
+        RIGHT,
+        TOP,
+        BOTTOM
     }
 
     private UmlNote(Builder builder) {
@@ -58,41 +47,6 @@ public final class UmlNote {
 
     public boolean isMemberNote() {
         return targetMember != null;
-    }
-
-    /**
-     * Renders this note for PlantUML.
-     * @param targetTypeName the simple name of the target type (or null for floating)
-     * @return PlantUML note lines
-     */
-    public String toPlantUml(String targetTypeName) {
-        StringBuilder sb = new StringBuilder();
-
-        if (isFloating()) {
-            // Floating note
-            sb.append(NOTE).append(" \"").append(escapeText(text)).append("\" as N");
-        } else if (isMemberNote()) {
-            // Note on member
-            sb.append(NOTE).append(" ").append(position.toPlantUml()).append(" of ");
-            sb.append(targetTypeName).append("::").append(targetMember);
-            sb.append("\n").append(text).append("\nend note");
-        } else {
-            // Note on type - simple single-line form if text is short
-            if (!text.contains("\n") && text.length() < 40) {
-                sb.append(NOTE).append(" ").append(position.toPlantUml()).append(" of ");
-                sb.append(targetTypeName).append(" : ").append(text);
-            } else {
-                sb.append(NOTE).append(" ").append(position.toPlantUml()).append(" of ");
-                sb.append(targetTypeName);
-                sb.append("\n").append(text).append("\nend note");
-            }
-        }
-
-        return sb.toString();
-    }
-
-    private String escapeText(String text) {
-        return text.replace("\"", "\\\"").replace("\n", "\\n");
     }
 
     public static Builder builder() {

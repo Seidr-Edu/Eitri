@@ -6,40 +6,29 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for Visibility enum and its PlantUML rendering.
+ * Tests for Visibility usage in model defaults.
  */
 class VisibilityTest {
 
     @Test
-    @DisplayName("PUBLIC renders as +")
-    void publicRendersAsPlus() {
-        assertEquals("+", Visibility.PUBLIC.toPlantUml());
+    @DisplayName("UmlField default visibility is PACKAGE")
+    void fieldDefaultVisibility() {
+        UmlField field = UmlField.builder()
+                .name("value")
+                .type("int")
+                .build();
+
+        assertEquals(Visibility.PACKAGE, field.getVisibility());
     }
 
     @Test
-    @DisplayName("PRIVATE renders as -")
-    void privateRendersAsMinus() {
-        assertEquals("-", Visibility.PRIVATE.toPlantUml());
-    }
+    @DisplayName("UmlMethod default visibility is PACKAGE")
+    void methodDefaultVisibility() {
+        UmlMethod method = UmlMethod.builder()
+                .name("compute")
+                .returnType("int")
+                .build();
 
-    @Test
-    @DisplayName("PROTECTED renders as #")
-    void protectedRendersAsHash() {
-        assertEquals("#", Visibility.PROTECTED.toPlantUml());
-    }
-
-    @Test
-    @DisplayName("PACKAGE renders as ~")
-    void packageRendersAsTilde() {
-        assertEquals("~", Visibility.PACKAGE.toPlantUml());
-    }
-
-    @Test
-    @DisplayName("All visibility symbols are single characters")
-    void allSymbolsAreSingleChar() {
-        for (Visibility v : Visibility.values()) {
-            assertEquals(1, v.toPlantUml().length(),
-                    "Visibility " + v + " should have single-char symbol");
-        }
+        assertEquals(Visibility.PACKAGE, method.getVisibility());
     }
 }

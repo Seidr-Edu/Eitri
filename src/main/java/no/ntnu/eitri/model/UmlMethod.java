@@ -5,7 +5,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A method or constructor in a UML type.
@@ -77,57 +76,6 @@ public final class UmlMethod {
 
     public boolean isAbstract() {
         return modifiers.contains(Modifier.ABSTRACT);
-    }
-
-    /**
-     * Returns the method signature string: name(param1: Type1, param2: Type2)
-     * For constructors, omits return type.
-     * @return the signature string
-     */
-    public String getSignature() {
-        String params = parameters.stream()
-                .map(UmlParameter::toPlantUml)
-                .collect(Collectors.joining(", "));
-        return name + "(" + params + ")";
-    }
-
-    /**
-     * Renders this method for PlantUML class body with default settings (show void).
-     */
-    public String toPlantUml() {
-        return toPlantUml(true);
-    }
-
-    /**
-     * Renders this method for PlantUML class body.
-     * Format: [visibility][{modifiers}] name(params) [: ReturnType]
-     * Example: +{abstract} calculate(x: int, y: int) : double
-     * Example: +Customer(name: String) -- constructor, no return type shown
-     * @param showVoidReturnTypes whether to show ': void' for methods with void return type 
-    */
-    public String toPlantUml(boolean showVoidReturnTypes) {
-        StringBuilder sb = new StringBuilder();
-
-        // Visibility
-        sb.append(visibility.toPlantUml());
-
-        // Modifiers
-        String modStr = Modifier.toPlantUml(modifiers);
-        if (!modStr.isEmpty()) {
-            sb.append(modStr).append(" ");
-        }
-
-        // Signature
-        sb.append(getSignature());
-
-        // Return type (skip for constructors; optionally skip void)
-        boolean showReturnType = !constructor
-                && (showVoidReturnTypes || !"void".equals(returnTypeSimpleName));
-        if (showReturnType) {
-            sb.append(" : ").append(returnTypeSimpleName);
-        }
-
-        return sb.toString();
     }
 
     private static String extractSimpleName(String fullType) {
@@ -320,6 +268,9 @@ public final class UmlMethod {
 
     @Override
     public String toString() {
-        return toPlantUml();
+        return "UmlMethod{" +
+                "name='" + name + '\'' +
+                ", returnType='" + returnType + '\'' +
+                '}';
     }
 }

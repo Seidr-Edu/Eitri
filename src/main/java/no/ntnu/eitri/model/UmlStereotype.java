@@ -53,20 +53,6 @@ public record UmlStereotype(
     }
 
     /**
-     * Renders this stereotype for PlantUML.
-     * Example: &lt;&lt;Singleton&gt;&gt; or &lt;&lt;(S,#FF0000) Service&gt;&gt;
-     */
-    public String toPlantUml() {
-        if (spotChar != null && spotColor != null) {
-            return "<< (" + spotChar + "," + spotColor + ") " + name + " >>";
-        } else if (spotChar != null) {
-            return "<< (" + spotChar + ") " + name + " >>";
-        } else {
-            return "<<" + name + ">>";
-        }
-    }
-
-    /**
      * Checks if this stereotype has annotation values.
      * @return true if values are present
      */

@@ -2,66 +2,42 @@ package no.ntnu.eitri.model;
 
 /**
  * Relationship kinds between UML types.
- * Each kind maps to a specific PlantUML arrow symbol.
  */
 public enum RelationKind {
     /**
      * Inheritance: A extends B.
-     * PlantUML: B &lt;|-- A (B is parent, A is child)
      */
-    EXTENDS("<|--"),
+    EXTENDS,
 
     /**
      * Implementation: A implements B.
-     * PlantUML: B &lt;|.. A (B is interface, A is implementor)
      */
-    IMPLEMENTS("<|.."),
+    IMPLEMENTS,
 
     /**
      * Composition: A is composed of B (strong ownership, lifecycle bound).
-     * PlantUML: A *-- B
      */
-    COMPOSITION("*--"),
+    COMPOSITION,
 
     /**
      * Aggregation: A aggregates B (weak ownership).
-     * PlantUML: A o-- B
      */
-    AGGREGATION("o--"),
+    AGGREGATION,
 
     /**
      * Association: A is associated with B (field reference).
-     * PlantUML: A -- B
      */
-    ASSOCIATION("--"),
+    ASSOCIATION,
 
     /**
      * Dependency: A depends on B (method param, return type, local usage).
-     * PlantUML: A ..> B
      */
-    DEPENDENCY("..>"),
+    DEPENDENCY,
 
     /**
      * Nesting: A contains nested type B (inner class, static nested class, etc.).
-     * PlantUML: A +-- B : nested
      */
-    NESTED("+--");
-
-    private final String arrowSymbol;
-
-    RelationKind(String arrowSymbol) {
-        this.arrowSymbol = arrowSymbol;
-    }
-
-    /**
-     * Returns the PlantUML arrow symbol for this relation.
-     * Note: For EXTENDS and IMPLEMENTS, the arrow points from child to parent,
-     * so render as: parentType arrowSymbol childType
-     * @return the PlantUML arrow symbol
-     */
-    public String toArrowSymbol() {
-        return arrowSymbol;
-    }
+    NESTED;
 
     /**
      * Whether this relation uses a dotted line.

@@ -26,15 +26,4 @@ public record UmlGeneric(
     public UmlGeneric(String identifier) {
         this(identifier, null);
     }
-
-    /**
-     * Renders this generic for PlantUML.
-     * Example: T or E extends Comparable
-     */
-    public String toPlantUml() {
-        if (bounds != null && !bounds.isBlank()) {
-            return identifier + " " + bounds;
-        }
-        return identifier;
-    }
 }
