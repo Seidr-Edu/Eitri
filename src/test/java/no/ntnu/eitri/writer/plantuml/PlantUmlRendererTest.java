@@ -23,6 +23,12 @@ class PlantUmlRendererTest {
 
     private final PlantUmlRenderer renderer = new PlantUmlRenderer();
 
+    @Test
+    @DisplayName("Renderer instance is created")
+    void rendererCreated() {
+            assertNotNull(renderer);
+    }
+
     @Nested
     @DisplayName("Type declarations")
     class TypeDeclarations {

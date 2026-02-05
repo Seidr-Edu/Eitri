@@ -66,6 +66,7 @@ public final class ParserRegistry {
         }
     }
 
+    @SuppressWarnings("null")
     private void registerFromServiceLoader() {
         ServiceLoader<SourceParser> loader = ServiceLoader.load(SourceParser.class);
         for (SourceParser parser : loader) {
