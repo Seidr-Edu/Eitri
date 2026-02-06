@@ -100,7 +100,7 @@ public class PlantUmlWriter implements DiagramWriter {
         sb.append("\n\n");
 
         // Layout direction
-        if (config.getDirection() != null && config.getDirection() != LayoutDirection.TOP_TO_BOTTOM) {
+        if (config.getDirection() != null) {
             sb.append(config.getDirection().toPlantUml()).append("\n\n");
         }
 
