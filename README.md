@@ -88,44 +88,7 @@ Run `java -jar eitri.jar --help` for full option list.
 
 ## ⚙️ YAML Configuration
 
-Create an `.eitri.config.yaml` file for reusable settings:
-
-```yaml
-# .eitri.config.yaml
-diagramName: my-project
-direction: tb
-
-# Visibility filtering
-hidePrivate: true
-hideProtected: false
-hidePackage: false
-
-# Member filtering
-hideFields: false
-hideMethods: false
-hideEmptyMembers: true
-
-# Relation filtering
-showInheritance: true
-showImplements: true
-showComposition: true
-showAggregation: true
-showAssociation: true
-showDependency: false # Often too noisy
-
-# Display
-hideCircle: false
-hideUnlinked: false
-showStereotypes: true
-showGenerics: true
-showMultiplicities: true
-showLabels: true
-
-# Custom skinparam lines
-skinparamLines:
-  - "skinparam classAttributeIconSize 0"
-  - "skinparam linetype ortho"
-```
+Create an `.eitri.config.yaml` file for reusable settings. See `.eitri.config.example.yaml` for an example.
 
 Use with:
 
