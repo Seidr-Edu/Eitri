@@ -1,46 +1,46 @@
 output:
-  file: diagram.puml
-  name: eitri-diagram
-  writerExtension: .puml
+  file: diagram.puml         # Output file path
+  name: eitri-diagram       # Diagram name inside @startuml
+  writerExtension: .puml    # Writer extension id (registry lookup)
 
 input:
-  parserExtension: .java
+  parserExtension: .java    # Parser extension id (registry lookup)
 
 layout:
-  direction: tb
-  groupInheritance: 2
-  classAttributeIconSize: 8
+  direction: tb             # Layout direction: tb or lr
+  groupInheritance: 2       # PlantUML groupInheritance value (1+)
+  classAttributeIconSize: 8 # PlantUML classAttributeIconSize value (0+)
 
 # Visibility filtering
 visibility:
-  hidePrivate: false
-  hideProtected: false
-  hidePackage: false
+  hidePrivate: false        # Hide private members
+  hideProtected: false      # Hide protected members
+  hidePackage: false        # Hide package-private members
 
 # Member filtering
 members:
-  hideFields: false
-  hideMethods: false
-  hideEmptyMembers: true
+  hideFields: false         # Hide all fields
+  hideMethods: false        # Hide all methods
+  hideEmptyMembers: true    # Hide types with no members
 
 # Relation filtering
 relations:
-  showInheritance: true
-  showImplements: true
-  showComposition: true
-  showAggregation: true
-  showAssociation: true
-  showDependency: false # Often too noisy
+  showInheritance: true     # Show extends relations
+  showImplements: true      # Show implements relations
+  showComposition: true     # Show composition relations
+  showAggregation: true     # Show aggregation relations
+  showAssociation: true     # Show association relations
+  showDependency: false     # Show dependency relations (often noisy)
 
 # Display
 display:
-  hideCircle: false
-  hideUnlinked: false
-  showStereotypes: true
-  showGenerics: true
-  showNotes: true
-  showMultiplicities: true
-  showLabels: true
-  showGhostTypes: true
-  showReadOnly: true
-  showVoidReturnTypes: true
+  hideCircle: false         # Hide circle for lollipop interfaces
+  hideUnlinked: false       # Hide types with no relations
+  showStereotypes: true     # Show stereotypes (e.g., <<abstract>>)
+  showGenerics: true        # Show generic type parameters
+  showNotes: true           # Show notes annotations
+  showMultiplicities: true  # Show relation multiplicities
+  showLabels: true          # Show relation labels
+  showGhostTypes: true      # Show external/ghost types
+  showReadOnly: true        # Show read-only modifier for fields
+  showVoidReturnTypes: true # Show : void on methods
