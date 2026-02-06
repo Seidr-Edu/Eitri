@@ -1,24 +1,11 @@
 package no.ntnu.eitri.config;
 
 /**
- * PlantUML diagram layout direction.
+ * Diagram layout direction.
  */
 public enum LayoutDirection {
-    TOP_TO_BOTTOM("top to bottom direction"),
-    LEFT_TO_RIGHT("left to right direction");
-
-    private final String plantUml;
-
-    LayoutDirection(String plantUml) {
-        this.plantUml = plantUml;
-    }
-
-    /**
-     * Returns the PlantUML directive for this direction.
-     */
-    public String toPlantUml() {
-        return plantUml;
-    }
+    TOP_TO_BOTTOM,
+    LEFT_TO_RIGHT;
 
     /**
      * Parses a direction from string (case-insensitive).
