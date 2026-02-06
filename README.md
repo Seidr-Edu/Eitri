@@ -1,12 +1,12 @@
 # Eitri
 
-**Java code parser that forges PlantUML diagrams from Java source code.**
+**Source code parser that forges UML diagrams.**
 
 ![](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNzE3ZWM0eTQ1MXc4ZHFpanlrdmw3YTJyM2Y0dGZ2MngxOXQzeDJrNCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/l3mZ67L0776T759uM/giphy.gif)
 
 ## Overview
 
-Eitri is a CLI tool that parses Java source directories and automatically generates PlantUML class diagrams (`.puml`) **without compiling or running the project**. It uses [JavaParser](https://javaparser.org/) for static analysis with symbol resolution.
+Eitri is a CLI tool that parses source directories and generates class diagrams **without compiling or running the project**. It resolves the parser and writer through registries, keyed by file extension. By default, `.java` uses [JavaParser](https://javaparser.org/) and output is written as PlantUML (`.puml`).
 
 ### Features
 
@@ -17,6 +17,7 @@ Eitri is a CLI tool that parses Java source directories and automatically genera
   - Composition, aggregation, association (from fields)
   - Dependencies (from method parameters/return types)
 - **Package grouping**: Types organized by package in the diagram
+- **Pluggable pipeline**: Parsers and writers are discovered via registries (file extension based)
 - **Highly configurable**: Filter members by visibility, hide/show relation types, customize layout
 - **YAML configuration**: Store settings in a config file for reproducibility
 - **Multiple source paths**: Combine sources from multiple directories
@@ -25,7 +26,7 @@ Eitri is a CLI tool that parses Java source directories and automatically genera
 
 - **Java 25** or later
 - **Maven** for building
-- [JavaParser](https://github.com/javaparser/javaparser) with symbol solver (bundled)
+- [JavaParser](https://github.com/javaparser/javaparser) with symbol solver (bundled default parser)
 - [picocli](https://picocli.info/) for CLI (bundled)
 - [SnakeYAML](https://github.com/snakeyaml/snakeyaml) for config files (bundled)
 
@@ -56,6 +57,18 @@ target/eitri-1.0-SNAPSHOT-jar-with-dependencies.jar
 java -jar target/eitri-1.0-SNAPSHOT-jar-with-dependencies.jar \
   --src src/main/java \
   --out diagram.puml
+```
+
+### Choose Parser and Writer
+
+Parsers and writers are selected by extension id. These are resolved through the registries (built-ins plus any ServiceLoader-provided implementations).
+
+```bash
+java -jar eitri.jar \
+  --src src/main/java \
+  --out diagram.puml \
+  --parser .java \
+  --writer .puml
 ```
 
 ### Multiple Source Directories
@@ -89,6 +102,13 @@ Run `java -jar eitri.jar --help` for full option list.
 ## ⚙️ YAML Configuration
 
 Create an `.eitri.config.yaml` file for reusable settings. See `.eitri.config.example.yaml` for an example.
+
+To choose a parser or writer in config, set the extension ids:
+
+```yaml
+parserExtension: .java
+writerExtension: .puml
+```
 
 Use with:
 
