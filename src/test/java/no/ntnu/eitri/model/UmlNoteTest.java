@@ -1,22 +1,59 @@
 package no.ntnu.eitri.model;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UmlNoteTest {
 
   @Test
-  void testGetText() {
-    // Arrange
-    String expectedText = "This is a test note";
+  void testBuilderAndGetters() {
     UmlNote note = UmlNote.builder()
-        .text(expectedText)
+        .text("Note text")
+        .targetTypeId("TypeA")
+        .targetMember("fieldA")
+        .position(UmlNote.NotePosition.LEFT)
         .build();
+    assertEquals("Note text", note.getText());
+    assertEquals("TypeA", note.getTargetTypeId());
+    assertEquals("fieldA", note.getTargetMember());
+    assertEquals(UmlNote.NotePosition.LEFT, note.getPosition());
+    assertFalse(note.isFloating());
+    assertTrue(note.isMemberNote());
+  }
 
-    // Act
-    String actualText = note.getText();
+  @Test
+  void testFloatingNoteDefaults() {
+    UmlNote note = UmlNote.builder()
+        .text("Floating note")
+        .build();
+    assertTrue(note.isFloating());
+    assertFalse(note.isMemberNote());
+    assertEquals(UmlNote.NotePosition.RIGHT, note.getPosition());
+    assertTrue(note.toString().contains("floating"));
+  }
 
-    // Assert
-    assertEquals(expectedText, actualText, "The text returned by getText() should match the text set in the builder");
+  @Test
+  void testMemberNote() {
+    UmlNote note = UmlNote.builder()
+        .text("Member note")
+        .targetTypeId("TypeB")
+        .targetMember("methodB()")
+        .build();
+    assertFalse(note.isFloating());
+    assertTrue(note.isMemberNote());
+    assertEquals("methodB()", note.getTargetMember());
+  }
+
+  @Test
+  void testToStringIncludesTargetAndText() {
+    UmlNote note = UmlNote.builder()
+        .text("ToString note")
+        .targetTypeId("TypeC")
+        .build();
+    assertTrue(note.toString().contains("TypeC"));
+    assertTrue(note.toString().contains("ToString note"));
   }
 }
