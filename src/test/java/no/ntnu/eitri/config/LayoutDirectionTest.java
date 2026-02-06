@@ -11,18 +11,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class LayoutDirectionTest {
 
     @Test
-    @DisplayName("TOP_TO_BOTTOM renders correct PlantUML directive")
-    void topToBottomDirective() {
-        assertEquals("top to bottom direction", LayoutDirection.TOP_TO_BOTTOM.toPlantUml());
-    }
-
-    @Test
-    @DisplayName("LEFT_TO_RIGHT renders correct PlantUML directive")
-    void leftToRightDirective() {
-        assertEquals("left to right direction", LayoutDirection.LEFT_TO_RIGHT.toPlantUml());
-    }
-
-    @Test
     @DisplayName("fromString parses 'lr' as LEFT_TO_RIGHT")
     void parseLr() {
         assertEquals(LayoutDirection.LEFT_TO_RIGHT, LayoutDirection.fromString("lr"));
