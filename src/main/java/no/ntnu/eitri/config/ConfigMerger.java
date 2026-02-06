@@ -37,7 +37,6 @@ public final class ConfigMerger {
     private void mergeInto(EitriConfig.Builder target, EitriConfig source, EitriConfig defaults) {
         // Additive properties
         source.getSourcePaths().forEach(target::addSourcePath);
-        source.getSkinparamLines().forEach(target::addSkinparamLine);
 
         // Override-if-non-null properties
         if (source.getOutputPath() != null) {

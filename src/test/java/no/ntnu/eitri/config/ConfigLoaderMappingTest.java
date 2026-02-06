@@ -14,7 +14,7 @@ class ConfigLoaderMappingTest {
     Path tempDir;
 
     @Test
-    void mapsInputOutputLayoutAndSkinparamSections() throws Exception {
+    void mapsInputOutputAndLayoutSections() throws Exception {
         Path configFile = tempDir.resolve("config.yaml");
         Path src = tempDir.resolve("src");
         Path out = tempDir.resolve("diagram.puml");
@@ -33,9 +33,6 @@ class ConfigLoaderMappingTest {
                   direction: lr
                   groupInheritance: 3
                   classAttributeIconSize: 4
-                skinparam:
-                  custom:
-                    - "skinparam linetype ortho"
                 display:
                   showNotes: true
                 """.formatted(src.toString(), out.toString());
@@ -49,7 +46,6 @@ class ConfigLoaderMappingTest {
         assertEquals(LayoutDirection.LEFT_TO_RIGHT, config.getDirection());
         assertEquals(3, config.getGroupInheritance());
         assertEquals(4, config.getClassAttributeIconSize());
-        assertEquals(List.of("skinparam linetype ortho"), config.getSkinparamLines());
         assertTrue(config.isShowNotes());
     }
 }

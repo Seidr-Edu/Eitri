@@ -90,7 +90,6 @@ public final class ConfigLoader {
     private static final String SECTION_RUNTIME = "runtime";
     private static final String SECTION_INPUT = "input";
     private static final String SECTION_OUTPUT = "output";
-    private static final String SECTION_SKINPARAM = "skinparam";
 
     @SuppressWarnings("null")
     private static final List<BoolProp> BOOL_PROPS = List.of(
@@ -240,7 +239,6 @@ public final class ConfigLoader {
         mapInputSection(data, builder);
         mapOutputSection(data, builder);
         mapLayoutDirection(data, builder);
-        mapSkinparamCustom(data, builder);
 
         // Boolean properties (generic handling)
         for (BoolProp prop : BOOL_PROPS) {
@@ -301,17 +299,6 @@ public final class ConfigLoader {
         Map<String, Object> layout = (Map<String, Object>) data.get(SECTION_LAYOUT);
         if (layout != null && layout.containsKey("direction")) {
             builder.direction(LayoutDirection.fromString((String) layout.get("direction")));
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void mapSkinparamCustom(Map<String, Object> data, EitriConfig.Builder builder) {
-        Map<String, Object> skinparam = (Map<String, Object>) data.get(SECTION_SKINPARAM);
-        if (skinparam == null) return;
-
-        List<String> custom = (List<String>) skinparam.get("custom");
-        if (custom != null) {
-            custom.forEach(builder::addSkinparamLine);
         }
     }
 
