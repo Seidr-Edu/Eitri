@@ -141,18 +141,6 @@ class EitriConfigTest {
             assertFalse(config.isShowAssociation());
             assertTrue(config.isShowInheritance());
         }
-
-        @Test
-        @DisplayName("Builder adds skinparam lines")
-        void builderSkinparamLines() {
-            EitriConfig config = EitriConfig.builder()
-                    .addSkinparamLine("class { BackgroundColor #FEFECE }")
-                    .addSkinparamLine("ArrowColor #333333")
-                    .build();
-
-            assertEquals(2, config.getSkinparamLines().size());
-            assertTrue(config.getSkinparamLines().contains("class { BackgroundColor #FEFECE }"));
-        }
     }
 
     @Nested

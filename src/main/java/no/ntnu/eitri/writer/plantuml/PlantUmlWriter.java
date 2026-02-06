@@ -119,14 +119,6 @@ public class PlantUmlWriter implements DiagramWriter {
         }
         sb.append("\n");
 
-        // Skinparam lines
-        for (String skinparam : config.getSkinparamLines()) {
-            sb.append(skinparam).append("\n");
-        }
-        if (!config.getSkinparamLines().isEmpty()) {
-            sb.append("\n");
-        }
-
         // Collect linked types for hideUnlinked filtering
         Set<String> linkedTypes = collectLinkedTypes(model);
 

@@ -41,14 +41,12 @@ public record EitriConfig(
         boolean showAggregation,
         boolean showAssociation,
         boolean showDependency,
-        List<String> skinparamLines,
         boolean verbose,
         boolean dryRun
 ) {
 
     public EitriConfig {
         sourcePaths = sourcePaths != null ? List.copyOf(sourcePaths) : List.of();
-        skinparamLines = skinparamLines != null ? List.copyOf(skinparamLines) : List.of();
         diagramName = diagramName != null ? diagramName : "diagram";
         direction = direction != null ? direction : LayoutDirection.TOP_TO_BOTTOM;
         groupInheritance = Math.max(1, groupInheritance);
@@ -178,10 +176,6 @@ public record EitriConfig(
         return showDependency;
     }
 
-    public List<String> getSkinparamLines() {
-        return skinparamLines;
-    }
-
     public boolean isVerbose() {
         return verbose;
     }
@@ -225,7 +219,6 @@ public record EitriConfig(
         private boolean showAggregation = true;
         private boolean showAssociation = true;
         private boolean showDependency = true;
-        private final List<String> skinparamLines = new ArrayList<>();
         private boolean verbose = false;
         private boolean dryRun = false;
 
@@ -389,21 +382,6 @@ public record EitriConfig(
             return this;
         }
 
-        public Builder skinparamLines(List<String> lines) {
-            this.skinparamLines.clear();
-            if (lines != null) {
-                this.skinparamLines.addAll(lines);
-            }
-            return this;
-        }
-
-        public Builder addSkinparamLine(String line) {
-            if (line != null) {
-                this.skinparamLines.add(line);
-            }
-            return this;
-        }
-
         public Builder verbose(boolean verbose) {
             this.verbose = verbose;
             return this;
@@ -446,7 +424,6 @@ public record EitriConfig(
                     showAggregation,
                     showAssociation,
                     showDependency,
-                    skinparamLines,
                     verbose,
                     dryRun
             );
