@@ -133,9 +133,11 @@ public class PlantUmlWriter implements DiagramWriter {
 
         sb.append("\n");
 
+        Set<String> nestedTypeIds = collectNestedTypeIds(model);
+
         // Render relations
         for (UmlRelation relation : model.getRelations()) {
-            if (shouldRenderRelation(relation, config)) {
+            if (shouldRenderRelation(relation, config, nestedTypeIds)) {
                 renderRelation(relation, config, typeNames, sb);
             }
         }
@@ -202,10 +204,21 @@ public class PlantUmlWriter implements DiagramWriter {
         return linked;
     }
 
+    private Set<String> collectNestedTypeIds(UmlModel model) {
+        return model.getTypes().stream()
+                .filter(UmlType::isNested)
+                .map(UmlType::getId)
+                .collect(Collectors.toSet());
+    }
+
     /**
      * Determines if a type should be rendered based on configuration.
      */
     private boolean shouldRenderType(UmlType type, EitriConfig config, Set<String> linkedTypes) {
+        if (!config.isShowNested() && type.isNested()) {
+            return false;
+        }
+
         // Check hideUnlinked
         return !config.isHideUnlinked() || linkedTypes.contains(type.getId());
     }
@@ -213,7 +226,13 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Determines if a relation should be rendered based on configuration.
      */
-    private boolean shouldRenderRelation(UmlRelation relation, EitriConfig config) {
+    private boolean shouldRenderRelation(UmlRelation relation, EitriConfig config, Set<String> nestedTypeIds) {
+        if (!config.isShowNested()
+                && (nestedTypeIds.contains(relation.getFromTypeId())
+                || nestedTypeIds.contains(relation.getToTypeId()))) {
+            return false;
+        }
+
         RelationKind kind = relation.getKind();
         
         return switch (kind) {
@@ -223,7 +242,7 @@ public class PlantUmlWriter implements DiagramWriter {
             case AGGREGATION -> config.isShowAggregation();
             case ASSOCIATION -> config.isShowAssociation();
             case DEPENDENCY -> config.isShowDependency();
-            case NESTED -> true;  // Always show nesting relations
+            case NESTED -> config.isShowNested();
         };
     }
 

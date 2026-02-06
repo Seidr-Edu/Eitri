@@ -41,6 +41,7 @@ public record EitriConfig(
         boolean showAggregation,
         boolean showAssociation,
         boolean showDependency,
+        boolean showNested,
         boolean verbose,
         boolean dryRun
 ) {
@@ -176,6 +177,10 @@ public record EitriConfig(
         return showDependency;
     }
 
+    public boolean isShowNested() {
+        return showNested;
+    }
+
     public boolean isVerbose() {
         return verbose;
     }
@@ -219,6 +224,7 @@ public record EitriConfig(
         private boolean showAggregation = true;
         private boolean showAssociation = true;
         private boolean showDependency = true;
+        private boolean showNested = true;
         private boolean verbose = false;
         private boolean dryRun = false;
 
@@ -382,6 +388,11 @@ public record EitriConfig(
             return this;
         }
 
+        public Builder showNested(boolean show) {
+            this.showNested = show;
+            return this;
+        }
+
         public Builder verbose(boolean verbose) {
             this.verbose = verbose;
             return this;
@@ -424,6 +435,7 @@ public record EitriConfig(
                     showAggregation,
                     showAssociation,
                     showDependency,
+                    showNested,
                     verbose,
                     dryRun
             );

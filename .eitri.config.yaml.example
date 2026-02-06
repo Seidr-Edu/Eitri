@@ -31,6 +31,8 @@ relations:
   showAggregation: true     # Show aggregation relations
   showAssociation: true     # Show association relations
   showDependency: false     # Show dependency relations (often noisy)
+  showNested: true          # Show nested type relations (typical Enums & Builder classes)
+
 
 # Display
 display:

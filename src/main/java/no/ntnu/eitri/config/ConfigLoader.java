@@ -142,6 +142,8 @@ public final class ConfigLoader {
                         EitriConfig::isShowAssociation, EitriConfig.Builder::showAssociation, true),
                     new BoolProp(SECTION_RELATIONS, "showDependency",
                         EitriConfig::isShowDependency, EitriConfig.Builder::showDependency, true),
+                    new BoolProp(SECTION_RELATIONS, "showNested",
+                        EitriConfig::isShowNested, EitriConfig.Builder::showNested, true),
 
             // Runtime
                     new BoolProp(SECTION_RUNTIME, "verbose",
