@@ -69,8 +69,10 @@ public final class ParserRegistry {
     @SuppressWarnings("null")
     private void registerFromServiceLoader() {
         ServiceLoader<SourceParser> loader = ServiceLoader.load(SourceParser.class);
-        for (SourceParser parser : loader) {
-            register(() -> parser, parser.getSupportedExtensions());
+        // Use ServiceLoader providers so each lookup can create a new SourceParser instance.
+        for (ServiceLoader.Provider<SourceParser> provider : loader.stream().toList()) {
+            SourceParser parser = provider.get();
+            register(provider::get, parser.getSupportedExtensions());
         }
     }
 

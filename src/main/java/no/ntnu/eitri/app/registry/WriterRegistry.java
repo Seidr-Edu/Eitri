@@ -63,7 +63,16 @@ public final class WriterRegistry {
     private void registerFromServiceLoader() {
         ServiceLoader<DiagramWriter> loader = ServiceLoader.load(DiagramWriter.class);
         for (DiagramWriter writer : loader) {
-            register(() -> writer, writer.getFileExtension());
+            // Creates new DiagramWriter instances via reflection, avoiding shared instances.
+            Class<? extends DiagramWriter> writerClass = writer.getClass();
+            Supplier<DiagramWriter> supplier = () -> {
+                try {
+                    return writerClass.getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException("Failed to instantiate DiagramWriter: " + writerClass.getName(), e);
+                }
+            };
+            register(supplier, writer.getFileExtension());
         }
     }
 
