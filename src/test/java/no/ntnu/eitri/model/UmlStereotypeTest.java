@@ -62,6 +62,7 @@ class UmlStereotypeTest {
   @Test
   void testImmutableValuesList() {
     UmlStereotype stereotype = new UmlStereotype("Service", List.of("value1", "value2"));
-    assertThrows(UnsupportedOperationException.class, () -> stereotype.values().add("value3"));
+    List<String> values = stereotype.values();
+    assertThrows(UnsupportedOperationException.class, () -> {values.add("value3");});
   }
 }
