@@ -117,6 +117,9 @@ public class PlantUmlWriter implements DiagramWriter {
         if (config.getClassAttributeIconSize() > 0) {
             sb.append("skinparam classAttributeIconSize ").append(config.getClassAttributeIconSize()).append("\n");
         }
+        if (config.isShowGenerics()) {
+            sb.append("skinparam genericDisplay old\n");
+        }
         sb.append("\n");
 
         // Collect linked types for hideUnlinked filtering
