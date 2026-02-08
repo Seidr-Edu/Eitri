@@ -142,6 +142,12 @@ public class PlantUmlWriter implements DiagramWriter {
         if (config.isHideCircle()) {
             sb.append("hide circle\n");
         }
+        if (config.isHideEmptyFields()) {
+            sb.append("hide empty fields\n");
+        }
+        if (config.isHideEmptyMethods()) {
+            sb.append("hide empty methods\n");
+        }
         if (config.isHideEmptyMembers()) {
             sb.append("hide empty members\n");
         }
@@ -156,7 +162,7 @@ public class PlantUmlWriter implements DiagramWriter {
         }
         sb.append("\n");
     }
-    
+
     /**
      * Renders types grouped by their package using PlantUML package syntax.
      */

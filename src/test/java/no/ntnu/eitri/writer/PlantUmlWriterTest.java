@@ -184,4 +184,29 @@ class PlantUmlWriterTest {
         assertFalse(output.contains("Inner -- Other"));
         assertFalse(output.contains(": uses"));
     }
+
+    @Test
+    void includesHideEmptyFieldsAndMethods() {
+        UmlType type = UmlType.builder()
+                .name("Data")
+                .kind(TypeKind.CLASS)
+                .visibility(Visibility.PUBLIC)
+                .build();
+
+        UmlModel model = UmlModel.builder()
+                .addType(type)
+                .build();
+
+        EitriConfig config = EitriConfig.builder()
+                .hideEmptyFields(true)
+                .hideEmptyMethods(true)
+                .build();
+
+        PlantUmlWriter writer = new PlantUmlWriter();
+        String output = writer.render(model, config);
+
+        assertTrue(output.contains("+class Data"));
+        assertTrue(output.contains("hide empty fields"));
+        assertTrue(output.contains("hide empty methods"));
+    }
 }
