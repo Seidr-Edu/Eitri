@@ -104,23 +104,7 @@ public class PlantUmlWriter implements DiagramWriter {
             sb.append(toPlantUmlDirection(config.getDirection())).append("\n\n");
         }
 
-        // Global settings
-        if (config.isHideCircle()) {
-            sb.append("hide circle\n");
-        }
-        if (config.isHideEmptyMembers()) {
-            sb.append("hide empty members\n");
-        }
-        if(config.getGroupInheritance() > 1) {
-            sb.append("skinparam groupInheritance ").append(config.getGroupInheritance()).append("\n");
-        }
-        if (config.getClassAttributeIconSize() > 0) {
-            sb.append("skinparam classAttributeIconSize ").append(config.getClassAttributeIconSize()).append("\n");
-        }
-        if (config.isShowGenerics()) {
-            sb.append("skinparam genericDisplay old\n");
-        }
-        sb.append("\n");
+        renderGlobalSettings(config, sb);
 
         // Collect linked types for hideUnlinked filtering
         Set<String> linkedTypes = collectLinkedTypes(model);
@@ -151,6 +135,28 @@ public class PlantUmlWriter implements DiagramWriter {
         writer.write(sb.toString());
     }
 
+    /**
+    * Renders global PlantUML settings based on configuration.
+    */
+    private void renderGlobalSettings(EitriConfig config, StringBuilder sb) {
+        if (config.isHideCircle()) {
+            sb.append("hide circle\n");
+        }
+        if (config.isHideEmptyMembers()) {
+            sb.append("hide empty members\n");
+        }
+        if(config.getGroupInheritance() > 1) {
+            sb.append("skinparam groupInheritance ").append(config.getGroupInheritance()).append("\n");
+        }
+        if (config.getClassAttributeIconSize() > 0) {
+            sb.append("skinparam classAttributeIconSize ").append(config.getClassAttributeIconSize()).append("\n");
+        }
+        if (config.isShowGenerics()) {
+            sb.append("skinparam genericDisplay old\n");
+        }
+        sb.append("\n");
+    }
+    
     /**
      * Renders types grouped by their package using PlantUML package syntax.
      */
