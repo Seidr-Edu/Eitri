@@ -28,44 +28,19 @@ public final class ConfigLoader {
     public static final String DEFAULT_CONFIG_FILENAME = ".eitri.config.yaml";
 
     // ========================================================================
-    // Merge Strategies
-    // ========================================================================
-
-    /**
-     * Defines how a property is merged when combining configurations.
-     */
-    enum MergeStrategy {
-        /** Override target if source value is true (default is false) */
-        OVERRIDE_IF_TRUE,
-        /** Override target if source value is false (default is true) */
-        OVERRIDE_IF_FALSE
-    }
-
-    // ========================================================================
     // Property Descriptors
     // ========================================================================
 
     /**
      * Descriptor for a boolean configuration property.
-     * Captures YAML location, getter/setter, default value, and merge strategy.
+     * Captures YAML location and getter/setter.
      */
-        record BoolProp(
+    record BoolProp(
             String section,
             String key,
             Predicate<EitriConfig> getter,
-            BiConsumer<EitriConfig.Builder, Boolean> setter,
-            boolean defaultValue,
-            MergeStrategy mergeStrategy
-        ) {
-        /** Convenience constructor that derives merge strategy from default value */
-        BoolProp(String section, String key,
-             Predicate<EitriConfig> getter,
-             BiConsumer<EitriConfig.Builder, Boolean> setter,
-             boolean defaultValue) {
-            this(section, key, getter, setter, defaultValue,
-                    defaultValue ? MergeStrategy.OVERRIDE_IF_FALSE : MergeStrategy.OVERRIDE_IF_TRUE);
-        }
-    }
+            BiConsumer<EitriConfig.Builder, Boolean> setter
+    ) {}
 
     /**
      * Descriptor for an integer configuration property.
@@ -95,65 +70,65 @@ public final class ConfigLoader {
     private static final List<BoolProp> BOOL_PROPS = List.of(
             // Visibility
             new BoolProp(SECTION_VISIBILITY, "hidePrivate",
-                EitriConfig::isHidePrivate, EitriConfig.Builder::hidePrivate, false),
+                EitriConfig::isHidePrivate, EitriConfig.Builder::hidePrivate),
             new BoolProp(SECTION_VISIBILITY, "hideProtected",
-                EitriConfig::isHideProtected, EitriConfig.Builder::hideProtected, false),
+                EitriConfig::isHideProtected, EitriConfig.Builder::hideProtected),
             new BoolProp(SECTION_VISIBILITY, "hidePackage",
-                EitriConfig::isHidePackage, EitriConfig.Builder::hidePackage, false),
+                EitriConfig::isHidePackage, EitriConfig.Builder::hidePackage),
 
             // Members
             new BoolProp(SECTION_MEMBERS, "hideFields",
-                EitriConfig::isHideFields, EitriConfig.Builder::hideFields, false),
+                EitriConfig::isHideFields, EitriConfig.Builder::hideFields),
             new BoolProp(SECTION_MEMBERS, "hideEmptyFields",
-                EitriConfig::isHideEmptyFields, EitriConfig.Builder::hideEmptyFields, false),
+                EitriConfig::isHideEmptyFields, EitriConfig.Builder::hideEmptyFields),
             new BoolProp(SECTION_MEMBERS, "hideMethods",
-                EitriConfig::isHideMethods, EitriConfig.Builder::hideMethods, false),
+                EitriConfig::isHideMethods, EitriConfig.Builder::hideMethods),
             new BoolProp(SECTION_MEMBERS, "hideEmptyMethods",
-                EitriConfig::isHideEmptyMethods, EitriConfig.Builder::hideEmptyMethods, false),
+                EitriConfig::isHideEmptyMethods, EitriConfig.Builder::hideEmptyMethods),
             new BoolProp(SECTION_MEMBERS, "hideEmptyMembers",
-                EitriConfig::isHideEmptyMembers, EitriConfig.Builder::hideEmptyMembers, true),
+                EitriConfig::isHideEmptyMembers, EitriConfig.Builder::hideEmptyMembers),
 
             // Display
             new BoolProp(SECTION_DISPLAY, "hideCircle",
-                EitriConfig::isHideCircle, EitriConfig.Builder::hideCircle, false),
+                EitriConfig::isHideCircle, EitriConfig.Builder::hideCircle),
             new BoolProp(SECTION_DISPLAY, "hideUnlinked",
-                EitriConfig::isHideUnlinked, EitriConfig.Builder::hideUnlinked, false),
+                EitriConfig::isHideUnlinked, EitriConfig.Builder::hideUnlinked),
             new BoolProp(SECTION_DISPLAY, "showStereotypes",
-                EitriConfig::isShowStereotypes, EitriConfig.Builder::showStereotypes, true),
+                EitriConfig::isShowStereotypes, EitriConfig.Builder::showStereotypes),
             new BoolProp(SECTION_DISPLAY, "showGenerics",
-                EitriConfig::isShowGenerics, EitriConfig.Builder::showGenerics, true),
+                EitriConfig::isShowGenerics, EitriConfig.Builder::showGenerics),
             new BoolProp(SECTION_DISPLAY, "showNotes",
-                EitriConfig::isShowNotes, EitriConfig.Builder::showNotes, false),
+                EitriConfig::isShowNotes, EitriConfig.Builder::showNotes),
             new BoolProp(SECTION_DISPLAY, "showMultiplicities",
-                EitriConfig::isShowMultiplicities, EitriConfig.Builder::showMultiplicities, true),
+                EitriConfig::isShowMultiplicities, EitriConfig.Builder::showMultiplicities),
             new BoolProp(SECTION_DISPLAY, "showLabels",
-                EitriConfig::isShowLabels, EitriConfig.Builder::showLabels, true),
+                EitriConfig::isShowLabels, EitriConfig.Builder::showLabels),
             new BoolProp(SECTION_DISPLAY, "showReadOnly",
-                EitriConfig::isShowReadOnly, EitriConfig.Builder::showReadOnly, true),
+                EitriConfig::isShowReadOnly, EitriConfig.Builder::showReadOnly),
             new BoolProp(SECTION_DISPLAY, "showVoidReturnTypes",
-                EitriConfig::isShowVoidReturnTypes, EitriConfig.Builder::showVoidReturnTypes, true),
+                EitriConfig::isShowVoidReturnTypes, EitriConfig.Builder::showVoidReturnTypes),
 
             // Relations
             new BoolProp(SECTION_RELATIONS, "showInheritance",
-                EitriConfig::isShowInheritance, EitriConfig.Builder::showInheritance, true),
+                EitriConfig::isShowInheritance, EitriConfig.Builder::showInheritance),
             new BoolProp(SECTION_RELATIONS, "showImplements",
-                EitriConfig::isShowImplements, EitriConfig.Builder::showImplements, true),
+                EitriConfig::isShowImplements, EitriConfig.Builder::showImplements),
             new BoolProp(SECTION_RELATIONS, "showComposition",
-                EitriConfig::isShowComposition, EitriConfig.Builder::showComposition, true),
+                EitriConfig::isShowComposition, EitriConfig.Builder::showComposition),
             new BoolProp(SECTION_RELATIONS, "showAggregation",
-                EitriConfig::isShowAggregation, EitriConfig.Builder::showAggregation, true),
+                EitriConfig::isShowAggregation, EitriConfig.Builder::showAggregation),
             new BoolProp(SECTION_RELATIONS, "showAssociation",
-                EitriConfig::isShowAssociation, EitriConfig.Builder::showAssociation, true),
+                EitriConfig::isShowAssociation, EitriConfig.Builder::showAssociation),
             new BoolProp(SECTION_RELATIONS, "showDependency",
-                EitriConfig::isShowDependency, EitriConfig.Builder::showDependency, true),
+                EitriConfig::isShowDependency, EitriConfig.Builder::showDependency),
             new BoolProp(SECTION_RELATIONS, "showNested",
-                EitriConfig::isShowNested, EitriConfig.Builder::showNested, true),
+                EitriConfig::isShowNested, EitriConfig.Builder::showNested),
 
             // Runtime
             new BoolProp(SECTION_RUNTIME, "verbose",
-                EitriConfig::isVerbose, EitriConfig.Builder::verbose, false),
+                EitriConfig::isVerbose, EitriConfig.Builder::verbose),
             new BoolProp(SECTION_RUNTIME, "dryRun",
-                EitriConfig::isDryRun, EitriConfig.Builder::dryRun, false)
+                EitriConfig::isDryRun, EitriConfig.Builder::dryRun)
     );
 
     @SuppressWarnings("null")
