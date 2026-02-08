@@ -100,8 +100,8 @@ public class PlantUmlWriter implements DiagramWriter {
         sb.append("\n\n");
 
         // Layout direction
-        if (config.getDirection() != null && config.getDirection() != LayoutDirection.TOP_TO_BOTTOM) {
-            sb.append(config.getDirection().toPlantUml()).append("\n\n");
+        if (config.getDirection() != null) {
+            sb.append(toPlantUmlDirection(config.getDirection())).append("\n\n");
         }
 
         // Global settings
@@ -110,6 +110,12 @@ public class PlantUmlWriter implements DiagramWriter {
         }
         if (config.isHideEmptyMembers()) {
             sb.append("hide empty members\n");
+        }
+        if(config.getGroupInheritance() > 1) {
+            sb.append("skinparam groupInheritance ").append(config.getGroupInheritance()).append("\n");
+        }
+        if (config.getClassAttributeIconSize() > 0) {
+            sb.append("skinparam classAttributeIconSize ").append(config.getClassAttributeIconSize()).append("\n");
         }
         sb.append("\n");
 
@@ -279,5 +285,12 @@ public class PlantUmlWriter implements DiagramWriter {
         String toName = typeNames.getOrDefault(relation.getToTypeId(), relation.getToTypeId());
         sb.append(renderer.renderRelation(relation, fromName, toName, config.isShowLabels(), config.isShowMultiplicities()));
         sb.append("\n");
+    }
+
+    private String toPlantUmlDirection(LayoutDirection direction) {
+        return switch (direction) {
+            case TOP_TO_BOTTOM -> "top to bottom direction";
+            case LEFT_TO_RIGHT -> "left to right direction";
+        };
     }
 }

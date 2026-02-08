@@ -160,12 +160,12 @@ class EitriConfigTest {
     class BuilderValidation {
 
         @Test
-        @DisplayName("groupInheritance clamps negative values to 0")
+        @DisplayName("groupInheritance clamps negative values to 1")
         void groupInheritanceNegative() {
             EitriConfig config = EitriConfig.builder()
                     .groupInheritance(-5)
                     .build();
-            assertEquals(0, config.getGroupInheritance());
+            assertEquals(1, config.getGroupInheritance());
         }
 
         @Test

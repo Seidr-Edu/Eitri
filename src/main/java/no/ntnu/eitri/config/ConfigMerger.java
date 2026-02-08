@@ -18,6 +18,7 @@ public final class ConfigMerger {
      */
     public EitriConfig merge(List<ConfigSource> sources) throws ConfigException {
         EitriConfig.Builder builder = EitriConfig.builder();
+        EitriConfig defaults = builder.build();
 
         if (sources == null) {
             return builder.build();
@@ -26,14 +27,14 @@ public final class ConfigMerger {
         for (ConfigSource source : sources) {
             Optional<EitriConfig> loaded = source.load();
             if (loaded.isPresent()) {
-                mergeInto(builder, loaded.get());
+                mergeInto(builder, loaded.get(), defaults);
             }
         }
 
         return builder.build();
     }
 
-    private void mergeInto(EitriConfig.Builder target, EitriConfig source) {
+    private void mergeInto(EitriConfig.Builder target, EitriConfig source, EitriConfig defaults) {
         // Additive properties
         source.getSourcePaths().forEach(target::addSourcePath);
         source.getSkinparamLines().forEach(target::addSkinparamLine);
@@ -70,7 +71,8 @@ public final class ConfigMerger {
         // Integer properties (override if positive)
         for (ConfigLoader.IntProp prop : ConfigLoader.intProps()) {
             int sourceValue = prop.getter().applyAsInt(source);
-            if (sourceValue > 0) {
+            int defaultValue = prop.getter().applyAsInt(defaults);
+            if (sourceValue != defaultValue) {
                 prop.setter().accept(target, sourceValue);
             }
         }

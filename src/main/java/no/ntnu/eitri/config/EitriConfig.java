@@ -51,7 +51,7 @@ public record EitriConfig(
         skinparamLines = skinparamLines != null ? List.copyOf(skinparamLines) : List.of();
         diagramName = diagramName != null ? diagramName : "diagram";
         direction = direction != null ? direction : LayoutDirection.TOP_TO_BOTTOM;
-        groupInheritance = Math.max(0, groupInheritance);
+        groupInheritance = Math.max(1, groupInheritance);
         classAttributeIconSize = Math.max(0, classAttributeIconSize);
         parserExtension = ExtensionNormalizer.normalizeExtension(parserExtension);
         writerExtension = ExtensionNormalizer.normalizeExtension(writerExtension);
@@ -201,7 +201,7 @@ public record EitriConfig(
         private String writerExtension;
         private String diagramName = "diagram";
         private LayoutDirection direction = LayoutDirection.TOP_TO_BOTTOM;
-        private int groupInheritance = 0;
+        private int groupInheritance = 1;
         private int classAttributeIconSize = 0;
         private boolean hidePrivate = false;
         private boolean hideProtected = false;
