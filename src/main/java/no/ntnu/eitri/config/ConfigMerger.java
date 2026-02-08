@@ -50,20 +50,19 @@ public final class ConfigMerger {
         }
 
         // Override-if-non-default properties
-        if (!"diagram".equals(source.getDiagramName())) {
+        if (!defaults.getDiagramName().equals(source.getDiagramName())) {
             target.diagramName(source.getDiagramName());
         }
-        if (source.getDirection() != LayoutDirection.TOP_TO_BOTTOM) {
+        if (source.getDirection() != defaults.getDirection()) {
             target.direction(source.getDirection());
         }
 
-        // Boolean properties (generic handling based on merge strategy)
+        // Boolean properties (override if source differs from defaults)
         for (ConfigLoader.BoolProp prop : ConfigLoader.boolProps()) {
             boolean sourceValue = prop.getter().test(source);
-            if (prop.mergeStrategy() == ConfigLoader.MergeStrategy.OVERRIDE_IF_TRUE && sourceValue) {
-                prop.setter().accept(target, true);
-            } else if (prop.mergeStrategy() == ConfigLoader.MergeStrategy.OVERRIDE_IF_FALSE && !sourceValue) {
-                prop.setter().accept(target, false);
+            boolean defaultValue = prop.getter().test(defaults);
+            if (sourceValue != defaultValue) {
+                prop.setter().accept(target, sourceValue);
             }
         }
 
