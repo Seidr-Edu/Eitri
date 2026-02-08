@@ -23,7 +23,9 @@ public record EitriConfig(
         boolean hideProtected,
         boolean hidePackage,
         boolean hideFields,
+        boolean hideEmptyFields,
         boolean hideMethods,
+        boolean hideEmptyMethods,
         boolean hideEmptyMembers,
         boolean hideCircle,
         boolean hideUnlinked,
@@ -105,8 +107,16 @@ public record EitriConfig(
         return hideFields;
     }
 
+    public boolean isHideEmptyFields() {
+        return hideEmptyFields;
+    }
+
     public boolean isHideMethods() {
         return hideMethods;
+    }
+
+    public boolean isHideEmptyMethods() {
+        return hideEmptyMethods;
     }
 
     public boolean isHideEmptyMembers() {
@@ -207,6 +217,8 @@ public record EitriConfig(
         private boolean hidePackage = false;
         private boolean hideFields = false;
         private boolean hideMethods = false;
+        private boolean hideEmptyFields = false;
+        private boolean hideEmptyMethods = false;
         private boolean hideEmptyMembers = true;
         private boolean hideCircle = false;
         private boolean hideUnlinked = false;
@@ -297,9 +309,19 @@ public record EitriConfig(
             this.hideFields = hide;
             return this;
         }
+        
+        public Builder hideEmptyFields(boolean hide) {
+            this.hideEmptyFields = hide;
+            return this;
+        }
 
         public Builder hideMethods(boolean hide) {
             this.hideMethods = hide;
+            return this;
+        }
+
+        public Builder hideEmptyMethods(boolean hide) {
+            this.hideEmptyMethods = hide;
             return this;
         }
 
@@ -417,7 +439,9 @@ public record EitriConfig(
                     hideProtected,
                     hidePackage,
                     hideFields,
+                    hideEmptyFields,
                     hideMethods,
+                    hideEmptyMethods,
                     hideEmptyMembers,
                     hideCircle,
                     hideUnlinked,

@@ -20,7 +20,9 @@ visibility:
 # Member filtering
 members:
   hideFields: false         # Hide all fields
+  hideEmptyFields: true     # Hide types with no fields
   hideMethods: false        # Hide all methods
+  hideEmptyMembers: false   # Hide types with no methods
   hideEmptyMembers: true    # Hide types with no members
 
 # Relation filtering
