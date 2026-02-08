@@ -58,6 +58,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
     private static final String STATIC_STEREOTYPE = "static";
     private static final String ABSTRACT_STEREOTYPE = "abstract";
     private static final String FINAL_STEREOTYPE = "final";
+    private static final String RECORD_STEREOTYPE = "record";
 
     private final ParseContext context;
 
@@ -191,6 +192,10 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
 
         if (n.isStatic() && isNestedType(n) && kind == TypeKind.CLASS) {
             builder.addStereotype(STATIC_STEREOTYPE);
+        }
+
+        if(kind == TypeKind.RECORD) {
+            builder.addStereotype(RECORD_STEREOTYPE);
         }
 
         // Add static stereotype for static nested types
