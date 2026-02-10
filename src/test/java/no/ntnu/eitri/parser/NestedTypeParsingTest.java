@@ -140,8 +140,8 @@ class NestedTypeParsingTest {
             assertEquals(1, nestedRelations.size());
 
             UmlRelation rel = nestedRelations.get(0);
-            assertEquals("com.example.Container", rel.getFromTypeId());
-            assertEquals("com.example.Container.Nested", rel.getToTypeId());
+            assertEquals("com.example.Container", rel.getFromTypeFqn());
+            assertEquals("com.example.Container.Nested", rel.getToTypeFqn());
             assertEquals("nested", rel.getLabel());
         }
     }
@@ -339,14 +339,14 @@ class NestedTypeParsingTest {
 
             // A -> A.B
             boolean hasAToB = nestedRelations.stream().anyMatch(r ->
-                    r.getFromTypeId().equals("com.example.A") &&
-                    r.getToTypeId().equals("com.example.A.B"));
+                    r.getFromTypeFqn().equals("com.example.A") &&
+                    r.getToTypeFqn().equals("com.example.A.B"));
             assertTrue(hasAToB);
 
             // A.B -> A.B.C
             boolean hasBToC = nestedRelations.stream().anyMatch(r ->
-                    r.getFromTypeId().equals("com.example.A.B") &&
-                    r.getToTypeId().equals("com.example.A.B.C"));
+                    r.getFromTypeFqn().equals("com.example.A.B") &&
+                    r.getToTypeFqn().equals("com.example.A.B.C"));
             assertTrue(hasBToC);
         }
     }
@@ -432,11 +432,11 @@ class NestedTypeParsingTest {
                     .filter(r -> r.getKind() == RelationKind.EXTENDS)
                     .toList();
 
-            // Either we have extends relations with the correct from ID, or we have no extends
+            // Either we have extends relations with the correct from FQN, or we have no extends
             // (due to stdlib type filtering). The key is the nested type was parsed.
             boolean hasValidExtendsRelation = extendsRelations.isEmpty() ||
                     extendsRelations.stream().anyMatch(r ->
-                            r.getFromTypeId().equals("com.example.Outer.Inner"));
+                            r.getFromTypeFqn().equals("com.example.Outer.Inner"));
             assertTrue(hasValidExtendsRelation,
                     "If extends relations exist, they should use dotted FQN for nested type. Found: " + extendsRelations);
         }

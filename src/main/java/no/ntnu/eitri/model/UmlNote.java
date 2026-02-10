@@ -7,7 +7,7 @@ import java.util.Objects;
  */
 public final class UmlNote {
     private final String text;
-    private final String targetTypeId;      // Attached to a type (optional)
+    private final String targetTypeFqn;      // Attached to a type (optional)
     private final String targetMember;      // Attached to a member (optional, e.g., "fieldName" or "methodName()")
     private final NotePosition position;    // Position relative to target
 
@@ -20,7 +20,7 @@ public final class UmlNote {
 
     private UmlNote(Builder builder) {
         this.text = Objects.requireNonNull(builder.text, "Note text cannot be null");
-        this.targetTypeId = builder.targetTypeId;
+        this.targetTypeFqn = builder.targetTypeFqn;
         this.targetMember = builder.targetMember;
         this.position = builder.position != null ? builder.position : NotePosition.RIGHT;
     }
@@ -29,8 +29,8 @@ public final class UmlNote {
         return text;
     }
 
-    public String getTargetTypeId() {
-        return targetTypeId;
+    public String getTargetTypeFqn() {
+        return targetTypeFqn;
     }
 
     public String getTargetMember() {
@@ -42,7 +42,7 @@ public final class UmlNote {
     }
 
     public boolean isFloating() {
-        return targetTypeId == null;
+        return targetTypeFqn == null;
     }
 
     public boolean isMemberNote() {
@@ -55,7 +55,7 @@ public final class UmlNote {
 
     public static final class Builder {
         private String text;
-        private String targetTypeId;
+        private String targetTypeFqn;
         private String targetMember;
         private NotePosition position;
 
@@ -66,8 +66,8 @@ public final class UmlNote {
             return this;
         }
 
-        public Builder targetTypeId(String targetTypeId) {
-            this.targetTypeId = targetTypeId;
+        public Builder targetTypeFqn(String targetTypeFqn) {
+            this.targetTypeFqn = targetTypeFqn;
             return this;
         }
 
@@ -88,6 +88,6 @@ public final class UmlNote {
 
     @Override
     public String toString() {
-        return "UmlNote{" + (targetTypeId != null ? targetTypeId : "floating") + ": " + text + "}";
+        return "UmlNote{" + (targetTypeFqn != null ? targetTypeFqn : "floating") + ": " + text + "}";
     }
 }

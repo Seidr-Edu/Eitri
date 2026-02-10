@@ -16,7 +16,7 @@ class UmlRelationTest {
     class FactoryMethods {
 
         @Test
-        @DisplayName("extendsRelation sets kind and ids")
+        @DisplayName("extendsRelation sets kind and fqns")
         void extendsRelation() {
             UmlRelation relation = UmlRelation.extendsRelation(
                     "com.example.Child",
@@ -24,12 +24,12 @@ class UmlRelationTest {
             );
 
             assertEquals(RelationKind.EXTENDS, relation.getKind());
-            assertEquals("com.example.Child", relation.getFromTypeId());
-            assertEquals("com.example.Parent", relation.getToTypeId());
+            assertEquals("com.example.Child", relation.getFromTypeFqn());
+            assertEquals("com.example.Parent", relation.getToTypeFqn());
         }
 
         @Test
-        @DisplayName("implementsRelation sets kind and ids")
+        @DisplayName("implementsRelation sets kind and fqns")
         void implementsRelation() {
             UmlRelation relation = UmlRelation.implementsRelation(
                     "com.example.OrderRepository",
@@ -37,8 +37,8 @@ class UmlRelationTest {
             );
 
             assertEquals(RelationKind.IMPLEMENTS, relation.getKind());
-            assertEquals("com.example.OrderRepository", relation.getFromTypeId());
-            assertEquals("com.example.Repository", relation.getToTypeId());
+            assertEquals("com.example.OrderRepository", relation.getFromTypeFqn());
+            assertEquals("com.example.Repository", relation.getToTypeFqn());
         }
 
         @Test
@@ -55,7 +55,7 @@ class UmlRelationTest {
         }
 
         @Test
-        @DisplayName("nestedRelation sets kind/label and ids")
+        @DisplayName("nestedRelation sets kind/label and fqns")
         void nestedRelation() {
             UmlRelation relation = UmlRelation.nestedRelation(
                     "com.example.Outer",
@@ -63,8 +63,8 @@ class UmlRelationTest {
             );
             assertEquals(RelationKind.NESTED, relation.getKind());
             assertEquals("nested", relation.getLabel());
-            assertEquals("com.example.Outer", relation.getFromTypeId());
-            assertEquals("com.example.Outer$Inner", relation.getToTypeId());
+            assertEquals("com.example.Outer", relation.getFromTypeFqn());
+            assertEquals("com.example.Outer$Inner", relation.getToTypeFqn());
         }
     }
 
@@ -76,8 +76,8 @@ class UmlRelationTest {
         @DisplayName("Member relation stores members")
         void memberRelationStoresMembers() {
             UmlRelation relation = UmlRelation.builder()
-                    .fromTypeId("com.example.Order")
-                    .toTypeId("com.example.Status")
+                    .fromTypeFqn("com.example.Order")
+                    .toTypeFqn("com.example.Status")
                     .kind(RelationKind.DEPENDENCY)
                     .fromMember("status")
                     .toMember("PAID")
@@ -93,8 +93,8 @@ class UmlRelationTest {
         @DisplayName("isMemberRelation returns true when both members set")
         void isMemberRelation() {
             UmlRelation relation = UmlRelation.builder()
-                    .fromTypeId("A")
-                    .toTypeId("B")
+                    .fromTypeFqn("A")
+                    .toTypeFqn("B")
                     .kind(RelationKind.ASSOCIATION)
                     .fromMember("x")
                     .toMember("y")
@@ -107,8 +107,8 @@ class UmlRelationTest {
         @DisplayName("isMemberRelation returns false when only one member set")
         void isNotMemberRelation() {
             UmlRelation relation = UmlRelation.builder()
-                    .fromTypeId("A")
-                    .toTypeId("B")
+                    .fromTypeFqn("A")
+                    .toTypeFqn("B")
                     .kind(RelationKind.ASSOCIATION)
                     .fromMember("x")
                     .build();

@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 public final class UmlModel {
     private final String name;
-    private final Map<String, UmlType> types;  // Keyed by type ID (fully qualified name)
+    private final Map<String, UmlType> types;  // Keyed by type FQN
     private final List<UmlRelation> relations;
     private final List<UmlNote> notes;
 
@@ -56,21 +56,21 @@ public final class UmlModel {
     }
 
     /**
-     * Looks up a type by its ID.
-     * @param typeId the fully qualified type ID
+     * Looks up a type by its fully qualified name.
+     * @param typeFqn the fully qualified name of type
      * @return the type, or empty if not found
      */
-    public Optional<UmlType> getType(String typeId) {
-        return Optional.ofNullable(types.get(typeId));
+    public Optional<UmlType> getType(String typeFqn) {
+        return Optional.ofNullable(types.get(typeFqn));
     }
 
     /**
      * Checks if a type exists in the model.
-     * @param typeId the fully qualified type ID
+     * @param typeFqn the fully qualified name of type
      * @return true if the type exists
      */
-    public boolean hasType(String typeId) {
-        return types.containsKey(typeId);
+    public boolean hasType(String typeFqn) {
+        return types.containsKey(typeFqn);
     }
 
     /**
@@ -83,7 +83,7 @@ public final class UmlModel {
 
     /**
      * Returns relations sorted for deterministic output.
-     * Hierarchy relations first, then by kind, then by type IDs.
+     * Hierarchy relations first, then by kind, then by type FQNs.
      * @return sorted list of relations
      */
     public List<UmlRelation> getRelationsSorted() {
@@ -91,8 +91,8 @@ public final class UmlModel {
                 .sorted(Comparator
                         .comparing((UmlRelation r) -> !r.getKind().isHierarchy())  // hierarchy first
                         .thenComparing(r -> r.getKind().ordinal())
-                        .thenComparing(UmlRelation::getFromTypeId)
-                        .thenComparing(UmlRelation::getToTypeId))
+                        .thenComparing(UmlRelation::getFromTypeFqn)
+                        .thenComparing(UmlRelation::getToTypeFqn))
                 .toList();
     }
 
