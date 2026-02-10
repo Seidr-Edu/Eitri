@@ -169,6 +169,11 @@ public final class UmlType {
             if (this.stereotypes == null) {
                 this.stereotypes = new ArrayList<>();
             }
+            for (UmlStereotype existing : this.stereotypes) {
+                if (existing.name().equals(stereotype.name())) {
+                    return this;
+                }
+            }
             this.stereotypes.add(stereotype);
             return this;
         }
