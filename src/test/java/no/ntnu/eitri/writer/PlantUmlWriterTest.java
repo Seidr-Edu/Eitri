@@ -1,6 +1,7 @@
 package no.ntnu.eitri.writer;
 
 import no.ntnu.eitri.config.EitriConfig;
+import no.ntnu.eitri.config.LayoutDirection;
 import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlMethod;
 import no.ntnu.eitri.model.UmlModel;
@@ -71,5 +72,70 @@ class PlantUmlWriterTest {
         String output = writer.render(model, config);
 
         assertTrue(output.contains(": void"));
+    }
+
+    @Test
+    void rendersLeftToRightDirection() {
+        UmlType type = UmlType.builder()
+                .name("TestClass")
+                .kind(TypeKind.CLASS)
+                .visibility(Visibility.PUBLIC)
+                .build();
+
+        UmlModel model = UmlModel.builder()
+                .addType(type)
+                .build();
+
+        EitriConfig config = EitriConfig.builder()
+                .direction(LayoutDirection.LEFT_TO_RIGHT)
+                .build();
+
+        PlantUmlWriter writer = new PlantUmlWriter();
+        String output = writer.render(model, config);
+
+        assertTrue(output.contains("left to right direction"));
+    }
+
+    @Test
+    void rendersTopToBottomDirection() {
+        UmlType type = UmlType.builder()
+                .name("TestClass")
+                .kind(TypeKind.CLASS)
+                .visibility(Visibility.PUBLIC)
+                .build();
+
+        UmlModel model = UmlModel.builder()
+                .addType(type)
+                .build();
+
+        EitriConfig config = EitriConfig.builder()
+                .direction(LayoutDirection.TOP_TO_BOTTOM)
+                .build();
+
+        PlantUmlWriter writer = new PlantUmlWriter();
+        String output = writer.render(model, config);
+
+        assertTrue(output.contains("top to bottom direction"));
+    }
+
+    @Test
+    void rendersDefaultDirectionWhenNotSet() {
+        UmlType type = UmlType.builder()
+                .name("TestClass")
+                .kind(TypeKind.CLASS)
+                .visibility(Visibility.PUBLIC)
+                .build();
+
+        UmlModel model = UmlModel.builder()
+                .addType(type)
+                .build();
+
+        EitriConfig config = EitriConfig.builder()
+                .build();
+
+        PlantUmlWriter writer = new PlantUmlWriter();
+        String output = writer.render(model, config);
+
+        assertTrue(output.contains("top to bottom direction"));
     }
 }
