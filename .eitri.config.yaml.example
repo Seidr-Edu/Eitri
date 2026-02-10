@@ -20,10 +20,10 @@ visibility:
 # Member filtering
 members:
   hideFields: false         # Hide all fields
-  hideEmptyFields: true     # Hide types with no fields
+  hideEmptyFields: true     # Hide fields compartment on types with no fields
   hideMethods: false        # Hide all methods
-  hideEmptyMembers: false   # Hide types with no methods
-  hideEmptyMembers: true    # Hide types with no members
+  hideEmptyMethods: false   # Hide methods compartment on types with no methods
+  hideEmptyMembers: true    # Hide fields/methods compartments on types with no members
 
 # Relation filtering
 relations:
