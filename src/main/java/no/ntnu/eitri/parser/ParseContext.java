@@ -10,10 +10,8 @@ import no.ntnu.eitri.model.UmlType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -23,7 +21,7 @@ import java.util.logging.Logger;
  * then produces a finalized {@link UmlModel}. It handles:
  * <ul>
  *   <li>Type registration and lookup by fully-qualified name</li>
- *   <li>Ghost type creation for unresolved references</li>
+ *   <li>On-demand type creation for unresolved references</li>
  *   <li>Relation collection with duplicate/strength management</li>
  *   <li>Warning collection for non-fatal issues</li>
  *   <li>Deferred inheritance resolution (extends/implements)</li>
@@ -45,9 +43,6 @@ public class ParseContext {
     /** Pending inheritance relations to resolve after all types are registered. */
     private final List<PendingInheritance> pendingInheritance = new ArrayList<>();
 
-    /** Ghost types created for unresolved references. */
-    private final Set<String> ghostTypes = new HashSet<>();
-
     /** Warnings collected during parsing. */
     private final List<String> warnings = new ArrayList<>();
 
@@ -60,14 +55,6 @@ public class ParseContext {
      * @param kind EXTENDS or IMPLEMENTS
      */
     public record PendingInheritance(String fromFqn, String toFqn, RelationKind kind) {}
-
-    private static final Set<String> PRIMITIVE_AND_COMMON = Set.of(
-            "void", "boolean", "byte", "char", "short", "int", "long", "float", "double",
-            "String", "Object", "Class", "Enum", "Annotation", "Record",
-            "Boolean", "Byte", "Character", "Short", "Integer", "Long", "Float", "Double",
-            "Number", "Comparable", "Cloneable", "Serializable", "Iterable",
-            "List", "Set", "Map", "Collection", "Optional", "Stream"
-    );
 
     /**
      * Creates a new parse context with the given configuration.
@@ -133,72 +120,33 @@ public class ParseContext {
     }
 
     /**
-     * Resolves a type reference, creating a ghost type if necessary.
-     * 
-     * <p>If the type is:
-     * <ul>
-     *   <li>Already registered: returns the FQN</li>
-     *   <li>A standard library type: returns null (skip)</li>
-     *   <li>A primitive/common type: returns null (skip)</li>
-     *   <li>Unknown and config.showGhostTypes is true: creates a ghost type</li>
-     *   <li>Unknown and config.showGhostTypes is false: logs warning and returns null</li>
-     * </ul>
-     * 
+     * Resolves a type reference.
+     *
+     * <p>If the type is not already registered, a placeholder type is created
+     * so all referenced types are modeled and can be filtered during writing.
+     *
      * @param fqn the fully-qualified name to resolve
      * @param referencedFrom context for warning messages
-     * @return the resolved FQN, or null if the type should be skipped
+     * @return the resolved (normalized) FQN, or null if the type is empty
      */
     public String resolveTypeReference(String fqn, String referencedFrom) {
         if (fqn == null || fqn.isEmpty()) {
             return null;
         }
 
+        String normalized = normalizeTypeName(fqn);
+        if (normalized == null || normalized.isEmpty()) {
+            return null;
+        }
+
         // Already known?
-        if (typesByFqn.containsKey(fqn)) {
-            return fqn;
+        if (typesByFqn.containsKey(normalized)) {
+            return normalized;
         }
 
-        // Primitive or common type? (skip these, they're not interesting in diagrams)
-        String simpleName = extractSimpleName(fqn);
-        if (PRIMITIVE_AND_COMMON.contains(simpleName)) {
-            return null;
-        }
+        ensureTypeExists(normalized);
 
-        // NOTE: Standard library filtering removed to capture all relations.
-        // Stdlib types will be included as ghost types if showGhostTypes is enabled.
-
-        // Create ghost type or warn
-        if (config.isShowGhostTypes()) {
-            if (!ghostTypes.contains(fqn)) {
-                createGhostType(fqn);
-                addWarning("Created ghost type for unresolved reference: " + fqn + 
-                           (referencedFrom != null ? " (referenced from " + referencedFrom + ")" : ""));
-            }
-            return fqn;
-        } else {
-            addWarning("Unresolved type reference: " + fqn + 
-                       (referencedFrom != null ? " (referenced from " + referencedFrom + ")" : ""));
-            return null;
-        }
-    }
-
-    /**
-     * Creates a ghost (placeholder) type for an unresolved reference.
-     * Ghost types are rendered with a special stereotype.
-     * 
-     * @param fqn the fully-qualified name
-     */
-    private void createGhostType(String fqn) {
-        String simpleName = extractSimpleName(fqn);
-
-        UmlType ghost = UmlType.builder()
-                .simpleName(simpleName)
-                .kind(TypeKind.CLASS)  // Default to class for unknowns
-                .addStereotype("ghost")
-                .build();
-
-        typesByFqn.put(fqn, ghost);
-        ghostTypes.add(fqn);
+        return normalized;
     }
 
     /**
@@ -222,6 +170,57 @@ public class ParseContext {
     private String extractSimpleName(String fqn) {
         int lastDot = fqn.lastIndexOf('.');
         return lastDot >= 0 ? fqn.substring(lastDot + 1) : fqn;
+    }
+
+    private void ensureTypeExists(String fqn) {
+        if (fqn == null || fqn.isBlank()) {
+            return;
+        }
+        if (typesByFqn.containsKey(fqn)) {
+            return;
+        }
+
+        UmlType placeholder = UmlType.builder()
+                .fqn(fqn)
+                .simpleName(extractSimpleName(fqn))
+                .kind(TypeKind.CLASS)
+                .visibility(no.ntnu.eitri.model.Visibility.PACKAGE)
+                .build();
+
+        typesByFqn.put(fqn, placeholder);
+    }
+
+    private String normalizeTypeName(String typeName) {
+        if (typeName == null) {
+            return null;
+        }
+
+        String base = typeName.trim();
+        if (base.isEmpty()) {
+            return null;
+        }
+
+        // Strip array notation
+        while (base.endsWith("[]")) {
+            base = base.substring(0, base.length() - 2).trim();
+        }
+
+        // Strip generic arguments
+        int genericStart = base.indexOf('<');
+        if (genericStart >= 0) {
+            base = base.substring(0, genericStart).trim();
+        }
+
+        // Strip wildcard bounds
+        if (base.startsWith("? extends ")) {
+            base = base.substring("? extends ".length()).trim();
+        } else if (base.startsWith("? super ")) {
+            base = base.substring("? super ".length()).trim();
+        } else if ("?".equals(base)) {
+            return null;
+        }
+
+        return base;
     }
 
     /**
