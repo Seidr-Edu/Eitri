@@ -233,15 +233,6 @@ public class ParseContext {
     }
 
     /**
-     * Returns the set of ghost type FQNs.
-     * 
-     * @return set of ghost type names
-     */
-    public Set<String> getGhostTypes() {
-        return new HashSet<>(ghostTypes);
-    }
-
-    /**
      * Returns all registered types.
      * 
      * @return collection of types
@@ -284,8 +275,8 @@ public class ParseContext {
             String targetFqn = resolveTypeReference(pi.toFqn(), pi.fromFqn());
             if (targetFqn != null) {
                 UmlRelation relation = UmlRelation.builder()
-                        .fromTypeId(pi.fromFqn())
-                        .toTypeId(targetFqn)
+                        .fromTypeFqn(pi.fromFqn())
+                        .toTypeFqn(targetFqn)
                         .kind(pi.kind())
                         .build();
                 relations.add(relation);
@@ -296,11 +287,11 @@ public class ParseContext {
         Map<String, UmlRelation> deduped = new HashMap<>();
         for (UmlRelation rel : relations) {
             // Skip relations to non-existent types
-            if (!typesByFqn.containsKey(rel.getFromTypeId()) || !typesByFqn.containsKey(rel.getToTypeId())) {
+            if (!typesByFqn.containsKey(rel.getFromTypeFqn()) || !typesByFqn.containsKey(rel.getToTypeFqn())) {
                 continue;
             }
 
-            String key = rel.getFromTypeId() + "->" + rel.getToTypeId();
+            String key = rel.getFromTypeFqn() + "->" + rel.getToTypeFqn();
             UmlRelation existing = deduped.get(key);
             if (existing == null || isStronger(rel.getKind(), existing.getKind())) {
                 deduped.put(key, rel);

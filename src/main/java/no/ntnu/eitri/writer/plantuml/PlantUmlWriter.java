@@ -120,11 +120,11 @@ public class PlantUmlWriter implements DiagramWriter {
 
         sb.append("\n");
 
-        Set<String> nestedTypeIds = collectNestedTypeIds(model);
+        Set<String> nestedTypeFqns = collectNestedTypeFqns(model);
 
         // Render relations
         for (UmlRelation relation : model.getRelations()) {
-            if (shouldRenderRelation(relation, config, nestedTypeIds)) {
+            if (shouldRenderRelation(relation, config, nestedTypeFqns)) {
                 renderRelation(relation, config, typeNames, sb);
             }
         }
@@ -213,13 +213,13 @@ public class PlantUmlWriter implements DiagramWriter {
     private Set<String> collectLinkedTypes(UmlModel model) {
         Set<String> linked = new HashSet<>();
         for (UmlRelation relation : model.getRelations()) {
-            linked.add(relation.getFromTypeId());
-            linked.add(relation.getToTypeId());
+            linked.add(relation.getFromTypeFqn());
+            linked.add(relation.getToTypeFqn());
         }
         return linked;
     }
 
-    private Set<String> collectNestedTypeIds(UmlModel model) {
+    private Set<String> collectNestedTypeFqns(UmlModel model) {
         return model.getTypes().stream()
                 .filter(UmlType::isNested)
                 .map(UmlType::getFqn)
@@ -241,10 +241,10 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Determines if a relation should be rendered based on configuration.
      */
-    private boolean shouldRenderRelation(UmlRelation relation, EitriConfig config, Set<String> nestedTypeIds) {
+    private boolean shouldRenderRelation(UmlRelation relation, EitriConfig config, Set<String> nestedTypeFqns) {
         if (!config.isShowNested()
-                && (nestedTypeIds.contains(relation.getFromTypeId())
-                || nestedTypeIds.contains(relation.getToTypeId()))) {
+                && (nestedTypeFqns.contains(relation.getFromTypeFqn())
+                || nestedTypeFqns.contains(relation.getToTypeFqn()))) {
             return false;
         }
 
@@ -307,8 +307,8 @@ public class PlantUmlWriter implements DiagramWriter {
      */
     private void renderRelation(UmlRelation relation, EitriConfig config, 
                                  Map<String, String> typeNames, StringBuilder sb) {
-        String fromName = typeNames.getOrDefault(relation.getFromTypeId(), relation.getFromTypeId());
-        String toName = typeNames.getOrDefault(relation.getToTypeId(), relation.getToTypeId());
+        String fromName = typeNames.getOrDefault(relation.getFromTypeFqn(), relation.getFromTypeFqn());
+        String toName = typeNames.getOrDefault(relation.getToTypeFqn(), relation.getToTypeFqn());
         sb.append(renderer.renderRelation(relation, fromName, toName, config.isShowLabels(), config.isShowMultiplicities()));
         sb.append("\n");
     }

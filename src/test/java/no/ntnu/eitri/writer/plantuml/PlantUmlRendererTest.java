@@ -293,8 +293,8 @@ class PlantUmlRendererTest {
         @DisplayName("Association with multiplicities and label")
         void associationWithMultiplicities() {
             UmlRelation relation = UmlRelation.builder()
-                    .fromTypeId("Customer")
-                    .toTypeId("Order")
+                    .fromTypeFqn("Customer")
+                    .toTypeFqn("Order")
                     .kind(RelationKind.ASSOCIATION)
                     .fromMultiplicity("1")
                     .toMultiplicity("0..*")
@@ -310,8 +310,8 @@ class PlantUmlRendererTest {
         void dependencyAndMemberRelations() {
             UmlRelation dependency = UmlRelation.dependency("Service", "Repo", "uses");
             UmlRelation member = UmlRelation.builder()
-                    .fromTypeId("Order")
-                    .toTypeId("Status")
+                    .fromTypeFqn("Order")
+                    .toTypeFqn("Status")
                     .kind(RelationKind.DEPENDENCY)
                     .fromMember("status")
                     .toMember("PAID")

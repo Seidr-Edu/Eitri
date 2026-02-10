@@ -54,8 +54,8 @@ public class RelationDetector {
      * Detects relationships from all registered types.
      */
     public void detectRelations() {
-        // Process each type's fields and methods
-        for (UmlType type : context.getTypes()) {
+        // Snapshot types since relation detection can add placeholder types.
+        for (UmlType type : new java.util.ArrayList<>(context.getTypes())) {
             String fqn = type.getFqn();
             detectFieldRelations(fqn, type);
             detectMethodDependencies(fqn, type);
@@ -102,8 +102,8 @@ public class RelationDetector {
                 if (resolvedType != null) {
                     // Aggregation for collections
                     UmlRelation relation = UmlRelation.builder()
-                            .fromTypeId(ownerFqn)
-                            .toTypeId(resolvedType)
+                            .fromTypeFqn(ownerFqn)
+                            .toTypeFqn(resolvedType)
                             .kind(RelationKind.AGGREGATION)
                             .toMultiplicity("*")
                             .fromMember(field.getName())
@@ -120,8 +120,8 @@ public class RelationDetector {
             String resolvedType = context.resolveTypeReference(elementType, ownerFqn + "." + field.getName());
             if (resolvedType != null) {
                 UmlRelation relation = UmlRelation.builder()
-                        .fromTypeId(ownerFqn)
-                        .toTypeId(resolvedType)
+                        .fromTypeFqn(ownerFqn)
+                        .toTypeFqn(resolvedType)
                         .kind(RelationKind.AGGREGATION)
                         .toMultiplicity("*")
                         .fromMember(field.getName())
@@ -138,8 +138,8 @@ public class RelationDetector {
             RelationKind kind = determineFieldRelationKind(field);
 
             UmlRelation.Builder relBuilder = UmlRelation.builder()
-                    .fromTypeId(ownerFqn)
-                    .toTypeId(resolvedType)
+                    .fromTypeFqn(ownerFqn)
+                    .toTypeFqn(resolvedType)
                     .kind(kind)
                     .fromMember(field.getName());
 
@@ -193,8 +193,8 @@ public class RelationDetector {
             String resolvedType = context.resolveTypeReference(dep, ownerFqn + "." + method.getName() + "()");
             if (resolvedType != null && !resolvedType.equals(ownerFqn)) {
                 UmlRelation relation = UmlRelation.builder()
-                        .fromTypeId(ownerFqn)
-                        .toTypeId(resolvedType)
+                        .fromTypeFqn(ownerFqn)
+                        .toTypeFqn(resolvedType)
                         .kind(RelationKind.DEPENDENCY)
                         .build();
                 context.addRelation(relation);

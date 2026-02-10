@@ -12,12 +12,12 @@ class UmlNoteTest {
   void testBuilderAndGetters() {
     UmlNote note = UmlNote.builder()
         .text("Note text")
-        .targetTypeId("TypeA")
+        .targetTypeFqn("TypeA")
         .targetMember("fieldA")
         .position(UmlNote.NotePosition.LEFT)
         .build();
     assertEquals("Note text", note.getText());
-    assertEquals("TypeA", note.getTargetTypeId());
+    assertEquals("TypeA", note.getTargetTypeFqn());
     assertEquals("fieldA", note.getTargetMember());
     assertEquals(UmlNote.NotePosition.LEFT, note.getPosition());
     assertFalse(note.isFloating());
@@ -39,7 +39,7 @@ class UmlNoteTest {
   void testMemberNote() {
     UmlNote note = UmlNote.builder()
         .text("Member note")
-        .targetTypeId("TypeB")
+        .targetTypeFqn("TypeB")
         .targetMember("methodB()")
         .build();
     assertFalse(note.isFloating());
@@ -51,7 +51,7 @@ class UmlNoteTest {
   void testToStringIncludesTargetAndText() {
     UmlNote note = UmlNote.builder()
         .text("ToString note")
-        .targetTypeId("TypeC")
+        .targetTypeFqn("TypeC")
         .build();
     assertTrue(note.toString().contains("TypeC"));
     assertTrue(note.toString().contains("ToString note"));

@@ -12,12 +12,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class UmlTypeTest {
     
     @Nested
-    @DisplayName("ID computation")
-    class IdComputation {
+    @DisplayName("FQN computation")
+    class FqnComputation {
 
         @Test
-        @DisplayName("ID is fully qualified name with package")
-        void idWithPackage() {
+        @DisplayName("FQN is fully qualified name with package")
+        void fqnWithPackage() {
             UmlType type = UmlType.builder()
                     .fqn("com.example.domain.Customer")
                     .simpleName("Customer")
@@ -27,8 +27,8 @@ class UmlTypeTest {
         }
 
         @Test
-        @DisplayName("Stable ID for same type")
-        void stableId() {
+        @DisplayName("Stable FQN for same type")
+        void stableFqn() {
             UmlType type1 = UmlType.builder()
                     .fqn("com.example.Order")
                     .simpleName("Order")
@@ -136,8 +136,8 @@ class UmlTypeTest {
         }
 
         @Test
-        @DisplayName("Nested type ID uses dollar sign convention")
-        void nestedTypeIdUsesDollar() {
+        @DisplayName("Nested type FQN uses dollar sign convention")
+        void nestedTypeFqnUsesDollar() {
             UmlType nested = UmlType.builder()
                     .fqn("com.example.Container$Nested")
                     .simpleName("Nested")
@@ -149,7 +149,7 @@ class UmlTypeTest {
 
         @Test
         @DisplayName("Deeply nested types use multiple dollar signs")
-        void deeplyNestedTypeId() {
+        void deeplyNestedTypeFqn() {
             UmlType deepNested = UmlType.builder()
                     .fqn("com.example.A$B$C")
                     .simpleName("C")
