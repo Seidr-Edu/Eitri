@@ -6,8 +6,8 @@ import java.util.Objects;
  * A relationship between two UML types.
  */
 public final class UmlRelation {
-    private final String fromTypeId;
-    private final String toTypeId;
+    private final String fromTypeFqn;
+    private final String toTypeFqn;
     private final RelationKind kind;
     private final String label;
     private final String fromMultiplicity;
@@ -16,8 +16,8 @@ public final class UmlRelation {
     private final String toMember;    // For member-to-member relations: B::field
 
     private UmlRelation(Builder builder) {
-        this.fromTypeId = Objects.requireNonNull(builder.fromTypeId, "fromTypeId cannot be null");
-        this.toTypeId = Objects.requireNonNull(builder.toTypeId, "toTypeId cannot be null");
+        this.fromTypeFqn = Objects.requireNonNull(builder.fromTypeFqn, "fromTypeFqn cannot be null");
+        this.toTypeFqn = Objects.requireNonNull(builder.toTypeFqn, "toTypeFqn cannot be null");
         this.kind = Objects.requireNonNull(builder.kind, "RelationKind cannot be null");
         this.label = builder.label;
         this.fromMultiplicity = builder.fromMultiplicity;
@@ -26,12 +26,12 @@ public final class UmlRelation {
         this.toMember = builder.toMember;
     }
 
-    public String getFromTypeId() {
-        return fromTypeId;
+    public String getFromTypeFqn() {
+        return fromTypeFqn;
     }
 
-    public String getToTypeId() {
-        return toTypeId;
+    public String getToTypeFqn() {
+        return toTypeFqn;
     }
 
     public RelationKind getKind() {
@@ -73,11 +73,11 @@ public final class UmlRelation {
      */
     public String getDeduplicationKey() {
         if (kind.isHierarchy()) {
-            return fromTypeId + "|" + kind + "|" + toTypeId;
+            return fromTypeFqn + "|" + kind + "|" + toTypeFqn;
         }
         // Normalize order for non-hierarchy relations
-        String first = fromTypeId.compareTo(toTypeId) <= 0 ? fromTypeId : toTypeId;
-        String second = fromTypeId.compareTo(toTypeId) <= 0 ? toTypeId : fromTypeId;
+        String first = fromTypeFqn.compareTo(toTypeFqn) <= 0 ? fromTypeFqn : toTypeFqn;
+        String second = fromTypeFqn.compareTo(toTypeFqn) <= 0 ? toTypeFqn : fromTypeFqn;
         return first + "|" + kind + "|" + second;
     }
 
@@ -88,42 +88,42 @@ public final class UmlRelation {
     /**
      * Convenience factory for extends relation.
      */
-    public static UmlRelation extendsRelation(String childId, String parentId) {
-        return builder().fromTypeId(childId).toTypeId(parentId).kind(RelationKind.EXTENDS).build();
+    public static UmlRelation extendsRelation(String childFqn, String parentFqn) {
+        return builder().fromTypeFqn(childFqn).toTypeFqn(parentFqn).kind(RelationKind.EXTENDS).build();
     }
 
     /**
      * Convenience factory for implements relation.
      */
-    public static UmlRelation implementsRelation(String implementorId, String interfaceId) {
-        return builder().fromTypeId(implementorId).toTypeId(interfaceId).kind(RelationKind.IMPLEMENTS).build();
+    public static UmlRelation implementsRelation(String implementorFqn, String interfaceFqn) {
+        return builder().fromTypeFqn(implementorFqn).toTypeFqn(interfaceFqn).kind(RelationKind.IMPLEMENTS).build();
     }
 
     /**
      * Convenience factory for dependency relation.
      */
-    public static UmlRelation dependency(String fromId, String toId, String label) {
-        return builder().fromTypeId(fromId).toTypeId(toId).kind(RelationKind.DEPENDENCY).label(label).build();
+    public static UmlRelation dependency(String fromFqn, String toFqn, String label) {
+        return builder().fromTypeFqn(fromFqn).toTypeFqn(toFqn).kind(RelationKind.DEPENDENCY).label(label).build();
     }
 
     /**
      * Convenience factory for association relation.
      */
-    public static UmlRelation association(String fromId, String toId, String label) {
-        return builder().fromTypeId(fromId).toTypeId(toId).kind(RelationKind.ASSOCIATION).label(label).build();
+    public static UmlRelation association(String fromFqn, String toFqn, String label) {
+        return builder().fromTypeFqn(fromFqn).toTypeFqn(toFqn).kind(RelationKind.ASSOCIATION).label(label).build();
     }
 
     /**
      * Convenience factory for nested type relation.
      * Creates a relation from outer type to nested type with "nested" label.
      */
-    public static UmlRelation nestedRelation(String outerId, String nestedId) {
-        return builder().fromTypeId(outerId).toTypeId(nestedId).kind(RelationKind.NESTED).label("nested").build();
+    public static UmlRelation nestedRelation(String outerFqn, String nestedFqn) {
+        return builder().fromTypeFqn(outerFqn).toTypeFqn(nestedFqn).kind(RelationKind.NESTED).label("nested").build();
     }
 
     public static final class Builder {
-        private String fromTypeId;
-        private String toTypeId;
+        private String fromTypeFqn;
+        private String toTypeFqn;
         private RelationKind kind;
         private String label;
         private String fromMultiplicity;
@@ -133,13 +133,13 @@ public final class UmlRelation {
 
         private Builder() {}
 
-        public Builder fromTypeId(String fromTypeId) {
-            this.fromTypeId = fromTypeId;
+        public Builder fromTypeFqn(String fromTypeFqn) {
+            this.fromTypeFqn = fromTypeFqn;
             return this;
         }
 
-        public Builder toTypeId(String toTypeId) {
-            this.toTypeId = toTypeId;
+        public Builder toTypeFqn(String toTypeFqn) {
+            this.toTypeFqn = toTypeFqn;
             return this;
         }
 
@@ -182,8 +182,8 @@ public final class UmlRelation {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UmlRelation that)) return false;
-        return fromTypeId.equals(that.fromTypeId) &&
-                toTypeId.equals(that.toTypeId) &&
+        return fromTypeFqn.equals(that.fromTypeFqn) &&
+                toTypeFqn.equals(that.toTypeFqn) &&
                 kind == that.kind &&
                 Objects.equals(fromMember, that.fromMember) &&
                 Objects.equals(toMember, that.toMember);
@@ -191,11 +191,11 @@ public final class UmlRelation {
 
     @Override
     public int hashCode() {
-        return Objects.hash(fromTypeId, toTypeId, kind, fromMember, toMember);
+        return Objects.hash(fromTypeFqn, toTypeFqn, kind, fromMember, toMember);
     }
 
     @Override
     public String toString() {
-        return "UmlRelation{" + fromTypeId + " " + kind + " " + toTypeId + "}";
+        return "UmlRelation{" + fromTypeFqn + " " + kind + " " + toTypeFqn + "}";
     }
 }

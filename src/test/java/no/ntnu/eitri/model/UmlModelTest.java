@@ -17,8 +17,8 @@ class UmlModelTest {
     }
 
     @Test
-    @DisplayName("Types are keyed by id and retrievable")
-    void typesById() {
+    @DisplayName("Types are keyed by fqn and retrievable")
+    void typesByFqn() {
         UmlType type = UmlType.builder()
                 .fqn("com.example.Customer")
                 .simpleName("Customer")
