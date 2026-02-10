@@ -61,15 +61,6 @@ public class ParseContext {
      */
     public record PendingInheritance(String fromFqn, String toFqn, RelationKind kind) {}
 
-    /** Standard library prefixes to skip for ghost type creation. */
-    private static final List<String> STDLIB_PREFIXES = List.of(
-            "java.", "javax.", "sun.", "com.sun.", "jdk.",
-            "kotlin.", "kotlinx.",
-            "org.w3c.", "org.xml.", "org.ietf.",
-            "android.", "dalvik."
-    );
-
-    /** Common types that should never become ghost types. */
     private static final Set<String> PRIMITIVE_AND_COMMON = Set.of(
             "void", "boolean", "byte", "char", "short", "int", "long", "float", "double",
             "String", "Object", "Class", "Enum", "Annotation", "Record",
@@ -95,7 +86,7 @@ public class ParseContext {
      * @throws IllegalArgumentException if a type with the same FQN already exists
      */
     public void addType(UmlType type) {
-        String fqn = type.getId();
+        String fqn = type.getFqn();
         if (typesByFqn.containsKey(fqn)) {
             throw new IllegalArgumentException("Type already registered: " + fqn);
         }
@@ -198,12 +189,10 @@ public class ParseContext {
      * @param fqn the fully-qualified name
      */
     private void createGhostType(String fqn) {
-        String packageName = extractPackageName(fqn);
         String simpleName = extractSimpleName(fqn);
 
         UmlType ghost = UmlType.builder()
-                .packageName(packageName)
-                .name(simpleName)
+                .simpleName(simpleName)
                 .kind(TypeKind.CLASS)  // Default to class for unknowns
                 .addStereotype("ghost")
                 .build();
@@ -222,30 +211,6 @@ public class ParseContext {
         if (config.isVerbose()) {
             LOGGER.warning(warning);
         }
-    }
-
-    /**
-     * Checks if a type is from the standard library.
-     * 
-     * @param fqn the fully-qualified name
-     * @return true if it's a stdlib type
-     */
-    private boolean isStdlibType(String fqn) {
-        for (String prefix : STDLIB_PREFIXES) {
-            if (fqn.startsWith(prefix)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Extracts the package name from a fully-qualified name.
-     * 
-     * @param fqn the fully-qualified name
-     * @return the package name, or empty string if no package
-     */
-    private String extractPackageName(String fqn) {
-        int lastDot = fqn.lastIndexOf('.');
-        return lastDot > 0 ? fqn.substring(0, lastDot) : "";
     }
 
     /**

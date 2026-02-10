@@ -1,6 +1,5 @@
 package no.ntnu.eitri.parser.java;
 
-import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.AnnotationDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -89,44 +88,27 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         processRecordDeclaration(n);
         super.visit(n, arg);
     }
-
-    /**
-     * Computes the nested type name chain by walking up the parent hierarchy.
-     * Returns the chain of enclosing type names joined with '$'.
-     * For example, for class C nested in B nested in A, returns "A$B$C".
-     * For top-level types, returns just the simple name.
-     */
-    private String computeNestedName(TypeDeclaration<?> n) {
-        StringBuilder sb = new StringBuilder();
-        buildNestedNameChain(n, sb);
-        return sb.toString();
-    }
-
-    /**
-     * Recursively builds the nested name chain by walking up the parent.
-     */
-    private void buildNestedNameChain(TypeDeclaration<?> n, StringBuilder sb) {
-        var parent = n.getParentNode().orElse(null);
-        if (parent instanceof TypeDeclaration<?> parentType) {
-            buildNestedNameChain(parentType, sb);
-            sb.append("$");
-        }
-        sb.append(n.getNameAsString());
-    }
-
+    
     /**
      * Computes the FQN of the enclosing type, or null if top-level.
      */
     private String computeOuterTypeFqn(TypeDeclaration<?> n) {
-        var parent = n.getParentNode().orElse(null);
-        if (parent instanceof TypeDeclaration<?> parentType) {
-            String packageName = getPackageName(parentType);
-            String nestedName = computeNestedName(parentType);
-            if (packageName.isEmpty()) {
-                return nestedName;
-            }
-            return packageName + "." + nestedName;
+        String typeFqn = n.getFullyQualifiedName().orElse("");
+        int lastDot = typeFqn.lastIndexOf('.');
+        if (lastDot <= 0) return n.getNameAsString();
+        
+        String candidate = typeFqn.substring(0, lastDot);
+        // Check if the candidate is a package (all lowercase) or a type (has uppercase)
+        // Package names are all lowercase, type names start with uppercase
+        int candidateLastDot = candidate.lastIndexOf('.');
+        String simplePart = candidateLastDot >= 0 ? candidate.substring(candidateLastDot + 1) : candidate;
+        
+        // If the simple part starts with uppercase, it's a type (nested parent)
+        // If it's all lowercase, it's a package (top-level type)
+        if (!simplePart.isEmpty() && Character.isUpperCase(simplePart.charAt(0))) {
+            return candidate;
         }
+        
         return null;
     }
 
@@ -161,24 +143,19 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      * Process a class or interface declaration.
      */
     private void processTypeDeclaration(ClassOrInterfaceDeclaration n, TypeKind kind) {
-        String packageName = getPackageName(n);
-        String nestedName = computeNestedName(n);  // e.g., "Outer$Inner" or "TopLevel"
-        String outerFqn = computeOuterTypeFqn(n);
+        String typeFqn = n.getFullyQualifiedName().orElse("");
+        String outerTypeFqn = computeOuterTypeFqn(n);
         Visibility visibility = extractVisibility(n);
 
-        // Compute the FQN
-        String typeFqn = packageName.isEmpty() ? nestedName : packageName + "." + nestedName;
-
         UmlType.Builder builder = UmlType.builder()
-                .id(typeFqn)
-                .name(nestedName)  // Use nested name (Outer$Inner) for uniqueness in PlantUML
-                .packageName(packageName)
+                .fqn(typeFqn)
+                .simpleName(n.getNameAsString())
                 .kind(kind)
                 .visibility(visibility);
 
         // Set outer type for nested types
-        if (outerFqn != null) {
-            builder.outerTypeId(outerFqn);
+        if (outerTypeFqn != null) {
+            builder.outerTypeFqn(outerTypeFqn);
         }
 
         // Add modifiers as stereotypes for abstract classes
@@ -230,8 +207,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         context.addType(type);
 
         // Create nesting relation if this is a nested type
-        if (outerFqn != null) {
-            context.addRelation(UmlRelation.nestedRelation(outerFqn, typeFqn));
+        if (outerTypeFqn != null) {
+            context.addRelation(UmlRelation.nestedRelation(outerTypeFqn, typeFqn));
         }
 
         // Detect inheritance relations
@@ -271,25 +248,20 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      * Process an enum declaration.
      */
     private void processEnumDeclaration(EnumDeclaration n) {
-        String packageName = getPackageName(n);
-        String nestedName = computeNestedName(n);  // e.g., "Outer$Status" or "Status"
-        String outerFqn = computeOuterTypeFqn(n);
+        String typeFqn = n.getFullyQualifiedName().orElse("");
+        String outerTypeFqn = computeOuterTypeFqn(n);
         String simpleName = n.getNameAsString();
         Visibility visibility = extractVisibility(n);
 
-        // Compute the FQN
-        String typeFqn = packageName.isEmpty() ? nestedName : packageName + "." + nestedName;
-
         UmlType.Builder builder = UmlType.builder()
-                .id(typeFqn)
-                .name(nestedName)  // Use nested name for uniqueness in PlantUML
-                .packageName(packageName)
+                .fqn(typeFqn)
+                .simpleName(simpleName)
                 .kind(TypeKind.ENUM)
                 .visibility(visibility);
 
         // Set outer type for nested types
-        if (outerFqn != null) {
-            builder.outerTypeId(outerFqn);
+        if (outerTypeFqn != null) {
+            builder.outerTypeFqn(outerTypeFqn);
         }
 
         // Add static stereotype for nested enums (implicitly static)
@@ -335,8 +307,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         context.addType(type);
 
         // Create nesting relation if this is a nested type
-        if (outerFqn != null) {
-            context.addRelation(UmlRelation.nestedRelation(outerFqn, typeFqn));
+        if (outerTypeFqn != null) {
+            context.addRelation(UmlRelation.nestedRelation(outerTypeFqn, typeFqn));
         }
 
         // Detect implemented interfaces
@@ -350,24 +322,19 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      * Process an annotation type declaration.
      */
     private void processAnnotationDeclaration(AnnotationDeclaration n) {
-        String packageName = getPackageName(n);
-        String nestedName = computeNestedName(n);  // e.g., "Outer$MyAnnotation" or "MyAnnotation"
-        String outerFqn = computeOuterTypeFqn(n);
+        String typeFqn = n.getFullyQualifiedName().orElse("");
+        String outerTypeFqn = computeOuterTypeFqn(n);
         Visibility visibility = extractVisibility(n);
 
-        // Compute the FQN
-        String typeFqn = packageName.isEmpty() ? nestedName : packageName + "." + nestedName;
-
         UmlType.Builder builder = UmlType.builder()
-                .id(typeFqn)
-                .name(nestedName)  // Use nested name for uniqueness in PlantUML
-                .packageName(packageName)
+                .fqn(typeFqn)
+                .simpleName(n.getNameAsString())
                 .kind(TypeKind.ANNOTATION)
                 .visibility(visibility);
 
         // Set outer type for nested types
-        if (outerFqn != null) {
-            builder.outerTypeId(outerFqn);
+        if (outerTypeFqn != null) {
+            builder.outerTypeFqn(outerTypeFqn);
         }
 
         // Add static stereotype for nested annotations (implicitly static)
@@ -401,8 +368,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         context.addType(type);
 
         // Create nesting relation if this is a nested type
-        if (outerFqn != null) {
-            context.addRelation(UmlRelation.nestedRelation(outerFqn, typeFqn));
+        if (outerTypeFqn != null) {
+            context.addRelation(UmlRelation.nestedRelation(outerTypeFqn, typeFqn));
         }
         // Nested types are visited automatically by super.visit()
     }
@@ -411,24 +378,21 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      * Process a record declaration.
      */
     private void processRecordDeclaration(RecordDeclaration n) {
-        String packageName = getPackageName(n);
-        String nestedName = computeNestedName(n);  // e.g., "Outer$Person" or "Person"
-        String outerFqn = computeOuterTypeFqn(n);
+        String typeFqn = n.getFullyQualifiedName().orElse("");
+        String outerTypeFqn = computeOuterTypeFqn(n);
         Visibility visibility = extractVisibility(n);
 
         // Compute the FQN
-        String typeFqn = packageName.isEmpty() ? nestedName : packageName + "." + nestedName;
 
         UmlType.Builder builder = UmlType.builder()
-                .id(typeFqn)
-                .name(nestedName)  // Use nested name for uniqueness in PlantUML
-                .packageName(packageName)
+                .fqn(typeFqn)
+                .simpleName(n.getNameAsString())  // Use nested name for uniqueness in PlantUML
                 .kind(TypeKind.RECORD)
                 .visibility(visibility);
 
         // Set outer type for nested types
-        if (outerFqn != null) {
-            builder.outerTypeId(outerFqn);
+        if (outerTypeFqn != null) {
+            builder.outerTypeFqn(outerTypeFqn);
         }
 
         // Add static stereotype for nested records (implicitly static)
@@ -466,8 +430,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         context.addType(type);
 
         // Create nesting relation if this is a nested type
-        if (outerFqn != null) {
-            context.addRelation(UmlRelation.nestedRelation(outerFqn, typeFqn));
+        if (outerTypeFqn != null) {
+            context.addRelation(UmlRelation.nestedRelation(outerTypeFqn, typeFqn));
         }
 
         // Detect implemented interfaces
@@ -475,16 +439,6 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
             addInheritanceRelation(typeFqn, implemented, RelationKind.IMPLEMENTS);
         }
         // Nested types are visited automatically by super.visit()
-    }
-
-    /**
-     * Extract the package name from a type declaration.
-     */
-    private String getPackageName(TypeDeclaration<?> n) {
-        return n.findCompilationUnit()
-                .flatMap(CompilationUnit::getPackageDeclaration)
-                .map(pd -> pd.getNameAsString())
-                .orElse("");
     }
 
     /**

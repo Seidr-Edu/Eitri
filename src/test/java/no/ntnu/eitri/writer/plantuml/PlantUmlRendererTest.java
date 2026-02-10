@@ -37,7 +37,8 @@ class PlantUmlRendererTest {
         @DisplayName("Simple public class")
         void simplePublicClass() {
             UmlType type = UmlType.builder()
-                    .name("Customer")
+                    .fqn("com.example.Customer")
+                    .simpleName("Customer")
                     .kind(TypeKind.CLASS)
                     .visibility(Visibility.PUBLIC)
                     .build();
@@ -49,13 +50,15 @@ class PlantUmlRendererTest {
         @DisplayName("Interface and abstract class")
         void interfaceAndAbstractClass() {
             UmlType iface = UmlType.builder()
-                    .name("Repository")
+                    .fqn("com.example.Repository")
+                    .simpleName("Repository")
                     .kind(TypeKind.INTERFACE)
                     .visibility(Visibility.PUBLIC)
                     .build();
 
             UmlType abs = UmlType.builder()
-                    .name("BaseEntity")
+                    .fqn("com.example.BaseEntity")
+                    .simpleName("BaseEntity")
                     .kind(TypeKind.ABSTRACT_CLASS)
                     .visibility(Visibility.PUBLIC)
                     .build();
@@ -68,19 +71,22 @@ class PlantUmlRendererTest {
         @DisplayName("Enum, annotation, and record")
         void enumAnnotationRecord() {
             UmlType enumType = UmlType.builder()
-                    .name("Status")
+                    .fqn("com.example.Status")
+                    .simpleName("Status")
                     .kind(TypeKind.ENUM)
                     .visibility(Visibility.PUBLIC)
                     .build();
 
             UmlType annotation = UmlType.builder()
-                    .name("Entity")
+                    .fqn("com.example.Entity")
+                    .simpleName("Entity")
                     .kind(TypeKind.ANNOTATION)
                     .visibility(Visibility.PUBLIC)
                     .build();
 
             UmlType recordType = UmlType.builder()
-                    .name("Point")
+                        .fqn("com.example.Point")
+                    .simpleName("Point")
                     .kind(TypeKind.RECORD)
                     .visibility(Visibility.PUBLIC)
                     .build();
@@ -94,28 +100,32 @@ class PlantUmlRendererTest {
         @DisplayName("Generics and stereotypes")
         void genericsAndStereotypes() {
             UmlType generic = UmlType.builder()
-                    .name("Repository")
+                        .fqn("com.example.Repository")
+                    .simpleName("Repository")
                     .kind(TypeKind.INTERFACE)
                     .visibility(Visibility.PUBLIC)
                     .addGeneric("T")
                     .build();
 
             UmlType bounded = UmlType.builder()
-                    .name("Comparable")
+                    .fqn("com.example.Comparable")
+                    .simpleName("Comparable")
                     .kind(TypeKind.INTERFACE)
                     .visibility(Visibility.PUBLIC)
                     .addGeneric(new UmlGeneric("T", "extends Number"))
                     .build();
 
             UmlType stereotype = UmlType.builder()
-                    .name("Customer")
+                        .fqn("com.example.Customer")
+                    .simpleName("Customer")
                     .kind(TypeKind.CLASS)
                     .visibility(Visibility.PUBLIC)
                     .addStereotype("Entity")
                     .build();
 
             UmlType spot = UmlType.builder()
-                    .name("Order")
+                        .fqn("com.example.Order")
+                    .simpleName("Order")
                     .kind(TypeKind.CLASS)
                     .visibility(Visibility.PUBLIC)
                     .addStereotype(new UmlStereotype("Aggregate", 'A', "#FF0000"))
@@ -131,8 +141,9 @@ class PlantUmlRendererTest {
         @DisplayName("Display name, tags, and style")
         void displayNameTagsStyle() {
             UmlType type = UmlType.builder()
-                    .name("OrderService")
-                    .displayName("Order Service")
+                        .fqn("com.example.Order")
+                    .simpleName("OrderService")
+                    .alias("Order Service")
                     .kind(TypeKind.CLASS)
                     .visibility(Visibility.PUBLIC)
                     .addTag("core")
@@ -321,5 +332,77 @@ class PlantUmlRendererTest {
             assertEquals("Outer +-- Inner : nested",
                     renderer.renderRelation(relation, "Outer", "Inner", true, true));
         }
+    }
+
+    @Test
+    @DisplayName("Top-level type should render with simple name only")
+    void topLevelTypeRendering() {
+        UmlType type = UmlType.builder()
+                .fqn("com.example.MyClass")
+                .simpleName("MyClass")
+                .kind(TypeKind.CLASS)
+                .visibility(Visibility.PUBLIC)
+                .build();
+
+        String rendered = renderer.renderTypeDeclaration(type);
+
+        assertTrue(rendered.contains("MyClass"), "Should contain simple name");
+        assertFalse(rendered.contains("$"), "Should not contain $ for top-level type");
+    }
+
+    @Test
+    @DisplayName("Nested type should render with Outer$Inner format")
+    void nestedTypeRendering() {
+        UmlType type = UmlType.builder()
+                .fqn("com.example.Outer.Inner")  // Stored with dots
+                .simpleName("Inner")
+                .kind(TypeKind.CLASS)
+                .visibility(Visibility.PUBLIC)
+                .outerTypeFqn("com.example.Outer")
+                .build();
+
+        String rendered = renderer.renderTypeDeclaration(type);
+
+        assertTrue(rendered.contains("Outer$Inner"), 
+                "Should render nested type with $ format. Got: " + rendered);
+    }
+
+    @Test
+    @DisplayName("Deeply nested type should render with A$B$C format")
+    void deeplyNestedTypeRendering() {
+        UmlType type = UmlType.builder()
+                .fqn("com.example.A.B.C")  // Stored with dots
+                .simpleName("C")
+                .kind(TypeKind.CLASS)
+                .visibility(Visibility.PUBLIC)
+                .outerTypeFqn("com.example.A.B")
+                .build();
+
+        String rendered = renderer.renderTypeDeclaration(type);
+
+        assertTrue(rendered.contains("A$B$C"), 
+                "Should render deeply nested type with $ format. Got: " + rendered);
+    }
+
+    @Test
+    @DisplayName("Nested type with alias should use alias and display name")
+    void nestedTypeWithAliasRendering() {
+        UmlType type = UmlType.builder()
+                .fqn("com.example.Outer.Inner")
+                .simpleName("Inner")
+                .alias("CustomAlias")
+                .kind(TypeKind.CLASS)
+                .visibility(Visibility.PUBLIC)
+                .outerTypeFqn("com.example.Outer")
+                .build();
+
+        String rendered = renderer.renderTypeDeclaration(type);
+
+        assertTrue(rendered.contains("\"CustomAlias\""), 
+                "Should contain quoted alias");
+        assertTrue(rendered.contains("as"), 
+                "Should use 'as' keyword");
+        assertTrue(rendered.contains("Outer$Inner"), 
+                "Should contain display name with $. Got: " + rendered);
     }
 }

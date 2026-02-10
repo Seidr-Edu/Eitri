@@ -20,17 +20,54 @@ import java.util.stream.Collectors;
  */
 public final class PlantUmlRenderer {
 
+    /**
+     * Computes the display name for a type in PlantUML.
+     * For nested types, uses $ to show hierarchy (e.g., "Outer$Inner").
+     * For top-level types, uses just the simple name.
+     */
+    private String computeDisplayName(UmlType type) {
+        if (!type.isNested()) {
+            return type.getSimpleName();
+        }
+        
+        // For nested types, extract the nested path from FQN
+        String fqn = type.getFqn();
+        int lastDot = fqn.lastIndexOf('.');
+        if (lastDot < 0) {
+            return type.getSimpleName();
+        }
+        
+        // Find where the type hierarchy starts (first uppercase segment)
+        String[] parts = fqn.split("\\.");
+        StringBuilder nestedName = new StringBuilder();
+        boolean foundFirstType = false;
+        
+        for (String part : parts) {
+            if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
+                if (foundFirstType) {
+                    nestedName.append("$");
+                }
+                nestedName.append(part);
+                foundFirstType = true;
+            }
+        }
+        
+        return nestedName.length() > 0 ? nestedName.toString() : type.getSimpleName();
+    }
+
     public String renderTypeDeclaration(UmlType type) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(visibilitySymbol(type.getVisibility()));
         sb.append(typeKeyword(type.getKind())).append(" ");
 
-        if (type.getDisplayName() != null) {
-            sb.append("\"").append(type.getDisplayName()).append("\" as ");
+        // Use alias if explicitly set, otherwise use display name with $ for nested types
+        if (type.getAlias() != null) {
+            sb.append("\"").append(type.getAlias()).append("\" as ").append(computeDisplayName(type));
         }
-
-        sb.append(type.getName());
+        else {
+            sb.append(computeDisplayName(type));
+        }
 
         if (!type.getGenerics().isEmpty()) {
             String genericStr = type.getGenerics().stream()

@@ -58,7 +58,7 @@ class NestedTypeParsingTest {
     class StaticNestedClass {
 
         @Test
-        @DisplayName("Should extract static nested class with Outer$Inner naming")
+        @DisplayName("Should extract static nested class with dotted FQN")
         void extractsStaticNestedClass() {
             String source = """
                 package com.example;
@@ -76,15 +76,15 @@ class NestedTypeParsingTest {
             assertEquals(2, model.getTypes().size());
 
             Optional<UmlType> outer = model.getType("com.example.Outer");
-            Optional<UmlType> inner = model.getType("com.example.Outer$Inner");
+            Optional<UmlType> inner = model.getType("com.example.Outer.Inner");
 
             assertTrue(outer.isPresent(), "Outer class should exist");
-            assertTrue(inner.isPresent(), "Inner class should exist with $ naming");
+            assertTrue(inner.isPresent(), "Inner class should exist with dotted FQN");
 
             // Verify inner type properties
             UmlType innerType = inner.get();
-            assertEquals("Outer$Inner", innerType.getName());  // Uses $ naming for PlantUML
-            assertEquals("com.example.Outer", innerType.getOuterTypeId());
+            assertEquals("Inner", innerType.getSimpleName());  // Just the simple name
+            assertEquals("com.example.Outer", innerType.getOuterTypeFqn());
             assertTrue(innerType.isNested());
 
             // Verify static stereotype
@@ -107,7 +107,7 @@ class NestedTypeParsingTest {
 
             UmlModel model = parseSource(source);
 
-            UmlType innerType = model.getType("com.example.Outer$Inner")
+            UmlType innerType = model.getType("com.example.Outer.Inner")
                     .orElseThrow(() -> new AssertionError("Inner class should exist"));
 
             long total = innerType.getStereotypes().size();
@@ -141,7 +141,7 @@ class NestedTypeParsingTest {
 
             UmlRelation rel = nestedRelations.get(0);
             assertEquals("com.example.Container", rel.getFromTypeId());
-            assertEquals("com.example.Container$Nested", rel.getToTypeId());
+            assertEquals("com.example.Container.Nested", rel.getToTypeId());
             assertEquals("nested", rel.getLabel());
         }
     }
@@ -165,12 +165,12 @@ class NestedTypeParsingTest {
 
             UmlModel model = parseSource(source);
 
-            Optional<UmlType> inner = model.getType("com.example.Outer$Inner");
+            Optional<UmlType> inner = model.getType("com.example.Outer.Inner");
             assertTrue(inner.isPresent());
 
             UmlType innerType = inner.get();
             assertTrue(innerType.isNested());
-            assertEquals("com.example.Outer", innerType.getOuterTypeId());
+            assertEquals("com.example.Outer", innerType.getOuterTypeFqn());
 
             // Non-static inner class should NOT have static stereotype
             boolean hasStaticStereotype = innerType.getStereotypes().stream()
@@ -198,11 +198,11 @@ class NestedTypeParsingTest {
 
             UmlModel model = parseSource(source);
 
-            Optional<UmlType> callback = model.getType("com.example.Container$Callback");
+            Optional<UmlType> callback = model.getType("com.example.Container.Callback");
             assertTrue(callback.isPresent());
 
             UmlType callbackType = callback.get();
-            assertEquals("Container$Callback", callbackType.getName());  // Uses $ naming for PlantUML
+            assertEquals("Callback", callbackType.getSimpleName());  // Just the simple name
             assertTrue(callbackType.isNested());
 
             // Nested interfaces are implicitly static
@@ -233,11 +233,11 @@ class NestedTypeParsingTest {
 
             UmlModel model = parseSource(source);
 
-            Optional<UmlType> status = model.getType("com.example.Order$Status");
+            Optional<UmlType> status = model.getType("com.example.Order.Status");
             assertTrue(status.isPresent());
 
             UmlType statusType = status.get();
-            assertEquals("Order$Status", statusType.getName());  // Uses $ naming for PlantUML
+            assertEquals("Status", statusType.getSimpleName());  // Just the simple name
             assertTrue(statusType.isNested());
 
             // Nested enums are implicitly static
@@ -265,11 +265,11 @@ class NestedTypeParsingTest {
 
             UmlModel model = parseSource(source);
 
-            Optional<UmlType> point = model.getType("com.example.Container$Point");
+            Optional<UmlType> point = model.getType("com.example.Container.Point");
             assertTrue(point.isPresent());
 
             UmlType pointType = point.get();
-            assertEquals("Container$Point", pointType.getName());  // Uses $ naming for PlantUML
+            assertEquals("Point", pointType.getSimpleName());  // Just the simple name
             assertTrue(pointType.isNested());
 
             // Nested records are implicitly static
@@ -300,19 +300,19 @@ class NestedTypeParsingTest {
 
             UmlModel model = parseSource(source);
 
-            // Should have A, A$B, and A$B$C
+            // Should have A, A.B, and A.B.C
             assertEquals(3, model.getTypes().size());
 
             assertTrue(model.getType("com.example.A").isPresent());
-            assertTrue(model.getType("com.example.A$B").isPresent());
-            assertTrue(model.getType("com.example.A$B$C").isPresent());
+            assertTrue(model.getType("com.example.A.B").isPresent());
+            assertTrue(model.getType("com.example.A.B.C").isPresent());
 
             // Verify nesting chain
-            UmlType b = model.getType("com.example.A$B").get();
-            assertEquals("com.example.A", b.getOuterTypeId());
+            UmlType b = model.getType("com.example.A.B").get();
+            assertEquals("com.example.A", b.getOuterTypeFqn());
 
-            UmlType c = model.getType("com.example.A$B$C").get();
-            assertEquals("com.example.A$B", c.getOuterTypeId());
+            UmlType c = model.getType("com.example.A.B.C").get();
+            assertEquals("com.example.A.B", c.getOuterTypeFqn());
         }
 
         @Test
@@ -337,16 +337,16 @@ class NestedTypeParsingTest {
 
             assertEquals(2, nestedRelations.size());
 
-            // A -> A$B
+            // A -> A.B
             boolean hasAToB = nestedRelations.stream().anyMatch(r ->
                     r.getFromTypeId().equals("com.example.A") &&
-                    r.getToTypeId().equals("com.example.A$B"));
+                    r.getToTypeId().equals("com.example.A.B"));
             assertTrue(hasAToB);
 
-            // A$B -> A$B$C
+            // A.B -> A.B.C
             boolean hasBToC = nestedRelations.stream().anyMatch(r ->
-                    r.getFromTypeId().equals("com.example.A$B") &&
-                    r.getToTypeId().equals("com.example.A$B$C"));
+                    r.getFromTypeId().equals("com.example.A.B") &&
+                    r.getToTypeId().equals("com.example.A.B.C"));
             assertTrue(hasBToC);
         }
     }
@@ -378,17 +378,17 @@ class NestedTypeParsingTest {
 
             assertEquals(4, model.getTypes().size());
             assertTrue(model.getType("com.example.Container").isPresent());
-            assertTrue(model.getType("com.example.Container$First").isPresent());
-            assertTrue(model.getType("com.example.Container$Second").isPresent());
-            assertTrue(model.getType("com.example.Container$Status").isPresent());
+            assertTrue(model.getType("com.example.Container.First").isPresent());
+            assertTrue(model.getType("com.example.Container.Second").isPresent());
+            assertTrue(model.getType("com.example.Container.Status").isPresent());
 
             // All nested types should have Container as outer
             assertEquals("com.example.Container",
-                    model.getType("com.example.Container$First").get().getOuterTypeId());
+                    model.getType("com.example.Container.First").get().getOuterTypeFqn());
             assertEquals("com.example.Container",
-                    model.getType("com.example.Container$Second").get().getOuterTypeId());
+                    model.getType("com.example.Container.Second").get().getOuterTypeFqn());
             assertEquals("com.example.Container",
-                    model.getType("com.example.Container$Status").get().getOuterTypeId());
+                    model.getType("com.example.Container.Status").get().getOuterTypeFqn());
         }
     }
 
@@ -419,8 +419,8 @@ class NestedTypeParsingTest {
             assertEquals(1, nestedRelations.size());
 
             // Verify the nested type exists with correct FQN
-            Optional<UmlType> inner = model.getType("com.example.Outer$Inner");
-            assertTrue(inner.isPresent(), "Inner class should exist with $ naming");
+            Optional<UmlType> inner = model.getType("com.example.Outer.Inner");
+            assertTrue(inner.isPresent(), "Inner class should exist with dotted FQN");
 
             // Get all relations and check for the extends relation
             List<UmlRelation> allRelations = model.getRelations();
@@ -436,9 +436,9 @@ class NestedTypeParsingTest {
             // (due to stdlib type filtering). The key is the nested type was parsed.
             boolean hasValidExtendsRelation = extendsRelations.isEmpty() ||
                     extendsRelations.stream().anyMatch(r ->
-                            r.getFromTypeId().equals("com.example.Outer$Inner"));
+                            r.getFromTypeId().equals("com.example.Outer.Inner"));
             assertTrue(hasValidExtendsRelation,
-                    "If extends relations exist, they should use $ naming for nested type. Found: " + extendsRelations);
+                    "If extends relations exist, they should use dotted FQN for nested type. Found: " + extendsRelations);
         }
     }
 }

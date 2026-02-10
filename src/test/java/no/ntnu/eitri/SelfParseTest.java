@@ -7,6 +7,7 @@ import no.ntnu.eitri.model.UmlType;
 import no.ntnu.eitri.parser.java.JavaSourceParser;
 import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Self-test: Parse Eitri's own source code and validate the output.
  */
 @DisplayName("Self-Test: Parsing Eitri Source")
+// @Disabled("Temporarily disabled due to frequent codebase changes")
 class SelfParseTest {
 
     private static final Path SOURCE_PATH = Path.of("src/main/java");
@@ -72,7 +74,7 @@ class SelfParseTest {
         void shouldFindKeyModelClasses() {
             UmlModel model = parser.parse(List.of(SOURCE_PATH), config);
             Set<String> typeNames = model.getTypes().stream()
-                    .map(UmlType::getName)
+                    .map(UmlType::getSimpleName)
                     .collect(Collectors.toSet());
 
             assertTrue(typeNames.contains("UmlType"), "Should find UmlType");
@@ -87,7 +89,7 @@ class SelfParseTest {
         void shouldFindEnums() {
             UmlModel model = parser.parse(List.of(SOURCE_PATH), config);
             Set<String> typeNames = model.getTypes().stream()
-                    .map(UmlType::getName)
+                    .map(UmlType::getSimpleName)
                     .collect(Collectors.toSet());
 
             assertTrue(typeNames.contains("Visibility"), "Should find Visibility enum");
@@ -101,7 +103,7 @@ class SelfParseTest {
         void shouldFindInterfaces() {
             UmlModel model = parser.parse(List.of(SOURCE_PATH), config);
             Set<String> typeNames = model.getTypes().stream()
-                    .map(UmlType::getName)
+                    .map(UmlType::getSimpleName)
                     .collect(Collectors.toSet());
 
             assertTrue(typeNames.contains("SourceParser"), "Should find SourceParser interface");
@@ -113,7 +115,7 @@ class SelfParseTest {
         void shouldFindRecords() {
             UmlModel model = parser.parse(List.of(SOURCE_PATH), config);
             Set<String> typeNames = model.getTypes().stream()
-                    .map(UmlType::getName)
+                    .map(UmlType::getSimpleName)
                     .collect(Collectors.toSet());
 
             assertTrue(typeNames.contains("UmlParameter"), "Should find UmlParameter record");
@@ -171,7 +173,7 @@ class SelfParseTest {
             UmlModel model = parser.parse(List.of(SOURCE_PATH), config);
             
             Optional<UmlType> configType = model.getTypes().stream()
-                    .filter(t -> t.getName().equals("EitriConfig"))
+                    .filter(t -> t.getSimpleName().equals("EitriConfig"))
                     .findFirst();
             
             assertTrue(configType.isPresent(), "Should find EitriConfig");
@@ -185,7 +187,7 @@ class SelfParseTest {
             UmlModel model = parser.parse(List.of(SOURCE_PATH), config);
             
             Optional<UmlType> parserType = model.getTypes().stream()
-                    .filter(t -> t.getName().equals("JavaSourceParser"))
+                    .filter(t -> t.getSimpleName().equals("JavaSourceParser"))
                     .findFirst();
             
             assertTrue(parserType.isPresent(), "Should find JavaSourceParser");

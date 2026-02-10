@@ -8,10 +8,10 @@ import java.util.Objects;
  * A UML type element (class, interface, enum, annotation, record).
  */
 public final class UmlType {
-    private final String id;              // Unique identifier (fully qualified name)
-    private final String name;            // Simple name
-    private final String displayName;     // Optional display name (for aliases)
-    private final String packageName;     // Package name
+    private final String fqn;             // Unique identifier (fully qualified name)
+    private final String simpleName;      // Simple name
+    private final String alias;           // Optional alias if name clashes occur
+    private final String packageName;     // Computed package name
     private final TypeKind kind;
     private final Visibility visibility;
     private final List<UmlStereotype> stereotypes;
@@ -20,13 +20,14 @@ public final class UmlType {
     private final List<UmlGeneric> generics;
     private final List<UmlField> fields;
     private final List<UmlMethod> methods;
-    private final String outerTypeId;  // FQN of enclosing type for nested types
+    private final String outerTypeFqn;  // FQN of enclosing type for nested types
+    private final String outerTypeSimpleName; // Simple name of enclosing type
 
     private UmlType(Builder builder) {
-        this.name = Objects.requireNonNull(builder.name, "Type name cannot be null");
-        this.packageName = builder.packageName != null ? builder.packageName : "";
-        this.id = builder.id != null ? builder.id : computeId(this.packageName, this.name);
-        this.displayName = builder.displayName;
+        this.fqn = Objects.requireNonNull(builder.fqn, "Type fqn cannot be null");
+        this.simpleName = Objects.requireNonNull(builder.simpleName, "Type simpleName cannot be null");
+        this.alias = builder.alias;
+        this.packageName = computePackageName(this.fqn);
         this.kind = builder.kind != null ? builder.kind : TypeKind.CLASS;
         this.visibility = builder.visibility != null ? builder.visibility : Visibility.PACKAGE;
         this.stereotypes = builder.stereotypes != null ? List.copyOf(builder.stereotypes) : List.of();
@@ -35,31 +36,57 @@ public final class UmlType {
         this.generics = builder.generics != null ? List.copyOf(builder.generics) : List.of();
         this.fields = builder.fields != null ? List.copyOf(builder.fields) : List.of();
         this.methods = builder.methods != null ? List.copyOf(builder.methods) : List.of();
-        this.outerTypeId = builder.outerTypeId;
+        this.outerTypeFqn = builder.outerTypeFqn;
+        this.outerTypeSimpleName = computeOuterTypeSimpleName();
     }
 
-    private static String computeId(String packageName, String name) {
-        if (packageName == null || packageName.isBlank()) {
-            return name;
+    private String computeOuterTypeSimpleName() {
+        if (outerTypeFqn == null) {
+            return null;
         }
-        return packageName + "." + name;
+        int lastDot = outerTypeFqn.lastIndexOf('.');
+        return lastDot == -1 ? outerTypeFqn : outerTypeFqn.substring(lastDot + 1);
     }
 
-    public String getId() {
-        return id;
+    public String computePackageName(String fqn) {
+        // Parse FQN to find where package ends and type hierarchy begins
+        // Package components are lowercase, type names start with uppercase
+        String[] parts = fqn.split("\\.");
+        StringBuilder packageName = new StringBuilder();
+        
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            // Once we hit an uppercase part, that's the start of the type hierarchy
+            if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
+                // Return everything before this point (or null if no package)
+                return packageName.length() > 0 ? packageName.toString() : null;
+            }
+            if (i > 0) {
+                packageName.append(".");
+            }
+            packageName.append(part);
+        }
+        
+        // All parts were lowercase (shouldn't happen for valid Java)
+        return packageName.length() > 0 ? packageName.toString() : null;
     }
 
-    public String getName() {
-        return name;
+    public String getFqn() {
+        return fqn;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public String getSimpleName() {
+        return simpleName;
+    }
+
+    public String getAlias() {
+        return alias;
     }
 
     public String getPackageName() {
         return packageName;
     }
+
 
     public TypeKind getKind() {
         return kind;
@@ -95,10 +122,18 @@ public final class UmlType {
 
     /**
      * Returns the FQN of the enclosing type, or null if this is a top-level type.
-     * @return the outer type ID, or null
+     * @return the outer type FQN, or null
      */
-    public String getOuterTypeId() {
-        return outerTypeId;
+    public String getOuterTypeFqn() {
+        return outerTypeFqn;
+    }
+
+    /**
+     * Returns the simple name of the enclosing type, or null if this is a top-level type.
+     * @return the outer type simple name, or null
+     */
+    public String getOuterTypeSimpleName() {
+        return outerTypeSimpleName;
     }
 
     /**
@@ -106,7 +141,7 @@ public final class UmlType {
      * @return true if this type is nested within another type
      */
     public boolean isNested() {
-        return outerTypeId != null;
+        return outerTypeFqn != null;
     }
 
     public static Builder builder() {
@@ -114,10 +149,9 @@ public final class UmlType {
     }
 
     public static final class Builder {
-        private String id;
-        private String name;
-        private String displayName;
-        private String packageName;
+        private String fqn;
+        private String simpleName;
+        private String alias;
         private TypeKind kind;
         private Visibility visibility;
         private List<UmlStereotype> stereotypes;
@@ -126,27 +160,21 @@ public final class UmlType {
         private List<UmlGeneric> generics;
         private List<UmlField> fields;
         private List<UmlMethod> methods;
-        private String outerTypeId;
-
+        private String outerTypeFqn;
         private Builder() {}
 
-        public Builder id(String id) {
-            this.id = id;
+        public Builder fqn(String fqn) {
+            this.fqn = fqn;
             return this;
         }
 
-        public Builder name(String name) {
-            this.name = name;
+        public Builder simpleName(String simpleName) {
+            this.simpleName = simpleName;
             return this;
         }
 
-        public Builder displayName(String displayName) {
-            this.displayName = displayName;
-            return this;
-        }
-
-        public Builder packageName(String packageName) {
-            this.packageName = packageName;
+        public Builder alias(String alias) {
+            this.alias = alias;
             return this;
         }
 
@@ -157,11 +185,6 @@ public final class UmlType {
 
         public Builder visibility(Visibility visibility) {
             this.visibility = visibility;
-            return this;
-        }
-
-        public Builder stereotypes(List<UmlStereotype> stereotypes) {
-            this.stereotypes = stereotypes;
             return this;
         }
 
@@ -182,11 +205,6 @@ public final class UmlType {
             return addStereotype(new UmlStereotype(name));
         }
 
-        public Builder tags(List<String> tags) {
-            this.tags = tags;
-            return this;
-        }
-
         public Builder addTag(String tag) {
             if (this.tags == null) {
                 this.tags = new ArrayList<>();
@@ -197,11 +215,6 @@ public final class UmlType {
 
         public Builder style(String style) {
             this.style = style;
-            return this;
-        }
-
-        public Builder generics(List<UmlGeneric> generics) {
-            this.generics = generics;
             return this;
         }
 
@@ -217,21 +230,11 @@ public final class UmlType {
             return addGeneric(new UmlGeneric(identifier));
         }
 
-        public Builder fields(List<UmlField> fields) {
-            this.fields = fields;
-            return this;
-        }
-
         public Builder addField(UmlField field) {
             if (this.fields == null) {
                 this.fields = new ArrayList<>();
             }
             this.fields.add(field);
-            return this;
-        }
-
-        public Builder methods(List<UmlMethod> methods) {
-            this.methods = methods;
             return this;
         }
 
@@ -243,8 +246,8 @@ public final class UmlType {
             return this;
         }
 
-        public Builder outerTypeId(String outerTypeId) {
-            this.outerTypeId = outerTypeId;
+        public Builder outerTypeFqn(String outerTypeFqn) {
+            this.outerTypeFqn = outerTypeFqn;
             return this;
         }
 
@@ -257,16 +260,16 @@ public final class UmlType {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UmlType that)) return false;
-        return id.equals(that.id);
+        return fqn.equals(that.fqn);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(fqn);
     }
 
     @Override
     public String toString() {
-        return "UmlType{" + id + "}";
+        return "UmlType{" + fqn + "}";
     }
 }
