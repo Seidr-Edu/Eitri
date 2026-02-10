@@ -56,7 +56,7 @@ public class RelationDetector {
     public void detectRelations() {
         // Process each type's fields and methods
         for (UmlType type : context.getTypes()) {
-            String fqn = type.getId();
+            String fqn = type.getFqn();
             detectFieldRelations(fqn, type);
             detectMethodDependencies(fqn, type);
         }

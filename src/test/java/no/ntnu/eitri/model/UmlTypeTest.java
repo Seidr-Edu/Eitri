@@ -19,49 +19,27 @@ class UmlTypeTest {
         @DisplayName("ID is fully qualified name with package")
         void idWithPackage() {
             UmlType type = UmlType.builder()
-                    .name("Customer")
-                    .packageName("com.example.domain")
+                    .fqn("com.example.domain.Customer")
+                    .simpleName("Customer")
                     .build();
 
-            assertEquals("com.example.domain.Customer", type.getId());
-        }
-
-        @Test
-        @DisplayName("ID is simple name without package")
-        void idWithoutPackage() {
-            UmlType type = UmlType.builder()
-                    .name("Helper")
-                    .build();
-
-            assertEquals("Helper", type.getId());
-        }
-
-        @Test
-        @DisplayName("Explicit ID overrides computed")
-        void explicitId() {
-            UmlType type = UmlType.builder()
-                    .id("custom.id")
-                    .name("Customer")
-                    .packageName("com.example")
-                    .build();
-
-            assertEquals("custom.id", type.getId());
+            assertEquals("com.example.domain.Customer", type.getFqn());
         }
 
         @Test
         @DisplayName("Stable ID for same type")
         void stableId() {
             UmlType type1 = UmlType.builder()
-                    .name("Order")
-                    .packageName("shop.core")
+                    .fqn("com.example.Order")
+                    .simpleName("Order")
                     .build();
 
             UmlType type2 = UmlType.builder()
-                    .name("Order")
-                    .packageName("shop.core")
+                    .fqn("com.example.Order")
+                    .simpleName("Order")
                     .build();
 
-            assertEquals(type1.getId(), type2.getId());
+            assertEquals(type1.getFqn(), type2.getFqn());
             assertEquals(type1, type2);
         }
     }
@@ -74,7 +52,8 @@ class UmlTypeTest {
         @DisplayName("Defaults are applied")
         void defaultsApplied() {
             UmlType type = UmlType.builder()
-                    .name("Customer")
+                    .fqn("com.example.Customer")
+                    .simpleName("Customer")
                     .build();
 
             assertEquals(TypeKind.CLASS, type.getKind());
@@ -85,18 +64,20 @@ class UmlTypeTest {
         @DisplayName("Display name is preserved")
         void displayNamePreserved() {
             UmlType type = UmlType.builder()
-                    .name("OrderHandler")
-                    .displayName("Order Handler")
+                    .fqn("com.example.OrderHandler")
+                    .simpleName("Order")
+                    .alias("Order Handler")
                     .build();
 
-            assertEquals("Order Handler", type.getDisplayName());
+            assertEquals("Order Handler", type.getAlias());
         }
 
         @Test
         @DisplayName("Tags and style are preserved")
         void tagsAndStylePreserved() {
             UmlType type = UmlType.builder()
-                    .name("Order")
+                    .fqn("com.example.Order")
+                    .simpleName("Order")
                     .addTag("core")
                     .style("#lightblue")
                     .build();
@@ -110,7 +91,8 @@ class UmlTypeTest {
         @DisplayName("Generics and stereotypes are preserved")
         void genericsAndStereotypesPreserved() {
             UmlType type = UmlType.builder()
-                    .name("OrderService")
+                    .fqn("com.example.OrderService")
+                    .simpleName("OrderService")
                     .addGeneric(new UmlGeneric("T", "extends Number"))
                     .addStereotype(new UmlStereotype("Service"))
                     .build();
@@ -132,11 +114,11 @@ class UmlTypeTest {
         @DisplayName("Top-level type has no outer type")
         void topLevelTypeHasNoOuter() {
             UmlType type = UmlType.builder()
-                    .name("TopLevel")
-                    .packageName("com.example")
+                    .fqn("com.example.TopLevel")
+                    .simpleName("TopLevel")
                     .build();
 
-            assertNull(type.getOuterTypeId());
+            assertNull(type.getOuterTypeFqn());
             assertFalse(type.isNested());
         }
 
@@ -144,13 +126,12 @@ class UmlTypeTest {
         @DisplayName("Nested type has outer type ID")
         void nestedTypeHasOuterId() {
             UmlType nested = UmlType.builder()
-                    .id("com.example.Outer$Inner")
-                    .name("Inner")
-                    .packageName("com.example")
-                    .outerTypeId("com.example.Outer")
+                    .fqn("com.example.Outer$Inner")
+                    .simpleName("Inner")
+                    .outerTypeFqn("com.example.Outer")
                     .build();
 
-            assertEquals("com.example.Outer", nested.getOuterTypeId());
+            assertEquals("com.example.Outer", nested.getOuterTypeFqn());
             assertTrue(nested.isNested());
         }
 
@@ -158,27 +139,25 @@ class UmlTypeTest {
         @DisplayName("Nested type ID uses dollar sign convention")
         void nestedTypeIdUsesDollar() {
             UmlType nested = UmlType.builder()
-                    .id("com.example.Container$Nested")
-                    .name("Nested")
-                    .packageName("com.example")
-                    .outerTypeId("com.example.Container")
+                    .fqn("com.example.Container$Nested")
+                    .simpleName("Nested")
+                    .outerTypeFqn("com.example.Container")
                     .build();
 
-            assertEquals("com.example.Container$Nested", nested.getId());
+            assertEquals("com.example.Container$Nested", nested.getFqn());
         }
 
         @Test
         @DisplayName("Deeply nested types use multiple dollar signs")
         void deeplyNestedTypeId() {
             UmlType deepNested = UmlType.builder()
-                    .id("com.example.A$B$C")
-                    .name("C")
-                    .packageName("com.example")
-                    .outerTypeId("com.example.A$B")
+                    .fqn("com.example.A$B$C")
+                    .simpleName("C")
+                    .outerTypeFqn("com.example.A$B")
                     .build();
 
-            assertEquals("com.example.A$B$C", deepNested.getId());
-            assertEquals("com.example.A$B", deepNested.getOuterTypeId());
+            assertEquals("com.example.A$B$C", deepNested.getFqn());
+            assertEquals("com.example.A$B", deepNested.getOuterTypeFqn());
             assertTrue(deepNested.isNested());
         }
 
@@ -186,10 +165,9 @@ class UmlTypeTest {
         @DisplayName("Static nested type with stereotype")
         void staticNestedType() {
             UmlType staticNested = UmlType.builder()
-                    .id("com.example.Outer$StaticNested")
-                    .name("StaticNested")
-                    .packageName("com.example")
-                    .outerTypeId("com.example.Outer")
+                    .fqn("com.example.Outer$StaticNested")
+                    .simpleName("StaticNested")
+                    .outerTypeFqn("com.example.Outer")
                     .addStereotype("static")
                     .build();
 

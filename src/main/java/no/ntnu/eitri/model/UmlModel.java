@@ -51,7 +51,7 @@ public final class UmlModel {
     public List<UmlType> getTypesSorted() {
         return types.values().stream()
                 .sorted(Comparator.comparing(UmlType::getPackageName)
-                        .thenComparing(UmlType::getName))
+                        .thenComparing(UmlType::getSimpleName))
                 .toList();
     }
 
@@ -125,7 +125,7 @@ public final class UmlModel {
     public List<UmlType> getTypesInPackage(String packageName) {
         return types.values().stream()
                 .filter(t -> packageName.equals(t.getPackageName()))
-                .sorted(Comparator.comparing(UmlType::getName))
+                .sorted(Comparator.comparing(UmlType::getSimpleName))
                 .toList();
     }
 
@@ -136,7 +136,7 @@ public final class UmlModel {
     public List<UmlType> getTypesInDefaultPackage() {
         return types.values().stream()
                 .filter(t -> t.getPackageName() == null || t.getPackageName().isBlank())
-                .sorted(Comparator.comparing(UmlType::getName))
+                .sorted(Comparator.comparing(UmlType::getSimpleName))
                 .toList();
     }
 
@@ -161,7 +161,7 @@ public final class UmlModel {
             if (this.types == null) {
                 this.types = new LinkedHashMap<>();
             }
-            this.types.put(type.getId(), type);
+            this.types.put(type.getFqn(), type);
             return this;
         }
 
@@ -170,7 +170,7 @@ public final class UmlModel {
                 this.types = new LinkedHashMap<>();
             }
             for (UmlType type : types) {
-                this.types.put(type.getId(), type);
+                this.types.put(type.getFqn(), type);
             }
             return this;
         }

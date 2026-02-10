@@ -24,7 +24,8 @@ class PlantUmlWriterTest {
                 .build();
 
         UmlType type = UmlType.builder()
-                .name("Service")
+                .fqn("com.example.Service")
+                .simpleName("Service")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .addMethod(method)
@@ -55,7 +56,8 @@ class PlantUmlWriterTest {
                 .build();
 
         UmlType type = UmlType.builder()
-                .name("Service")
+                .fqn("com.example.Service")
+                .simpleName("Service")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .addMethod(method)
@@ -78,18 +80,20 @@ class PlantUmlWriterTest {
     @Test
     void includesNestedRelationsWhenEnabled() {
         UmlType outer = UmlType.builder()
-                .name("Outer")
+                .fqn("com.example.Outer")
+                .simpleName("Outer")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .build();
 
         UmlType inner = UmlType.builder()
-                .name("Inner")
+                .fqn("com.example.Outer$Inner")
+                .simpleName("Inner")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .build();
 
-        UmlRelation nested = UmlRelation.nestedRelation(outer.getId(), inner.getId());
+        UmlRelation nested = UmlRelation.nestedRelation(outer.getFqn(), inner.getFqn());
 
         UmlModel model = UmlModel.builder()
                 .addType(outer)
@@ -111,18 +115,21 @@ class PlantUmlWriterTest {
     @Test
     void omitsNestedRelationsWhenDisabled() {
         UmlType outer = UmlType.builder()
-                .name("Outer")
+                .fqn("com.example.Outer")
+                .simpleName("Outer")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .build();
 
         UmlType inner = UmlType.builder()
-                .name("Inner")
+                .fqn("com.example.Outer$Inner")
+                .simpleName("Inner")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
+                .outerTypeFqn(outer.getFqn())
                 .build();
 
-        UmlRelation nested = UmlRelation.nestedRelation(outer.getId(), inner.getId());
+        UmlRelation nested = UmlRelation.nestedRelation(outer.getFqn(), inner.getFqn());
 
         UmlModel model = UmlModel.builder()
                 .addType(outer)
@@ -144,26 +151,29 @@ class PlantUmlWriterTest {
     @Test
     void omitsNestedTypesAndTheirRelationsWhenDisabled() {
         UmlType outer = UmlType.builder()
-                .name("Outer")
+                .fqn("com.example.Outer")
+                .simpleName("Outer")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .build();
 
         UmlType inner = UmlType.builder()
-                .name("Inner")
+                .fqn("com.example.Outer$Inner")
+                .simpleName("Inner")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
-                .outerTypeId(outer.getId())
+                .outerTypeFqn(outer.getFqn())
                 .build();
 
         UmlType other = UmlType.builder()
-                .name("Other")
+                .fqn("com.example.Other")
+                .simpleName("Other")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .build();
 
-        UmlRelation nested = UmlRelation.nestedRelation(outer.getId(), inner.getId());
-        UmlRelation assoc = UmlRelation.association(inner.getId(), other.getId(), "uses");
+        UmlRelation nested = UmlRelation.nestedRelation(outer.getFqn(), inner.getFqn());
+        UmlRelation assoc = UmlRelation.association(inner.getFqn(), other.getFqn(), "uses");
 
         UmlModel model = UmlModel.builder()
                 .addType(outer)
@@ -189,7 +199,8 @@ class PlantUmlWriterTest {
     @Test
     void includesHideEmptyFieldsAndMethods() {
         UmlType type = UmlType.builder()
-                .name("Data")
+                .fqn("com.example.Data")
+                .simpleName("Data")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .build();
@@ -215,7 +226,8 @@ class PlantUmlWriterTest {
     @Test
     void rendersLeftToRightDirection() {
         UmlType type = UmlType.builder()
-                .name("TestClass")
+                .fqn("com.example.TestClass")
+                .simpleName("TestClass")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .build();
@@ -237,7 +249,8 @@ class PlantUmlWriterTest {
     @Test
     void rendersTopToBottomDirection() {
         UmlType type = UmlType.builder()
-                .name("TestClass")
+                .fqn("com.example.TestClass")
+                .simpleName("TestClass")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .build();
@@ -259,7 +272,8 @@ class PlantUmlWriterTest {
     @Test
     void rendersDefaultDirectionWhenNotSet() {
         UmlType type = UmlType.builder()
-                .name("TestClass")
+                .fqn("com.example.TestClass")
+                .simpleName("TestClass")
                 .kind(TypeKind.CLASS)
                 .visibility(Visibility.PUBLIC)
                 .build();

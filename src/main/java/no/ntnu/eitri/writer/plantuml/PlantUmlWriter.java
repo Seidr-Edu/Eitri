@@ -109,10 +109,10 @@ public class PlantUmlWriter implements DiagramWriter {
         // Collect linked types for hideUnlinked filtering
         Set<String> linkedTypes = collectLinkedTypes(model);
 
-        // Build type lookup map (FQN -> reference name)
+        // Build type lookup map (FQN -> PlantUML display name)
         Map<String, String> typeNames = new HashMap<>();
         for (UmlType type : model.getTypes()) {
-            typeNames.put(type.getId(), type.getName());
+            typeNames.put(type.getFqn(), computePlantUmlDisplayName(type));
         }
 
         // Render types grouped by package
@@ -222,7 +222,7 @@ public class PlantUmlWriter implements DiagramWriter {
     private Set<String> collectNestedTypeIds(UmlModel model) {
         return model.getTypes().stream()
                 .filter(UmlType::isNested)
-                .map(UmlType::getId)
+                .map(UmlType::getFqn)
                 .collect(Collectors.toSet());
     }
 
@@ -235,7 +235,7 @@ public class PlantUmlWriter implements DiagramWriter {
         }
 
         // Check hideUnlinked
-        return !config.isHideUnlinked() || linkedTypes.contains(type.getId());
+        return !config.isHideUnlinked() || linkedTypes.contains(type.getFqn());
     }
 
     /**
@@ -318,5 +318,34 @@ public class PlantUmlWriter implements DiagramWriter {
             case TOP_TO_BOTTOM -> "top to bottom direction";
             case LEFT_TO_RIGHT -> "left to right direction";
         };
+    }
+
+    /**
+     * Computes the PlantUML display name for a type.
+     * For nested types, uses $ to show hierarchy (e.g., "Outer$Inner").
+     * For top-level types, uses just the simple name.
+     */
+    private String computePlantUmlDisplayName(UmlType type) {
+        if (!type.isNested()) {
+            return type.getSimpleName();
+        }
+        
+        // For nested types, extract the nested path from FQN using $ separator
+        String fqn = type.getFqn();
+        String[] parts = fqn.split("\\.");
+        StringBuilder nestedName = new StringBuilder();
+        boolean foundFirstType = false;
+        
+        for (String part : parts) {
+            if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
+                if (foundFirstType) {
+                    nestedName.append("$");
+                }
+                nestedName.append(part);
+                foundFirstType = true;
+            }
+        }
+        
+        return nestedName.length() > 0 ? nestedName.toString() : type.getSimpleName();
     }
 }
