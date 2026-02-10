@@ -194,7 +194,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
             builder.addStereotype(STATIC_STEREOTYPE);
         }
 
-        if(kind == TypeKind.RECORD) {
+        if (kind == TypeKind.RECORD) {
             builder.addStereotype(RECORD_STEREOTYPE);
         }
 
