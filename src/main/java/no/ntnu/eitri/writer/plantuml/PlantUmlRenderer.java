@@ -25,7 +25,7 @@ public final class PlantUmlRenderer {
      * For nested types, uses $ to show hierarchy (e.g., "Outer$Inner").
      * For top-level types, uses just the simple name.
      */
-    private String computeDisplayName(UmlType type) {
+    public String displayNameForType(UmlType type) {
         if (!type.isNested()) {
             return type.getSimpleName();
         }
@@ -63,10 +63,10 @@ public final class PlantUmlRenderer {
 
         // Use alias if explicitly set, otherwise use display name with $ for nested types
         if (type.getAlias() != null) {
-            sb.append("\"").append(type.getAlias()).append("\" as ").append(computeDisplayName(type));
+            sb.append("\"").append(type.getAlias()).append("\" as ").append(displayNameForType(type));
         }
         else {
-            sb.append(computeDisplayName(type));
+            sb.append(displayNameForType(type));
         }
 
         if (!type.getGenerics().isEmpty()) {
