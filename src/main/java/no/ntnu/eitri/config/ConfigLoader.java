@@ -44,7 +44,6 @@ public final class ConfigLoader {
 
     /**
      * Descriptor for an integer configuration property.
-     * Uses OVERRIDE_IF_POSITIVE merge strategy (override if source > 0).
      */
         record IntProp(
             String section,
