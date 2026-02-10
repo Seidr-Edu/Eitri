@@ -94,6 +94,32 @@ class NestedTypeParsingTest {
         }
 
         @Test
+        @DisplayName("Should not duplicate stereotypes")
+        void noDuplicateStereotypes() {
+            String source = """
+                package com.example;
+                
+                public class Outer {
+                    public static class Inner {
+                    }
+                }
+                """;
+
+            UmlModel model = parseSource(source);
+
+            UmlType innerType = model.getType("com.example.Outer$Inner")
+                    .orElseThrow(() -> new AssertionError("Inner class should exist"));
+
+            long total = innerType.getStereotypes().size();
+            long distinct = innerType.getStereotypes().stream()
+                    .map(s -> s.name())
+                    .distinct()
+                    .count();
+
+            assertEquals(distinct, total, "Stereotypes should be unique by name");
+        }
+
+        @Test
         @DisplayName("Should create NESTED relation from outer to inner")
         void createsNestedRelation() {
             String source = """
