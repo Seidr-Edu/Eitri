@@ -7,7 +7,6 @@ import no.ntnu.eitri.model.UmlType;
 import no.ntnu.eitri.parser.java.JavaSourceParser;
 import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
