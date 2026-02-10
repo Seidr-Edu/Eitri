@@ -66,7 +66,7 @@ public final class ConfigMerger {
             }
         }
 
-        // Integer properties (override if positive)
+        // Integer properties (override if source differs from defaults)
         for (ConfigLoader.IntProp prop : ConfigLoader.intProps()) {
             int sourceValue = prop.getter().applyAsInt(source);
             int defaultValue = prop.getter().applyAsInt(defaults);
