@@ -20,14 +20,15 @@ import java.util.logging.Logger;
 /**
  * Mutable context for accumulating parsed UML data.
  * 
- * <p>This class collects types, relations, and warnings during parsing,
+ * <p>
+ * This class collects types, relations, and warnings during parsing,
  * then produces a finalized {@link UmlModel}. It handles:
  * <ul>
- *   <li>Type registration and lookup by fully-qualified name</li>
- *   <li>On-demand type creation for unresolved references</li>
- *   <li>Relation collection with duplicate/strength management</li>
- *   <li>Warning collection for non-fatal issues</li>
- *   <li>Deferred inheritance resolution (extends/implements)</li>
+ * <li>Type registration and lookup by fully-qualified name</li>
+ * <li>On-demand type creation for unresolved references</li>
+ * <li>Relation collection with duplicate/strength management</li>
+ * <li>Warning collection for non-fatal issues</li>
+ * <li>Deferred inheritance resolution (extends/implements)</li>
  * </ul>
  */
 public class ParseContext {
@@ -57,10 +58,11 @@ public class ParseContext {
      * after all types are registered.
      *
      * @param fromFqn the FQN of the type doing the extending/implementing
-     * @param toFqn the FQN of the target type (may be unresolved simple name)
-     * @param kind EXTENDS or IMPLEMENTS
+     * @param toFqn   the FQN of the target type (may be unresolved simple name)
+     * @param kind    EXTENDS or IMPLEMENTS
      */
-    public record PendingInheritance(String fromFqn, String toFqn, RelationKind kind) {}
+    public record PendingInheritance(String fromFqn, String toFqn, RelationKind kind) {
+    }
 
     /**
      * Creates a new parse context with the given configuration.
@@ -120,7 +122,8 @@ public class ParseContext {
     }
 
     /**
-     * Adds a pending inheritance relation to be resolved after all types are registered.
+     * Adds a pending inheritance relation to be resolved after all types are
+     * registered.
      * 
      * @param pending the pending inheritance information
      */
@@ -131,10 +134,11 @@ public class ParseContext {
     /**
      * Resolves a type reference.
      *
-     * <p>If the type is not already registered, a placeholder type is created
+     * <p>
+     * If the type is not already registered, a placeholder type is created
      * so all referenced types are modeled and can be filtered during writing.
      *
-     * @param fqn the fully-qualified name to resolve
+     * @param fqn            the fully-qualified name to resolve
      * @param referencedFrom context for warning messages
      * @return the resolved (normalized) FQN, or null if the type is empty
      */
@@ -294,12 +298,13 @@ public class ParseContext {
     /**
      * Builds the final UML model from collected data.
      * 
-     * <p>This method:
+     * <p>
+     * This method:
      * <ul>
-     *   <li>Resolves pending inheritance relations</li>
-     *   <li>Deduplicates relations (keeping the strongest)</li>
-     *   <li>Removes relations to non-existent types</li>
-     *   <li>Assembles the final model</li>
+     * <li>Resolves pending inheritance relations</li>
+     * <li>Deduplicates relations (keeping the strongest)</li>
+     * <li>Removes relations to non-existent types</li>
+     * <li>Assembles the final model</li>
      * </ul>
      * 
      * @return the finalized UML model
@@ -347,7 +352,8 @@ public class ParseContext {
 
     /**
      * Determines if one relation kind is stronger than another.
-     * Strength order: NESTED > EXTENDS > IMPLEMENTS > COMPOSITION > AGGREGATION > ASSOCIATION > DEPENDENCY
+     * Strength order: NESTED > EXTENDS > IMPLEMENTS > COMPOSITION > AGGREGATION >
+     * ASSOCIATION > DEPENDENCY
      * 
      * @param a the first relation kind
      * @param b the second relation kind
@@ -359,7 +365,7 @@ public class ParseContext {
 
     private int strengthOf(RelationKind kind) {
         return switch (kind) {
-            case NESTED -> 7;  // Nesting is structural, highest priority
+            case NESTED -> 7; // Nesting is structural, highest priority
             case EXTENDS -> 6;
             case IMPLEMENTS -> 5;
             case COMPOSITION -> 4;
