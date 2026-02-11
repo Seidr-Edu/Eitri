@@ -32,53 +32,53 @@ class UmlModelTest {
         assertEquals(type, model.getType(type.getFqn()).orElseThrow());
     }
 
-    // @Test
-    // @DisplayName("Types are sorted by package then name")
-    // void typesSorted() {
-    //     UmlType a = UmlType.builder().simpleName("A").packageName("pkg").build();
-    //     UmlType b = UmlType.builder().simpleName("B").packageName("pkg").build();
-    //     UmlType c = UmlType.builder().simpleName("C").packageName("aaa").build();
+    @Test
+    @DisplayName("Types are sorted by package then name")
+    void typesSorted() {
+        UmlType a = UmlType.builder().simpleName("A").build();
+        UmlType b = UmlType.builder().simpleName("B").build();
+        UmlType c = UmlType.builder().simpleName("C").build();
 
-    //     UmlModel model = UmlModel.builder()
-    //             .addType(b)
-    //             .addType(c)
-    //             .addType(a)
-    //             .build();
+        UmlModel model = UmlModel.builder()
+                .addType(b)
+                .addType(c)
+                .addType(a)
+                .build();
 
-    //     List<UmlType> sorted = model.getTypesSorted();
-    //     assertEquals(List.of(c, a, b), sorted);
-    // }
+        List<UmlType> sorted = model.getTypesSorted();
+        assertEquals(List.of(c, a, b), sorted);
+    }
 
-    // @Test
-    // @DisplayName("Packages list is distinct and sorted")
-    // void packagesList() {
-    //     UmlType a = UmlType.builder().simpleName("A").packageName("pkg").build();
-    //     UmlType b = UmlType.builder().simpleName("B").packageName("pkg").build();
-    //     UmlType c = UmlType.builder().simpleName("C").packageName("aaa").build();
+    @Test
+    @DisplayName("Packages list is distinct and sorted")
+    void packagesList() {
+        UmlType a = UmlType.builder().simpleName("A").build();
+        UmlType b = UmlType.builder().simpleName("B").build();
+        UmlType c = UmlType.builder().simpleName("C").build();
 
-    //     UmlModel model = UmlModel.builder()
-    //             .addType(a)
-    //             .addType(b)
-    //             .addType(c)
-    //             .build();
+        UmlModel model = UmlModel.builder()
+                .addType(a)
+                .addType(b)
+                .addType(c)
+                .build();
 
-    //     assertEquals(List.of("aaa", "pkg"), model.getPackages());
-    // }
+        assertEquals(List.of("aaa", "pkg"), model.getPackages());
+    }
 
-    // @Test
-    // @DisplayName("Types in package and default package")
-    // void typesInPackage() {
-    //     UmlType pkgType = UmlType.builder().simpleName("A").packageName("pkg").build();
-    //     UmlType defaultType = UmlType.builder().simpleName("B").build();
+    @Test
+    @DisplayName("Types in package and default package")
+    void typesInPackage() {
+        UmlType pkgType = UmlType.builder().simpleName("A").build();
+        UmlType defaultType = UmlType.builder().simpleName("B").build();
 
-    //     UmlModel model = UmlModel.builder()
-    //             .addType(pkgType)
-    //             .addType(defaultType)
-    //             .build();
+        UmlModel model = UmlModel.builder()
+                .addType(pkgType)
+                .addType(defaultType)
+                .build();
 
-    //     assertEquals(List.of(pkgType), model.getTypesInPackage("pkg"));
-    //     assertEquals(List.of(defaultType), model.getTypesInDefaultPackage());
-    // }
+        assertEquals(List.of(pkgType), model.getTypesInPackage("pkg"));
+        assertEquals(List.of(defaultType), model.getTypesInDefaultPackage());
+    }
 
     @Test
     @DisplayName("Relations and notes are unmodifiable")
