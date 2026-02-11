@@ -154,7 +154,8 @@ public class PlantUmlWriter implements DiagramWriter {
         if(config.getGroupInheritance() > 1) {
             sb.append("skinparam groupInheritance ").append(config.getGroupInheritance()).append("\n");
         }
-        if (config.getClassAttributeIconSize() > 0) {
+        if (config.getClassAttributeIconSize() != 8 && config.getClassAttributeIconSize() > -1) { // 8 is PlantUML
+                                                                                                  // default
             sb.append("skinparam classAttributeIconSize ").append(config.getClassAttributeIconSize()).append("\n");
         }
         if (config.isShowGenerics()) {
