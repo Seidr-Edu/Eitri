@@ -213,7 +213,7 @@ public class ParseContext {
                 .fqn(fqn)
                 .simpleName(extractSimpleName(fqn))
                 .kind(TypeKind.CLASS)
-                .visibility(no.ntnu.eitri.model.Visibility.PACKAGE)
+                .visibility(no.ntnu.eitri.model.Visibility.PUBLIC)
                 .build();
 
         typesByFqn.put(fqn, placeholder);
