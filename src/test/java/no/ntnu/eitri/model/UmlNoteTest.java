@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UmlNoteTest {
@@ -55,5 +56,22 @@ class UmlNoteTest {
         .build();
     assertTrue(note.toString().contains("TypeC"));
     assertTrue(note.toString().contains("ToString note"));
+  }
+
+  @Test
+  void testNullTextThrowsException() {
+    NullPointerException exception = assertThrows(NullPointerException.class,
+        () -> UmlNote.builder().build());
+    assertEquals("Note text cannot be null", exception.getMessage());
+  }
+
+  @Test
+  void testCanBeFloatingAndMemberNoteAtSameTime() {
+    UmlNote note = UmlNote.builder()
+        .text("Detached member note")
+        .targetMember("orphanMember")
+        .build();
+    assertTrue(note.isFloating());
+    assertTrue(note.isMemberNote());
   }
 }

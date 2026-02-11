@@ -40,4 +40,19 @@ class ModifierTest {
     assertTrue(modifiers.contains(Modifier.FINAL), "The set should contain the FINAL modifier");
     assertTrue(modifiers.contains(Modifier.ABSTRACT), "The set should contain the ABSTRACT modifier");
   }
+
+  @Test
+  void testOfWithDuplicateModifiersDeduplicates() {
+    Set<Modifier> modifiers = Modifier.of(Modifier.STATIC, Modifier.STATIC, Modifier.FINAL);
+    assertEquals(2, modifiers.size(), "Duplicate modifiers should be collapsed");
+    assertTrue(modifiers.contains(Modifier.STATIC));
+    assertTrue(modifiers.contains(Modifier.FINAL));
+  }
+
+  @Test
+  void testNoneReturnsMutableEnumSet() {
+    Set<Modifier> modifiers = Modifier.none();
+    modifiers.add(Modifier.TRANSIENT);
+    assertTrue(modifiers.contains(Modifier.TRANSIENT));
+  }
 }

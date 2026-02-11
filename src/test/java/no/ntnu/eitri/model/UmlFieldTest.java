@@ -102,5 +102,47 @@ class UmlFieldTest {
 
             assertEquals("int", field.getTypeSimpleName());
         }
+
+        @Test
+        @DisplayName("Nested generic types are simplified recursively")
+        void nestedGenericType() {
+            UmlField field = UmlField.builder()
+                    .name("index")
+                    .type("java.util.Map<java.lang.String, java.util.List<com.acme.Item>>")
+                    .build();
+
+            assertEquals("Map<String, List<Item>>", field.getTypeSimpleName());
+        }
+    }
+
+    @Nested
+    @DisplayName("Immutability and equality")
+    class ImmutabilityAndEquality {
+
+        @Test
+        @DisplayName("Collections are immutable after build")
+        void immutableCollections() {
+            UmlField field = UmlField.builder()
+                    .name("value")
+                    .type("java.lang.String")
+                    .addModifier(Modifier.FINAL)
+                    .addAnnotation("NotNull")
+                    .build();
+
+            assertThrows(UnsupportedOperationException.class, () -> field.getModifiers().add(Modifier.STATIC));
+            assertThrows(UnsupportedOperationException.class, () -> field.getAnnotations().add("Readonly"));
+        }
+
+        @Test
+        @DisplayName("equals/hashCode depend on name and full type")
+        void equalsAndHashCode() {
+            UmlField a = UmlField.builder().name("value").type("java.lang.String").build();
+            UmlField b = UmlField.builder().name("value").type("java.lang.String").readOnly(true).build();
+            UmlField c = UmlField.builder().name("value").type("String").build();
+
+            assertEquals(a, b);
+            assertEquals(a.hashCode(), b.hashCode());
+            assertNotEquals(a, c);
+        }
     }
 }
