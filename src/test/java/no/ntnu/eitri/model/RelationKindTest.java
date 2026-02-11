@@ -70,4 +70,22 @@ class RelationKindTest {
     void nestedSolidLine() {
         assertFalse(RelationKind.NESTED.isDotted());
     }
+
+    @Test
+    @DisplayName("Only expected kinds are hierarchy relations")
+    void onlyExpectedHierarchyRelations() {
+        for (RelationKind kind : RelationKind.values()) {
+            boolean expected = kind == RelationKind.EXTENDS || kind == RelationKind.IMPLEMENTS;
+            assertEquals(expected, kind.isHierarchy(), "Mismatch for " + kind);
+        }
+    }
+
+    @Test
+    @DisplayName("Only expected kinds are dotted relations")
+    void onlyExpectedDottedRelations() {
+        for (RelationKind kind : RelationKind.values()) {
+            boolean expected = kind == RelationKind.IMPLEMENTS || kind == RelationKind.DEPENDENCY;
+            assertEquals(expected, kind.isDotted(), "Mismatch for " + kind);
+        }
+    }
 }

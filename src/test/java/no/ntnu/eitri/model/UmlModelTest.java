@@ -97,4 +97,44 @@ class UmlModelTest {
         assertThrows(UnsupportedOperationException.class, () -> relations.add(relation));
         assertThrows(UnsupportedOperationException.class, () -> notes.add(note));
     }
+
+    @Test
+    @DisplayName("Types collection is unmodifiable")
+    void typesCollectionUnmodifiable() {
+        UmlType type = UmlType.builder().fqn("com.example.A").simpleName("A").build();
+        UmlModel model = UmlModel.builder().addType(type).build();
+        assertThrows(UnsupportedOperationException.class, () -> model.getTypes().clear());
+    }
+
+    @Test
+    @DisplayName("Relations are sorted with hierarchy first")
+    void relationsSortedHierarchyFirst() {
+        UmlRelation assoc = UmlRelation.association("com.example.A", "com.example.B", null);
+        UmlRelation impl = UmlRelation.implementsRelation("com.example.C", "com.example.D");
+        UmlRelation ext = UmlRelation.extendsRelation("com.example.E", "com.example.F");
+
+        UmlModel model = UmlModel.builder()
+                .addRelation(assoc)
+                .addRelation(impl)
+                .addRelation(ext)
+                .build();
+
+        List<UmlRelation> sorted = model.getRelationsSorted();
+        assertEquals(RelationKind.EXTENDS, sorted.get(0).getKind());
+        assertEquals(RelationKind.IMPLEMENTS, sorted.get(1).getKind());
+        assertEquals(RelationKind.ASSOCIATION, sorted.get(2).getKind());
+    }
+
+    @Test
+    @DisplayName("Source packages are defensive copied and unmodifiable")
+    void sourcePackagesCopiedAndUnmodifiable() {
+        java.util.Set<String> sourcePackages = new java.util.HashSet<>(List.of("com.example"));
+        UmlModel model = UmlModel.builder()
+                .sourcePackages(sourcePackages)
+                .build();
+        sourcePackages.add("org.other");
+
+        assertEquals(java.util.Set.of("com.example"), model.getSourcePackages());
+        assertThrows(UnsupportedOperationException.class, () -> model.getSourcePackages().add("x.y"));
+    }
 }

@@ -38,4 +38,21 @@ class UmlParameterTest {
                 () -> new UmlParameter("name", null));
         assertEquals("Parameter type cannot be null", exception.getMessage());
     }
+
+    @Test
+    @DisplayName("Blank simple name falls back to derived simple name")
+    void blankSimpleNameFallsBack() {
+        UmlParameter parameter = new UmlParameter("items", "java.util.List<java.lang.Integer>", "   ");
+        assertEquals("List<Integer>", parameter.typeSimpleName());
+    }
+
+    @Test
+    @DisplayName("Nested generics are simplified recursively")
+    void nestedGenericsSimplified() {
+        UmlParameter parameter = new UmlParameter(
+                "mapping",
+                "java.util.Map<java.lang.String, java.util.List<com.acme.Item>>"
+        );
+        assertEquals("Map<String, List<Item>>", parameter.typeSimpleName());
+    }
 }

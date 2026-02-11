@@ -65,4 +65,19 @@ class UmlStereotypeTest {
     List<String> values = stereotype.values();
     assertThrows(UnsupportedOperationException.class, () -> {values.add("value3");});
   }
+
+  @Test
+  void testDefensiveCopyOfValues() {
+    java.util.ArrayList<String> values = new java.util.ArrayList<>(List.of("v1"));
+    UmlStereotype stereotype = new UmlStereotype("Service", values);
+    values.add("v2");
+    assertEquals(List.of("v1"), stereotype.values());
+  }
+
+  @Test
+  void testNullValuesBecomeEmptyList() {
+    UmlStereotype stereotype = new UmlStereotype("Marker", null, null, null);
+    assertNotNull(stereotype.values());
+    assertTrue(stereotype.values().isEmpty());
+  }
 }

@@ -91,4 +91,49 @@ class UmlMethodTest {
             assertTrue(method.isAbstract());
         }
     }
+
+    @Nested
+    @DisplayName("Additional behavior")
+    class AdditionalBehavior {
+
+        @Test
+        @DisplayName("Nested generic return type is simplified recursively")
+        void nestedGenericReturnType() {
+            UmlMethod method = UmlMethod.builder()
+                    .name("index")
+                    .returnType("java.util.Map<java.lang.String, java.util.List<com.acme.Item>>")
+                    .build();
+
+            assertEquals("Map<String, List<Item>>", method.getReturnTypeSimpleName());
+        }
+
+        @Test
+        @DisplayName("Collections are immutable after build")
+        void collectionsAreImmutable() {
+            UmlMethod method = UmlMethod.builder()
+                    .name("work")
+                    .addParameter("id", "long")
+                    .addAnnotation("Transactional")
+                    .addThrownException("java.io.IOException")
+                    .addModifier(Modifier.STATIC)
+                    .build();
+
+            assertThrows(UnsupportedOperationException.class, () -> method.getParameters().add(new UmlParameter("x", "int")));
+            assertThrows(UnsupportedOperationException.class, () -> method.getAnnotations().add("Other"));
+            assertThrows(UnsupportedOperationException.class, () -> method.getThrownExceptions().add("java.lang.Exception"));
+            assertThrows(UnsupportedOperationException.class, () -> method.getModifiers().add(Modifier.FINAL));
+        }
+
+        @Test
+        @DisplayName("equals/hashCode depend on name and parameters only")
+        void equalsAndHashCodeByNameAndParams() {
+            UmlMethod a = UmlMethod.builder().name("m").returnType("int").addParameter("x", "int").build();
+            UmlMethod b = UmlMethod.builder().name("m").returnType("java.lang.Integer").addParameter("x", "int").build();
+            UmlMethod c = UmlMethod.builder().name("m").returnType("int").addParameter("y", "int").build();
+
+            assertEquals(a, b);
+            assertEquals(a.hashCode(), b.hashCode());
+            assertNotEquals(a, c);
+        }
+    }
 }

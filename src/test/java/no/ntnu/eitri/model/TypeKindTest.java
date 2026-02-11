@@ -22,4 +22,13 @@ class TypeKindTest {
         assertFalse(TypeKind.ANNOTATION.isAbstract());
         assertFalse(TypeKind.RECORD.isAbstract());
     }
+
+    @Test
+    @DisplayName("Exactly two type kinds are abstract")
+    void abstractKindCount() {
+        long abstractCount = java.util.Arrays.stream(TypeKind.values())
+                .filter(TypeKind::isAbstract)
+                .count();
+        assertEquals(2, abstractCount);
+    }
 }

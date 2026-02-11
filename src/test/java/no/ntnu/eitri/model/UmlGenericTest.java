@@ -42,4 +42,11 @@ class UmlGenericTest {
     assertEquals(generic1.hashCode(), generic2.hashCode());
     assertNotEquals(generic1.hashCode(), generic3.hashCode());
   }
+
+  @Test
+  void testEmptyIdentifierIsAllowed() {
+    UmlGeneric generic = new UmlGeneric("", "extends java.lang.Object");
+    assertEquals("", generic.identifier());
+    assertEquals("extends java.lang.Object", generic.bounds());
+  }
 }

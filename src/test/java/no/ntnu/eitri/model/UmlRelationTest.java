@@ -149,4 +149,50 @@ class UmlRelationTest {
             assertNotEquals(assoc.getDeduplicationKey(), dep.getDeduplicationKey());
         }
     }
+
+    @Nested
+    @DisplayName("Equality and null safety")
+    class EqualityAndNullSafety {
+
+        @Test
+        @DisplayName("equals ignores label and multiplicity")
+        void equalsIgnoresLabelAndMultiplicity() {
+            UmlRelation left = UmlRelation.builder()
+                    .fromTypeFqn("A")
+                    .toTypeFqn("B")
+                    .kind(RelationKind.ASSOCIATION)
+                    .label("x")
+                    .fromMultiplicity("1")
+                    .toMultiplicity("*")
+                    .build();
+            UmlRelation right = UmlRelation.builder()
+                    .fromTypeFqn("A")
+                    .toTypeFqn("B")
+                    .kind(RelationKind.ASSOCIATION)
+                    .label("y")
+                    .fromMultiplicity("0..1")
+                    .toMultiplicity("1")
+                    .build();
+
+            assertEquals(left, right);
+            assertEquals(left.hashCode(), right.hashCode());
+        }
+
+        @Test
+        @DisplayName("builder requires mandatory fields")
+        void builderRequiresMandatoryFields() {
+            assertThrows(NullPointerException.class, () -> UmlRelation.builder()
+                    .toTypeFqn("B")
+                    .kind(RelationKind.ASSOCIATION)
+                    .build());
+            assertThrows(NullPointerException.class, () -> UmlRelation.builder()
+                    .fromTypeFqn("A")
+                    .kind(RelationKind.ASSOCIATION)
+                    .build());
+            assertThrows(NullPointerException.class, () -> UmlRelation.builder()
+                    .fromTypeFqn("A")
+                    .toTypeFqn("B")
+                    .build());
+        }
+    }
 }
