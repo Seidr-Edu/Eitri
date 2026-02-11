@@ -78,6 +78,7 @@ public class ParseContext {
             throw new IllegalArgumentException("Type already registered: " + fqn);
         }
         typesByFqn.put(fqn, type);
+        LOGGER.info("Registered type: " + fqn);
     }
 
     /**
@@ -188,6 +189,7 @@ public class ParseContext {
                 .build();
 
         typesByFqn.put(fqn, placeholder);
+        LOGGER.info("Created placeholder type for unresolved reference: " + fqn);
     }
 
     private String normalizeTypeName(String typeName) {
@@ -217,6 +219,10 @@ public class ParseContext {
         } else if (base.startsWith("? super ")) {
             base = base.substring("? super ".length()).trim();
         } else if ("?".equals(base)) {
+            return null;
+        }
+
+        if ("int".equals(base) || "boolean".equals(base)) {
             return null;
         }
 

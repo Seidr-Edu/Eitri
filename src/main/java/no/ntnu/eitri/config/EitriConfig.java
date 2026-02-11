@@ -3,6 +3,7 @@ package no.ntnu.eitri.config;
 import no.ntnu.eitri.util.ExtensionNormalizer;
 
 import java.nio.file.Path;
+import java.lang.String;
 import java.util.ArrayList;
 import java.util.List;
 

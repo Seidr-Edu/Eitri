@@ -27,14 +27,14 @@ public final class PlantUmlRenderer {
      */
     public String displayNameForType(UmlType type) {
         if (!type.isNested()) {
-            return type.getSimpleName();
+            return type.getFqn();
         }
         
         // For nested types, extract the nested path from FQN
         String fqn = type.getFqn();
         int lastDot = fqn.lastIndexOf('.');
         if (lastDot < 0) {
-            return type.getSimpleName();
+            return type.getFqn();
         }
         
         // Find where the type hierarchy starts (first uppercase segment)
@@ -52,7 +52,7 @@ public final class PlantUmlRenderer {
             }
         }
         
-        return nestedName.length() > 0 ? nestedName.toString() : type.getSimpleName();
+        return nestedName.length() > 0 ? type.getPackageName().concat(".").concat(nestedName.toString()) : type.getFqn();
     }
 
     public String renderTypeDeclaration(UmlType type) {

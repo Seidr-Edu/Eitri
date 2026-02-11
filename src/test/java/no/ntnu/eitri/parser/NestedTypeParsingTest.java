@@ -426,7 +426,6 @@ class NestedTypeParsingTest {
             List<UmlRelation> allRelations = model.getRelations();
 
             // Should have EXTENDS relation for RuntimeException
-            // Note: RuntimeException is from java.lang and may not be tracked if ghost types are disabled
             // The test verifies that nested types CAN have inheritance relations
             List<UmlRelation> extendsRelations = allRelations.stream()
                     .filter(r -> r.getKind() == RelationKind.EXTENDS)
