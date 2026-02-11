@@ -1,4 +1,4 @@
-package no.ntnu.eitri.parser;
+package no.ntnu.eitri.util;
 
 import java.util.Set;
 

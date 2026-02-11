@@ -1,4 +1,4 @@
-package no.ntnu.eitri.parser;
+package no.ntnu.eitri.util;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
