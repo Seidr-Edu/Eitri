@@ -96,6 +96,10 @@ public final class PackageClassifier {
       return false;
     }
 
+    // Common packages are never considered siblings
+    if (isCommonPackage(packageName)) {
+      return false;
+    }
     // If it's already a source package, it's not a sibling
     if (sourcePackages.contains(packageName)) {
       return false;
