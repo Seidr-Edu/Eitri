@@ -93,6 +93,9 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         super.visit(n, arg);
     }
 
+    private record TypeBuildContext(String typeFqn, String outerTypeFqn, UmlType.Builder builder) {
+    }
+
     /**
      * Computes the FQN of the enclosing type, or null if top-level.
      */
@@ -156,20 +159,9 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      * Process a class or interface declaration.
      */
     private void processTypeDeclaration(ClassOrInterfaceDeclaration n, TypeKind kind) {
-        String typeFqn = n.getFullyQualifiedName().orElse("");
-        String outerTypeFqn = computeOuterTypeFqn(n);
-        Visibility visibility = extractVisibility(n);
-
-        UmlType.Builder builder = UmlType.builder()
-                .fqn(typeFqn)
-                .simpleName(n.getNameAsString())
-                .kind(kind)
-                .visibility(visibility);
-
-        // Set outer type for nested types
-        if (outerTypeFqn != null) {
-            builder.outerTypeFqn(outerTypeFqn);
-        }
+        TypeBuildContext typeBuild = createTypeBuildContext(n, kind);
+        UmlType.Builder builder = typeBuild.builder();
+        String typeFqn = typeBuild.typeFqn();
 
         // Add modifiers as stereotypes for abstract classes
         if (n.isAbstract() && kind == TypeKind.CLASS) {
@@ -184,45 +176,11 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
             builder.addStereotype(RECORD_STEREOTYPE);
         }
 
-        // Add static stereotype for static nested types
-        if (isStaticNested(n, kind)) {
-            builder.addStereotype(STATIC_STEREOTYPE);
-        }
-
-        // Extract generics
-        for (TypeParameter tp : n.getTypeParameters()) {
-            builder.addGeneric(extractGeneric(tp));
-        }
-
-        // Extract annotations
-        for (AnnotationExpr ann : n.getAnnotations()) {
-            builder.addStereotype(extractAnnotationAsStereotype(ann));
-        }
-
-        // Extract fields
-        for (FieldDeclaration field : n.getFields()) {
-            for (VariableDeclarator varDec : field.getVariables()) {
-                builder.addField(extractField(field, varDec));
-            }
-        }
-
-        // Extract methods
-        for (MethodDeclaration method : n.getMethods()) {
-            builder.addMethod(extractMethod(method));
-        }
-
-        // Extract constructors (as methods with <<constructor>> stereotype)
-        for (ConstructorDeclaration ctor : n.getConstructors()) {
-            builder.addMethod(extractConstructor(ctor, n.getNameAsString()));
-        }
-
-        UmlType type = builder.build();
-        context.addType(type);
-
-        // Create nesting relation if this is a nested type
-        if (outerTypeFqn != null) {
-            context.addRelation(UmlRelation.nestedRelation(outerTypeFqn, typeFqn));
-        }
+        addGenerics(n.getTypeParameters(), builder);
+        addFields(n.getFields(), builder);
+        addMethods(n.getMethods(), builder);
+        addConstructors(n.getConstructors(), n.getNameAsString(), builder);
+        registerType(typeBuild);
 
         // Detect inheritance relations
         for (ClassOrInterfaceType extended : n.getExtendedTypes()) {
@@ -262,31 +220,10 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      * Process an enum declaration.
      */
     private void processEnumDeclaration(EnumDeclaration n) {
-        String typeFqn = n.getFullyQualifiedName().orElse("");
-        String outerTypeFqn = computeOuterTypeFqn(n);
+        TypeBuildContext typeBuild = createTypeBuildContext(n, TypeKind.ENUM);
+        UmlType.Builder builder = typeBuild.builder();
+        String typeFqn = typeBuild.typeFqn();
         String simpleName = n.getNameAsString();
-        Visibility visibility = extractVisibility(n);
-
-        UmlType.Builder builder = UmlType.builder()
-                .fqn(typeFqn)
-                .simpleName(simpleName)
-                .kind(TypeKind.ENUM)
-                .visibility(visibility);
-
-        // Set outer type for nested types
-        if (outerTypeFqn != null) {
-            builder.outerTypeFqn(outerTypeFqn);
-        }
-
-        // Add static stereotype for nested enums (implicitly static)
-        if (isStaticNested(n, TypeKind.ENUM)) {
-            builder.addStereotype(STATIC_STEREOTYPE);
-        }
-
-        // Extract annotations
-        for (AnnotationExpr ann : n.getAnnotations()) {
-            builder.addStereotype(extractAnnotationAsStereotype(ann));
-        }
 
         // Enum constants as fields
         for (EnumConstantDeclaration constant : n.getEntries()) {
@@ -300,30 +237,10 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
             builder.addField(constantField);
         }
 
-        // Extract regular fields
-        for (FieldDeclaration field : n.getFields()) {
-            for (VariableDeclarator varDec : field.getVariables()) {
-                builder.addField(extractField(field, varDec));
-            }
-        }
-
-        // Extract methods
-        for (MethodDeclaration method : n.getMethods()) {
-            builder.addMethod(extractMethod(method));
-        }
-
-        // Extract constructors
-        for (ConstructorDeclaration ctor : n.getConstructors()) {
-            builder.addMethod(extractConstructor(ctor, simpleName));
-        }
-
-        UmlType type = builder.build();
-        context.addType(type);
-
-        // Create nesting relation if this is a nested type
-        if (outerTypeFqn != null) {
-            context.addRelation(UmlRelation.nestedRelation(outerTypeFqn, typeFqn));
-        }
+        addFields(n.getFields(), builder);
+        addMethods(n.getMethods(), builder);
+        addConstructors(n.getConstructors(), simpleName, builder);
+        registerType(typeBuild);
 
         // Detect implemented interfaces
         for (ClassOrInterfaceType implemented : n.getImplementedTypes()) {
@@ -336,30 +253,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      * Process an annotation type declaration.
      */
     private void processAnnotationDeclaration(AnnotationDeclaration n) {
-        String typeFqn = n.getFullyQualifiedName().orElse("");
-        String outerTypeFqn = computeOuterTypeFqn(n);
-        Visibility visibility = extractVisibility(n);
-
-        UmlType.Builder builder = UmlType.builder()
-                .fqn(typeFqn)
-                .simpleName(n.getNameAsString())
-                .kind(TypeKind.ANNOTATION)
-                .visibility(visibility);
-
-        // Set outer type for nested types
-        if (outerTypeFqn != null) {
-            builder.outerTypeFqn(outerTypeFqn);
-        }
-
-        // Add static stereotype for nested annotations (implicitly static)
-        if (isStaticNested(n, TypeKind.ANNOTATION)) {
-            builder.addStereotype(STATIC_STEREOTYPE);
-        }
-
-        // Extract meta-annotations
-        for (AnnotationExpr ann : n.getAnnotations()) {
-            builder.addStereotype(extractAnnotationAsStereotype(ann));
-        }
+        TypeBuildContext typeBuild = createTypeBuildContext(n, TypeKind.ANNOTATION);
+        UmlType.Builder builder = typeBuild.builder();
 
         // Annotation members as methods (they are abstract methods returning values)
         n.getMembers().stream()
@@ -378,13 +273,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
                     builder.addMethod(method);
                 });
 
-        UmlType type = builder.build();
-        context.addType(type);
-
-        // Create nesting relation if this is a nested type
-        if (outerTypeFqn != null) {
-            context.addRelation(UmlRelation.nestedRelation(outerTypeFqn, typeFqn));
-        }
+        registerType(typeBuild);
         // Nested types are visited automatically by super.visit()
     }
 
@@ -392,37 +281,10 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      * Process a record declaration.
      */
     private void processRecordDeclaration(RecordDeclaration n) {
-        String typeFqn = n.getFullyQualifiedName().orElse("");
-        String outerTypeFqn = computeOuterTypeFqn(n);
-        Visibility visibility = extractVisibility(n);
-
-        // Compute the FQN
-
-        UmlType.Builder builder = UmlType.builder()
-                .fqn(typeFqn)
-                .simpleName(n.getNameAsString()) // Use nested name for uniqueness in PlantUML
-                .kind(TypeKind.RECORD)
-                .visibility(visibility);
-
-        // Set outer type for nested types
-        if (outerTypeFqn != null) {
-            builder.outerTypeFqn(outerTypeFqn);
-        }
-
-        // Add static stereotype for nested records (implicitly static)
-        if (isStaticNested(n, TypeKind.RECORD)) {
-            builder.addStereotype(STATIC_STEREOTYPE);
-        }
-
-        // Extract generics
-        for (TypeParameter tp : n.getTypeParameters()) {
-            builder.addGeneric(extractGeneric(tp));
-        }
-
-        // Extract annotations
-        for (AnnotationExpr ann : n.getAnnotations()) {
-            builder.addStereotype(extractAnnotationAsStereotype(ann));
-        }
+        TypeBuildContext typeBuild = createTypeBuildContext(n, TypeKind.RECORD);
+        String typeFqn = typeBuild.typeFqn();
+        UmlType.Builder builder = typeBuild.builder();
+        addGenerics(n.getTypeParameters(), builder);
 
         // Record components as fields
         n.getParameters().forEach(param -> {
@@ -435,24 +297,77 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
             builder.addField(field);
         });
 
-        // Extract additional methods
-        for (MethodDeclaration method : n.getMethods()) {
-            builder.addMethod(extractMethod(method));
-        }
-
-        UmlType type = builder.build();
-        context.addType(type);
-
-        // Create nesting relation if this is a nested type
-        if (outerTypeFqn != null) {
-            context.addRelation(UmlRelation.nestedRelation(outerTypeFqn, typeFqn));
-        }
+        addMethods(n.getMethods(), builder);
+        registerType(typeBuild);
 
         // Detect implemented interfaces
         for (ClassOrInterfaceType implemented : n.getImplementedTypes()) {
             addInheritanceRelation(typeFqn, implemented, RelationKind.IMPLEMENTS);
         }
         // Nested types are visited automatically by super.visit()
+    }
+
+    private TypeBuildContext createTypeBuildContext(TypeDeclaration<?> declaration, TypeKind kind) {
+        String typeFqn = declaration.getFullyQualifiedName().orElse("");
+        String outerTypeFqn = computeOuterTypeFqn(declaration);
+        Visibility visibility = extractVisibility(declaration);
+
+        UmlType.Builder builder = UmlType.builder()
+                .fqn(typeFqn)
+                .simpleName(declaration.getNameAsString())
+                .kind(kind)
+                .visibility(visibility);
+
+        if (outerTypeFqn != null) {
+            builder.outerTypeFqn(outerTypeFqn);
+        }
+
+        if (isStaticNested(declaration, kind)) {
+            builder.addStereotype(STATIC_STEREOTYPE);
+        }
+
+        addTypeAnnotations(declaration.getAnnotations(), builder);
+        return new TypeBuildContext(typeFqn, outerTypeFqn, builder);
+    }
+
+    private void registerType(TypeBuildContext typeBuild) {
+        context.addType(typeBuild.builder().build());
+        if (typeBuild.outerTypeFqn() != null) {
+            context.addRelation(UmlRelation.nestedRelation(typeBuild.outerTypeFqn(), typeBuild.typeFqn()));
+        }
+    }
+
+    private void addTypeAnnotations(List<AnnotationExpr> annotations, UmlType.Builder builder) {
+        for (AnnotationExpr annotation : annotations) {
+            builder.addStereotype(extractAnnotationAsStereotype(annotation));
+        }
+    }
+
+    private void addGenerics(List<TypeParameter> typeParameters, UmlType.Builder builder) {
+        for (TypeParameter typeParameter : typeParameters) {
+            builder.addGeneric(extractGeneric(typeParameter));
+        }
+    }
+
+    private void addFields(List<FieldDeclaration> fields, UmlType.Builder builder) {
+        for (FieldDeclaration field : fields) {
+            for (VariableDeclarator variableDeclarator : field.getVariables()) {
+                builder.addField(extractField(field, variableDeclarator));
+            }
+        }
+    }
+
+    private void addMethods(List<MethodDeclaration> methods, UmlType.Builder builder) {
+        for (MethodDeclaration method : methods) {
+            builder.addMethod(extractMethod(method));
+        }
+    }
+
+    private void addConstructors(List<ConstructorDeclaration> constructors, String ownerSimpleName,
+            UmlType.Builder builder) {
+        for (ConstructorDeclaration constructor : constructors) {
+            builder.addMethod(extractConstructor(constructor, ownerSimpleName));
+        }
     }
 
     /**
