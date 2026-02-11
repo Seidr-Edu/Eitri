@@ -16,16 +16,19 @@ import java.util.regex.Pattern;
 /**
  * Detects relationships between types based on their members.
  * 
- * <p>Relationship detection strategy:
+ * <p>
+ * Relationship detection strategy:
  * <ul>
- *   <li>EXTENDS/IMPLEMENTS - detected during TypeVisitor parsing (from AST)</li>
- *   <li>COMPOSITION - fields with strong ownership (final, initialized in constructor)</li>
- *   <li>AGGREGATION - collection fields, shared references</li>
- *   <li>ASSOCIATION - simple field references</li>
- *   <li>DEPENDENCY - method parameter/return type references</li>
+ * <li>EXTENDS/IMPLEMENTS - detected during TypeVisitor parsing (from AST)</li>
+ * <li>COMPOSITION - fields with strong ownership (final, initialized in
+ * constructor)</li>
+ * <li>AGGREGATION - collection fields, shared references</li>
+ * <li>ASSOCIATION - simple field references</li>
+ * <li>DEPENDENCY - method parameter/return type references</li>
  * </ul>
  * 
- * <p>Note: EXTENDS and IMPLEMENTS relations are added by the TypeVisitor when
+ * <p>
+ * Note: EXTENDS and IMPLEMENTS relations are added by the TypeVisitor when
  * parsing the extends/implements clauses. This detector handles field and
  * method-based relationships.
  */
@@ -43,8 +46,7 @@ public class RelationDetector {
             "Map", "HashMap", "TreeMap", "LinkedHashMap",
             "Collection", "Iterable",
             "Queue", "Deque", "ArrayDeque", "PriorityQueue",
-            "Stack", "Vector"
-    );
+            "Stack", "Vector");
 
     public RelationDetector(ParseContext context) {
         this.context = context;
@@ -67,7 +69,7 @@ public class RelationDetector {
      * Should be called during type processing.
      * 
      * @param ownerFqn the FQN of the type owning the fields
-     * @param type the UmlType to analyze
+     * @param type     the UmlType to analyze
      */
     public void detectFieldRelations(String ownerFqn, UmlType type) {
         for (UmlField field : type.getFields()) {
@@ -79,7 +81,7 @@ public class RelationDetector {
      * Detects method-based dependencies for a type.
      * 
      * @param ownerFqn the FQN of the type owning the methods
-     * @param type the UmlType to analyze
+     * @param type     the UmlType to analyze
      */
     public void detectMethodDependencies(String ownerFqn, UmlType type) {
         for (UmlMethod method : type.getMethods()) {
@@ -97,19 +99,17 @@ public class RelationDetector {
         if (isCollectionType(fieldType)) {
             // Extract the generic type argument
             String elementType = extractGenericArgument(fieldType);
-            if (elementType != null) {
-                // Only use elementType if it's already a known type in context
-                // (don't create placeholders for generic arguments extracted from strings)
-                if (context.hasType(elementType)) {
-                    UmlRelation relation = UmlRelation.builder()
-                            .fromTypeFqn(ownerFqn)
-                            .toTypeFqn(elementType)
-                            .kind(RelationKind.AGGREGATION)
-                            .toMultiplicity("*")
-                            .fromMember(field.getName())
-                            .build();
-                    context.addRelation(relation);
-                }
+            // Only use elementType if it's already a known type in context
+            // (don't create placeholders for generic arguments extracted from strings)
+            if (elementType != null && context.hasType(elementType)) {
+                UmlRelation relation = UmlRelation.builder()
+                        .fromTypeFqn(ownerFqn)
+                        .toTypeFqn(elementType)
+                        .kind(RelationKind.AGGREGATION)
+                        .toMultiplicity("*")
+                        .fromMember(field.getName())
+                        .build();
+                context.addRelation(relation);
             }
             return;
         }
