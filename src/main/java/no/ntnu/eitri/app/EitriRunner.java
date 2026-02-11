@@ -107,7 +107,6 @@ public class EitriRunner {
         if (config.isVerbose()) {
             LOGGER.log(Level.INFO, "Parsed {0} types, {1} relations",
                     new Object[]{model.getTypes().size(), model.getRelations().size()});
-            dumpModelDetails(model);
         }
 
         return model;
@@ -152,21 +151,6 @@ public class EitriRunner {
         String resolvedExtension = extension;
         return writerRegistry.getByExtension(resolvedExtension)
                 .orElseThrow(() -> new WriteException("No writer registered for extension: " + resolvedExtension, config.getOutputPath()));
-    }
-
-    private void dumpModelDetails(UmlModel model) {
-        LOGGER.info("=== MODEL DUMP ===");
-        LOGGER.info("--- TYPES ---");
-        model.getTypes().forEach(type -> {
-            LOGGER.info(String.format("  %s [%s] in package: %s", 
-                    type.getFqn(), type.getKind(), type.getPackageName()));
-        });
-        LOGGER.info("--- RELATIONS ---");
-        model.getRelations().forEach(rel -> {
-            LOGGER.info(String.format("  %s --%s--> %s", 
-                    rel.getFromTypeFqn(), rel.getKind(), rel.getToTypeFqn()));
-        });
-        LOGGER.info("=== END DUMP ===");
     }
 
     private String detectSourceExtension(EitriConfig config) {
