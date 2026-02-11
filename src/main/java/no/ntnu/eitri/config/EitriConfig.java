@@ -3,7 +3,6 @@ package no.ntnu.eitri.config;
 import no.ntnu.eitri.util.ExtensionNormalizer;
 
 import java.nio.file.Path;
-import java.lang.String;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +34,6 @@ public record EitriConfig(
         boolean showNotes,
         boolean showMultiplicities,
         boolean showLabels,
-        boolean showGhostTypes,
         boolean showReadOnly,
         boolean showVoidReturnTypes,
         boolean showInheritance,
@@ -152,10 +150,6 @@ public record EitriConfig(
         return showLabels;
     }
 
-    public boolean isShowGhostTypes() {
-        return showGhostTypes;
-    }
-
     public boolean isShowReadOnly() {
         return showReadOnly;
     }
@@ -228,7 +222,6 @@ public record EitriConfig(
         private boolean showNotes = false;
         private boolean showMultiplicities = true;
         private boolean showLabels = true;
-        private boolean showGhostTypes = false;
         private boolean showReadOnly = true;
         private boolean showVoidReturnTypes = true;
         private boolean showInheritance = true;
@@ -366,11 +359,6 @@ public record EitriConfig(
             return this;
         }
 
-        public Builder showGhostTypes(boolean show) {
-            this.showGhostTypes = show;
-            return this;
-        }
-
         public Builder showReadOnly(boolean show) {
             this.showReadOnly = show;
             return this;
@@ -451,7 +439,6 @@ public record EitriConfig(
                     showNotes,
                     showMultiplicities,
                     showLabels,
-                    showGhostTypes,
                     showReadOnly,
                     showVoidReturnTypes,
                     showInheritance,

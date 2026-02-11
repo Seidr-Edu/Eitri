@@ -36,7 +36,6 @@ import no.ntnu.eitri.parser.ParseContext;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * AST visitor for extracting type declarations from Java source.
@@ -54,8 +53,6 @@ import java.util.logging.Logger;
  * The naming is computed using JavaParser's parent chain.
  */
 public class TypeVisitor extends VoidVisitorAdapter<Void> {
-
-    private static final Logger LOGGER = Logger.getLogger(TypeVisitor.class.getName());
     
     private static final String STATIC_STEREOTYPE = "static";
     private static final String ABSTRACT_STEREOTYPE = "abstract";
@@ -281,7 +278,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         for (EnumConstantDeclaration constant : n.getEntries()) {
             UmlField constantField = UmlField.builder()
                     .name(constant.getNameAsString())
-                    .type(typeFqn)  // Use full FQN, not simple name
+                    .type(typeFqn) 
                     .visibility(Visibility.PUBLIC)
                     .isStatic(true)
                     .isFinal(true)
@@ -509,7 +506,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         } catch (Exception e) {
             // Symbol resolution failed, fall back to source representation
             String simpleName = type.asString();
-            LOGGER.warning("Failed to resolve type '" + simpleName + "' at " + 
+            context.addWarning("Failed to resolve type '" + simpleName + "' at " + 
                 type.getBegin().map(pos -> pos.toString()).orElse("unknown position") + 
                 ": " + e.getClass().getSimpleName() + " - " + e.getMessage());
             return simpleName;

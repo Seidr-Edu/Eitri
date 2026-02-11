@@ -78,7 +78,6 @@ public class ParseContext {
             throw new IllegalArgumentException("Type already registered: " + fqn);
         }
         typesByFqn.put(fqn, type);
-        LOGGER.info("Registered type: " + fqn);
     }
 
     /**
@@ -189,7 +188,6 @@ public class ParseContext {
                 .build();
 
         typesByFqn.put(fqn, placeholder);
-        LOGGER.info("Created placeholder type for unresolved reference: " + fqn);
     }
 
     private String normalizeTypeName(String typeName) {
@@ -222,11 +220,19 @@ public class ParseContext {
             return null;
         }
 
-        if ("int".equals(base) || "boolean".equals(base)) {
+        // Filter out Java primitives and void
+        if (isPrimitive(base)) {
             return null;
         }
 
         return base;
+    }
+
+    private boolean isPrimitive(String type) {
+        return switch (type) {
+            case "void", "boolean", "byte", "short", "int", "long", "float", "double", "char" -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -311,7 +317,7 @@ public class ParseContext {
 
     /**
      * Determines if one relation kind is stronger than another.
-     * Strength order: EXTENDS > IMPLEMENTS > COMPOSITION > AGGREGATION > ASSOCIATION > DEPENDENCY
+     * Strength order: NESTED > EXTENDS > IMPLEMENTS > COMPOSITION > AGGREGATION > ASSOCIATION > DEPENDENCY
      * 
      * @param a the first relation kind
      * @param b the second relation kind
@@ -323,13 +329,13 @@ public class ParseContext {
 
     private int strengthOf(RelationKind kind) {
         return switch (kind) {
+            case NESTED -> 7;  // Nesting is structural, highest priority
             case EXTENDS -> 6;
             case IMPLEMENTS -> 5;
             case COMPOSITION -> 4;
             case AGGREGATION -> 3;
             case ASSOCIATION -> 2;
             case DEPENDENCY -> 1;
-            case NESTED -> 7;  // Nesting is structural, highest priority
         };
     }
 

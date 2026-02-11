@@ -21,9 +21,7 @@ import java.util.stream.Collectors;
 public final class PlantUmlRenderer {
 
     /**
-     * Computes the display name for a type in PlantUML.
-     * For nested types, uses $ to show hierarchy (e.g., "Outer$Inner").
-     * For top-level types, uses just the simple name.
+     * Return FQN display name for the type to be used for consistent referencing.
      */
     public String displayNameForType(UmlType type) {
         if (!type.isNested()) {
