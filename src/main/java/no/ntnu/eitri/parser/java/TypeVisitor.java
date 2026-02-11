@@ -40,20 +40,24 @@ import java.util.List;
 /**
  * AST visitor for extracting type declarations from Java source.
  * 
- * <p>This visitor processes:
+ * <p>
+ * This visitor processes:
  * <ul>
- *   <li>Classes and interfaces</li>
- *   <li>Enums with constants</li>
- *   <li>Annotations</li>
- *   <li>Records</li>
+ * <li>Classes and interfaces</li>
+ * <li>Enums with constants</li>
+ * <li>Annotations</li>
+ * <li>Records</li>
  * </ul>
  * 
- * <p>Nested types (inner classes, static nested classes, nested interfaces/enums/annotations/records)
- * are included with Outer$Inner naming convention and explicit "nested" relations.
+ * <p>
+ * Nested types (inner classes, static nested classes, nested
+ * interfaces/enums/annotations/records)
+ * are included with Outer$Inner naming convention and explicit "nested"
+ * relations.
  * The naming is computed using JavaParser's parent chain.
  */
 public class TypeVisitor extends VoidVisitorAdapter<Void> {
-    
+
     private static final String STATIC_STEREOTYPE = "static";
     private static final String ABSTRACT_STEREOTYPE = "abstract";
     private static final String FINAL_STEREOTYPE = "final";
@@ -88,16 +92,16 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         processRecordDeclaration(n);
         super.visit(n, arg);
     }
-    
+
     /**
      * Computes the FQN of the enclosing type, or null if top-level.
      */
     private String computeOuterTypeFqn(TypeDeclaration<?> n) {
         // First, check if this type is actually nested by examining the parent node
         if (!isNestedType(n)) {
-            return null;  // Top-level type has no outer type
+            return null; // Top-level type has no outer type
         }
-        
+
         // Type is nested; compute the outer type's FQN
         String typeFqn = n.getFullyQualifiedName().orElse("");
         int lastDot = typeFqn.lastIndexOf('.');
@@ -105,19 +109,19 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
             // Fallback: shouldn't happen for nested types with proper FQN
             return null;
         }
-        
+
         String candidate = typeFqn.substring(0, lastDot);
         // Check if the candidate is a package (all lowercase) or a type (has uppercase)
         // Package names are all lowercase, type names start with uppercase
         int candidateLastDot = candidate.lastIndexOf('.');
         String simplePart = candidateLastDot >= 0 ? candidate.substring(candidateLastDot + 1) : candidate;
-        
+
         // If the simple part starts with uppercase, it's a type (nested parent)
         // If it's all lowercase, it's a package (shouldn't happen for nested types)
         if (!simplePart.isEmpty() && Character.isUpperCase(simplePart.charAt(0))) {
             return candidate;
         }
-        
+
         return null;
     }
 
@@ -137,8 +141,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
             return false;
         }
         // Interfaces, enums, records, and annotations are implicitly static when nested
-        if (kind == TypeKind.INTERFACE || kind == TypeKind.ENUM || 
-            kind == TypeKind.RECORD || kind == TypeKind.ANNOTATION) {
+        if (kind == TypeKind.INTERFACE || kind == TypeKind.ENUM ||
+                kind == TypeKind.RECORD || kind == TypeKind.ANNOTATION) {
             return true;
         }
         // For classes, check the static modifier
@@ -232,7 +236,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
 
     /**
      * Adds an inheritance (EXTENDS or IMPLEMENTS) relation.
-     * The relation is deferred to ParseContext.build() for resolution after all types are registered.
+     * The relation is deferred to ParseContext.build() for resolution after all
+     * types are registered.
      */
     private void addInheritanceRelation(String fromFqn, ClassOrInterfaceType toType, RelationKind kind) {
         // Try to resolve the fully qualified name using symbol resolution
@@ -287,7 +292,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         for (EnumConstantDeclaration constant : n.getEntries()) {
             UmlField constantField = UmlField.builder()
                     .name(constant.getNameAsString())
-                    .type(typeFqn) 
+                    .type(typeFqn)
                     .visibility(Visibility.PUBLIC)
                     .isStatic(true)
                     .isFinal(true)
@@ -395,7 +400,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
 
         UmlType.Builder builder = UmlType.builder()
                 .fqn(typeFqn)
-                .simpleName(n.getNameAsString())  // Use nested name for uniqueness in PlantUML
+                .simpleName(n.getNameAsString()) // Use nested name for uniqueness in PlantUML
                 .kind(TypeKind.RECORD)
                 .visibility(visibility);
 
@@ -503,7 +508,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
     /**
      * Resolves a JavaParser Type to its fully-qualified name.
      * Uses the symbol resolver when available, falls back to the simple name.
-     * For generic types like List<Foo>, returns the full representation with resolved type arguments.
+     * For generic types like List<Foo>, returns the full representation with
+     * resolved type arguments.
      *
      * @param type the JavaParser type to resolve
      * @return the fully-qualified type name, or simple name if resolution fails
@@ -515,9 +521,9 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         } catch (Exception e) {
             // Symbol resolution failed, fall back to source representation
             String simpleName = type.asString();
-            context.addWarning("Failed to resolve type '" + simpleName + "' at " + 
-                type.getBegin().map(pos -> pos.toString()).orElse("unknown position") + 
-                ": " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            context.addWarning("Failed to resolve type '" + simpleName + "' at " +
+                    type.getBegin().map(Object::toString).orElse("unknown position") +
+                    ": " + e.getClass().getSimpleName() + " - " + e.getMessage());
             return simpleName;
         }
     }
@@ -539,17 +545,18 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         if (resolved.isReferenceType()) {
             ResolvedReferenceType refType = resolved.asReferenceType();
             String baseFqn = refType.getQualifiedName();
-            
+
             // Handle generic type arguments
             List<ResolvedType> typeArgs = refType.typeParametersValues();
             if (typeArgs.isEmpty()) {
                 return baseFqn;
             }
-            
+
             StringBuilder sb = new StringBuilder(baseFqn);
             sb.append("<");
             for (int i = 0; i < typeArgs.size(); i++) {
-                if (i > 0) sb.append(", ");
+                if (i > 0)
+                    sb.append(", ");
                 sb.append(resolveTypeToFqnString(typeArgs.get(i), "?"));
             }
             sb.append(">");
@@ -569,7 +576,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      */
     private UmlField extractField(FieldDeclaration field, VariableDeclarator varDec) {
         String name = varDec.getNameAsString();
-        String type = resolveTypeFqn(varDec.getType());  // FQN for relation detection
+        String type = resolveTypeFqn(varDec.getType()); // FQN for relation detection
         Visibility visibility = extractVisibility(field);
 
         boolean isStatic = field.isStatic();
@@ -581,7 +588,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
                 .visibility(visibility)
                 .isStatic(isStatic)
                 .isFinal(isFinal)
-                .readOnly(isFinal);  // Mark final fields as read-only in PlantUML
+                .readOnly(isFinal); // Mark final fields as read-only in PlantUML
 
         // Add annotations
         for (AnnotationExpr ann : field.getAnnotations()) {
@@ -592,7 +599,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         varDec.getInitializer().ifPresent(init -> {
             // Store as annotation for display purposes
             String initStr = init.toString();
-            if (initStr.length() <= 50) {  // Truncate long initializers
+            if (initStr.length() <= 50) { // Truncate long initializers
                 builder.addAnnotation("init:" + initStr);
             }
         });
@@ -605,7 +612,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      */
     private UmlMethod extractMethod(MethodDeclaration method) {
         String name = method.getNameAsString();
-        String returnType = resolveTypeFqn(method.getType());  // FQN for relation detection
+        String returnType = resolveTypeFqn(method.getType()); // FQN for relation detection
         Visibility visibility = extractVisibility(method);
 
         boolean isStatic = method.isStatic();
@@ -622,19 +629,25 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         // Extract modifiers
         @SuppressWarnings("null")
         EnumSet<no.ntnu.eitri.model.Modifier> modifiers = EnumSet.noneOf(no.ntnu.eitri.model.Modifier.class);
-        if (isStatic) modifiers.add(no.ntnu.eitri.model.Modifier.STATIC);
-        if (isAbstract) modifiers.add(no.ntnu.eitri.model.Modifier.ABSTRACT);
-        if (isFinal) modifiers.add(no.ntnu.eitri.model.Modifier.FINAL);
-        if (method.isSynchronized()) modifiers.add(no.ntnu.eitri.model.Modifier.SYNCHRONIZED);
-        if (method.isNative()) modifiers.add(no.ntnu.eitri.model.Modifier.NATIVE);
-        if (method.isDefault()) modifiers.add(no.ntnu.eitri.model.Modifier.DEFAULT);
+        if (isStatic)
+            modifiers.add(no.ntnu.eitri.model.Modifier.STATIC);
+        if (isAbstract)
+            modifiers.add(no.ntnu.eitri.model.Modifier.ABSTRACT);
+        if (isFinal)
+            modifiers.add(no.ntnu.eitri.model.Modifier.FINAL);
+        if (method.isSynchronized())
+            modifiers.add(no.ntnu.eitri.model.Modifier.SYNCHRONIZED);
+        if (method.isNative())
+            modifiers.add(no.ntnu.eitri.model.Modifier.NATIVE);
+        if (method.isDefault())
+            modifiers.add(no.ntnu.eitri.model.Modifier.DEFAULT);
         builder.modifiers(modifiers);
 
         // Extract parameters with FQN types
         method.getParameters().forEach(param -> {
             UmlParameter umlParam = new UmlParameter(
                     param.getNameAsString(),
-                    resolveTypeFqn(param.getType())  // FQN for relation detection
+                    resolveTypeFqn(param.getType()) // FQN for relation detection
             );
             builder.addParameter(umlParam);
         });
@@ -646,7 +659,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         for (AnnotationExpr ann : method.getAnnotations()) {
             // Store significant annotations
             String annName = ann.getNameAsString();
-            if (!annName.equals("Override")) {  // Skip @Override, too common
+            if (!annName.equals("Override")) { // Skip @Override, too common
                 builder.addAnnotation(annName);
             }
         }
@@ -661,8 +674,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         Visibility visibility = extractVisibility(ctor);
 
         UmlMethod.Builder builder = UmlMethod.builder()
-                .name(className)  // Constructor has class name
-                .returnType("")    // No return type for constructors
+                .name(className) // Constructor has class name
+                .returnType("") // No return type for constructors
                 .visibility(visibility)
                 .constructor(true)
                 .addAnnotation("constructor");
@@ -671,7 +684,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         ctor.getParameters().forEach(param -> {
             UmlParameter umlParam = new UmlParameter(
                     param.getNameAsString(),
-                    resolveTypeFqn(param.getType())  // FQN for relation detection
+                    resolveTypeFqn(param.getType()) // FQN for relation detection
             );
             builder.addParameter(umlParam);
         });
