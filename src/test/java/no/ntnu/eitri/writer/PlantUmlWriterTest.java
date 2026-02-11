@@ -281,4 +281,70 @@ class PlantUmlWriterTest {
 
         assertTrue(output.contains("top to bottom direction"));
     }
+
+    @Test
+    void hideCommonPackagesRemovesTypeAndRelations() {
+        UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlType common = UmlType.builder().fqn("java.util.List").simpleName("List").visibility(Visibility.PUBLIC).build();
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addType(common)
+                .addRelation(UmlRelation.dependency(source.getFqn(), common.getFqn(), "uses"))
+                .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
+                .build();
+
+        EitriConfig config = EitriConfig.builder()
+                .hideCommonPackages(true)
+                .build();
+
+        String output = new PlantUmlWriter().render(model, config);
+
+        assertTrue(output.contains("+class no.ntnu.eitri.parser.Source"));
+        assertFalse(output.contains("+class java.util.List"));
+        assertFalse(output.contains("no.ntnu.eitri.parser.Source ..> java.util.List"));
+    }
+
+    @Test
+    void hideExternalPackagesRemovesTypeAndRelations() {
+        UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlType external = UmlType.builder().fqn("org.external.Library").simpleName("Library").visibility(Visibility.PUBLIC).build();
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addType(external)
+                .addRelation(UmlRelation.association(source.getFqn(), external.getFqn(), "uses"))
+                .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
+                .build();
+
+        EitriConfig config = EitriConfig.builder()
+                .hideExternalPackages(true)
+                .build();
+
+        String output = new PlantUmlWriter().render(model, config);
+
+        assertTrue(output.contains("+class no.ntnu.eitri.parser.Source"));
+        assertFalse(output.contains("+class org.external.Library"));
+        assertFalse(output.contains("no.ntnu.eitri.parser.Source -- org.external.Library"));
+    }
+
+    @Test
+    void hideSiblingPackagesRemovesTypeAndRelations() {
+        UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlType sibling = UmlType.builder().fqn("no.ntnu.eitri.model.ModelType").simpleName("ModelType").visibility(Visibility.PUBLIC).build();
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addType(sibling)
+                .addRelation(UmlRelation.association(source.getFqn(), sibling.getFqn(), "uses"))
+                .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
+                .build();
+
+        EitriConfig config = EitriConfig.builder()
+                .hideSiblingPackages(true)
+                .build();
+
+        String output = new PlantUmlWriter().render(model, config);
+
+        assertTrue(output.contains("+class no.ntnu.eitri.parser.Source"));
+        assertFalse(output.contains("+class no.ntnu.eitri.model.ModelType"));
+        assertFalse(output.contains("no.ntnu.eitri.parser.Source -- no.ntnu.eitri.model.ModelType"));
+    }
 }
