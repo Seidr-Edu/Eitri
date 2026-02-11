@@ -98,12 +98,12 @@ public class RelationDetector {
             // Extract the generic type argument
             String elementType = extractGenericArgument(fieldType);
             if (elementType != null) {
-                String resolvedType = context.resolveTypeReference(elementType, ownerFqn + "." + field.getName());
-                if (resolvedType != null) {
-                    // Aggregation for collections
+                // Only use elementType if it's already a known type in context
+                // (don't create placeholders for generic arguments extracted from strings)
+                if (context.hasType(elementType)) {
                     UmlRelation relation = UmlRelation.builder()
                             .fromTypeFqn(ownerFqn)
-                            .toTypeFqn(resolvedType)
+                            .toTypeFqn(elementType)
                             .kind(RelationKind.AGGREGATION)
                             .toMultiplicity("*")
                             .fromMember(field.getName())

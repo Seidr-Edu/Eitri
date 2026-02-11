@@ -21,20 +21,18 @@ import java.util.stream.Collectors;
 public final class PlantUmlRenderer {
 
     /**
-     * Computes the display name for a type in PlantUML.
-     * For nested types, uses $ to show hierarchy (e.g., "Outer$Inner").
-     * For top-level types, uses just the simple name.
+     * Return FQN display name for the type to be used for consistent referencing.
      */
     public String displayNameForType(UmlType type) {
         if (!type.isNested()) {
-            return type.getSimpleName();
+            return type.getFqn();
         }
         
         // For nested types, extract the nested path from FQN
         String fqn = type.getFqn();
         int lastDot = fqn.lastIndexOf('.');
         if (lastDot < 0) {
-            return type.getSimpleName();
+            return type.getFqn();
         }
         
         // Find where the type hierarchy starts (first uppercase segment)
@@ -52,7 +50,7 @@ public final class PlantUmlRenderer {
             }
         }
         
-        return nestedName.length() > 0 ? nestedName.toString() : type.getSimpleName();
+        return nestedName.length() > 0 ? type.getPackageName().concat(".").concat(nestedName.toString()) : type.getFqn();
     }
 
     public String renderTypeDeclaration(UmlType type) {

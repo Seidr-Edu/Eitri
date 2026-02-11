@@ -43,7 +43,7 @@ class PlantUmlRendererTest {
                     .visibility(Visibility.PUBLIC)
                     .build();
 
-            assertEquals("+class Customer", renderer.renderTypeDeclaration(type));
+            assertEquals("+class com.example.Customer", renderer.renderTypeDeclaration(type));
         }
 
         @Test
@@ -63,8 +63,8 @@ class PlantUmlRendererTest {
                     .visibility(Visibility.PUBLIC)
                     .build();
 
-            assertEquals("+interface Repository", renderer.renderTypeDeclaration(iface));
-            assertEquals("+abstract class BaseEntity", renderer.renderTypeDeclaration(abs));
+            assertEquals("+interface com.example.Repository", renderer.renderTypeDeclaration(iface));
+            assertEquals("+abstract class com.example.BaseEntity", renderer.renderTypeDeclaration(abs));
         }
 
         @Test
@@ -91,9 +91,9 @@ class PlantUmlRendererTest {
                     .visibility(Visibility.PUBLIC)
                     .build();
 
-            assertEquals("+enum Status", renderer.renderTypeDeclaration(enumType));
-            assertEquals("+annotation Entity", renderer.renderTypeDeclaration(annotation));
-            assertEquals("+class Point", renderer.renderTypeDeclaration(recordType));
+            assertEquals("+enum com.example.Status", renderer.renderTypeDeclaration(enumType));
+            assertEquals("+annotation com.example.Entity", renderer.renderTypeDeclaration(annotation));
+            assertEquals("+class com.example.Point", renderer.renderTypeDeclaration(recordType));
         }
 
         @Test
@@ -131,17 +131,17 @@ class PlantUmlRendererTest {
                     .addStereotype(new UmlStereotype("Aggregate", 'A', "#FF0000"))
                     .build();
 
-            assertEquals("+interface Repository<T>", renderer.renderTypeDeclaration(generic));
-            assertEquals("+interface Comparable<T extends Number>", renderer.renderTypeDeclaration(bounded));
-            assertEquals("+class Customer <<Entity>>", renderer.renderTypeDeclaration(stereotype));
-            assertEquals("+class Order << (A,#FF0000) Aggregate >>", renderer.renderTypeDeclaration(spot));
+            assertEquals("+interface com.example.Repository<T>", renderer.renderTypeDeclaration(generic));
+            assertEquals("+interface com.example.Comparable<T extends Number>", renderer.renderTypeDeclaration(bounded));
+            assertEquals("+class com.example.Customer <<Entity>>", renderer.renderTypeDeclaration(stereotype));
+            assertEquals("+class com.example.Order << (A,#FF0000) Aggregate >>", renderer.renderTypeDeclaration(spot));
         }
 
         @Test
         @DisplayName("Display name, tags, and style")
         void displayNameTagsStyle() {
             UmlType type = UmlType.builder()
-                        .fqn("com.example.Order")
+                    .fqn("com.example.OrderService")
                     .simpleName("OrderService")
                     .alias("Order Service")
                     .kind(TypeKind.CLASS)
@@ -150,7 +150,7 @@ class PlantUmlRendererTest {
                     .style("#lightblue")
                     .build();
 
-            assertEquals("+class \"Order Service\" as OrderService $core #lightblue",
+            assertEquals("+class \"Order Service\" as com.example.OrderService $core #lightblue",
                     renderer.renderTypeDeclaration(type));
         }
     }

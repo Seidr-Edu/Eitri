@@ -53,7 +53,7 @@ import java.util.List;
  * The naming is computed using JavaParser's parent chain.
  */
 public class TypeVisitor extends VoidVisitorAdapter<Void> {
-
+    
     private static final String STATIC_STEREOTYPE = "static";
     private static final String ABSTRACT_STEREOTYPE = "abstract";
     private static final String FINAL_STEREOTYPE = "final";
@@ -278,7 +278,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         for (EnumConstantDeclaration constant : n.getEntries()) {
             UmlField constantField = UmlField.builder()
                     .name(constant.getNameAsString())
-                    .type(simpleName)
+                    .type(typeFqn) 
                     .visibility(Visibility.PUBLIC)
                     .isStatic(true)
                     .isFinal(true)
@@ -357,7 +357,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
                             .orElse("");
                     UmlMethod method = UmlMethod.builder()
                             .name(member.getNameAsString() + "()" + defaultValue)
-                            .returnType(member.getType().asString())
+                            .returnType(resolveTypeFqn(member.getType()))
                             .visibility(Visibility.PUBLIC)
                             .isAbstract(true)
                             .build();
@@ -414,7 +414,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         n.getParameters().forEach(param -> {
             UmlField field = UmlField.builder()
                     .name(param.getNameAsString())
-                    .type(param.getType().asString())
+                    .type(resolveTypeFqn(param.getType()))
                     .visibility(Visibility.PRIVATE)
                     .isFinal(true)
                     .build();
@@ -503,9 +503,13 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         try {
             ResolvedType resolved = type.resolve();
             return resolveTypeToFqnString(resolved, type.asString());
-        } catch (Exception _) {
+        } catch (Exception e) {
             // Symbol resolution failed, fall back to source representation
-            return type.asString();
+            String simpleName = type.asString();
+            context.addWarning("Failed to resolve type '" + simpleName + "' at " + 
+                type.getBegin().map(pos -> pos.toString()).orElse("unknown position") + 
+                ": " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            return simpleName;
         }
     }
 

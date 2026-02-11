@@ -42,7 +42,7 @@ class PlantUmlWriterTest {
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
 
-        assertTrue(output.contains("+class Service"));
+        assertTrue(output.contains("+class com.example.Service"));
         assertTrue(output.contains("+init()"));
         assertFalse(output.contains(": void"));
     }
@@ -108,7 +108,7 @@ class PlantUmlWriterTest {
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
 
-        assertTrue(output.contains("Outer +-- Inner"));
+        assertTrue(output.contains("com.example.Outer +-- com.example.Outer$Inner"));
         assertTrue(output.contains(": nested"));
     }
 
@@ -144,7 +144,7 @@ class PlantUmlWriterTest {
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
 
-        assertFalse(output.contains("Outer +-- Inner"));
+        assertFalse(output.contains("com.example.Outer +-- com.example.Outer$Inner"));
         assertFalse(output.contains(": nested"));
     }
 
@@ -191,22 +191,14 @@ class PlantUmlWriterTest {
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
 
-        assertFalse(output.contains("+class Inner"));
-        assertFalse(output.contains("Inner -- Other"));
+        assertFalse(output.contains("+class com.example.Outer$Inner"));
+        assertFalse(output.contains("com.example.Outer$Inner -- com.example.Other"));
         assertFalse(output.contains(": uses"));
     }
 
     @Test
     void includesHideEmptyFieldsAndMethods() {
-        UmlType type = UmlType.builder()
-                .fqn("com.example.Data")
-                .simpleName("Data")
-                .kind(TypeKind.CLASS)
-                .visibility(Visibility.PUBLIC)
-                .build();
-
         UmlModel model = UmlModel.builder()
-                .addType(type)
                 .build();
 
         EitriConfig config = EitriConfig.builder()
@@ -217,7 +209,6 @@ class PlantUmlWriterTest {
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
 
-        assertTrue(output.contains("+class Data"));
         assertTrue(output.contains("hide empty fields"));
         assertTrue(output.contains("hide empty methods"));
     }
