@@ -93,9 +93,18 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
      * Computes the FQN of the enclosing type, or null if top-level.
      */
     private String computeOuterTypeFqn(TypeDeclaration<?> n) {
+        // First, check if this type is actually nested by examining the parent node
+        if (!isNestedType(n)) {
+            return null;  // Top-level type has no outer type
+        }
+        
+        // Type is nested; compute the outer type's FQN
         String typeFqn = n.getFullyQualifiedName().orElse("");
         int lastDot = typeFqn.lastIndexOf('.');
-        if (lastDot <= 0) return n.getNameAsString();
+        if (lastDot <= 0) {
+            // Fallback: shouldn't happen for nested types with proper FQN
+            return null;
+        }
         
         String candidate = typeFqn.substring(0, lastDot);
         // Check if the candidate is a package (all lowercase) or a type (has uppercase)
@@ -104,7 +113,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         String simplePart = candidateLastDot >= 0 ? candidate.substring(candidateLastDot + 1) : candidate;
         
         // If the simple part starts with uppercase, it's a type (nested parent)
-        // If it's all lowercase, it's a package (top-level type)
+        // If it's all lowercase, it's a package (shouldn't happen for nested types)
         if (!simplePart.isEmpty() && Character.isUpperCase(simplePart.charAt(0))) {
             return candidate;
         }
