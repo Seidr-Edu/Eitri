@@ -2,18 +2,12 @@ package no.ntnu.eitri.parser;
 
 import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.model.RelationKind;
-import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
 import no.ntnu.eitri.model.UmlType;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -37,21 +31,10 @@ public class ParseContext {
 
     private final EitriConfig config;
     private final String diagramName;
-
-    /** Types indexed by fully-qualified name. */
-    private final Map<String, UmlType> typesByFqn = new HashMap<>();
-
-    /** Collected relations (may contain duplicates, resolved at finalization). */
-    private final List<UmlRelation> relations = new ArrayList<>();
-
-    /** Pending inheritance relations to resolve after all types are registered. */
-    private final List<PendingInheritance> pendingInheritance = new ArrayList<>();
-
-    /** Warnings collected during parsing. */
-    private final List<String> warnings = new ArrayList<>();
-
-    /** Packages that were directly parsed from source files. */
-    private final Set<String> sourcePackages = new HashSet<>();
+    private final TypeRegistry types;
+    private final TypeReferenceResolver typeResolver;
+    private final RelationStore relations;
+    private final ParseDiagnostics diagnostics;
 
     /**
      * Represents a pending inheritance relation (extends/implements) to be resolved
@@ -72,6 +55,10 @@ public class ParseContext {
     public ParseContext(EitriConfig config) {
         this.config = config;
         this.diagramName = config.getDiagramName();
+        this.types = new TypeRegistry();
+        this.typeResolver = new TypeReferenceResolver(types);
+        this.relations = new RelationStore();
+        this.diagnostics = new ParseDiagnostics(LOGGER, config.isVerbose());
     }
 
     /**
@@ -81,14 +68,7 @@ public class ParseContext {
      * @throws IllegalArgumentException if a type with the same FQN already exists
      */
     public void addType(UmlType type) {
-        String fqn = type.getFqn();
-        if (typesByFqn.containsKey(fqn)) {
-            throw new IllegalArgumentException("Type already registered: " + fqn);
-        }
-        typesByFqn.put(fqn, type);
-
-        // Record the package as a source package (parsed from actual source files)
-        addSourcePackage(type.getPackageName());
+        types.addType(type);
     }
 
     /**
@@ -98,7 +78,7 @@ public class ParseContext {
      * @return the type, or null if not found
      */
     public UmlType getType(String fqn) {
-        return typesByFqn.get(fqn);
+        return types.getType(fqn);
     }
 
     /**
@@ -108,7 +88,7 @@ public class ParseContext {
      * @return true if the type exists
      */
     public boolean hasType(String fqn) {
-        return typesByFqn.containsKey(fqn);
+        return types.hasType(fqn);
     }
 
     /**
@@ -118,7 +98,7 @@ public class ParseContext {
      * @param relation the relation to add
      */
     public void addRelation(UmlRelation relation) {
-        relations.add(relation);
+        relations.addRelation(relation);
     }
 
     /**
@@ -128,7 +108,7 @@ public class ParseContext {
      * @param pending the pending inheritance information
      */
     public void addPendingInheritance(PendingInheritance pending) {
-        pendingInheritance.add(pending);
+        relations.addPendingInheritance(pending);
     }
 
     /**
@@ -143,23 +123,7 @@ public class ParseContext {
      * @return the resolved (normalized) FQN, or null if the type is empty
      */
     public String resolveTypeReference(String fqn, String referencedFrom) {
-        if (fqn == null || fqn.isEmpty()) {
-            return null;
-        }
-
-        String normalized = normalizeTypeName(fqn);
-        if (normalized == null || normalized.isEmpty()) {
-            return null;
-        }
-
-        // Already known?
-        if (typesByFqn.containsKey(normalized)) {
-            return normalized;
-        }
-
-        ensureTypeExists(normalized);
-
-        return normalized;
+        return typeResolver.resolveTypeReference(fqn);
     }
 
     /**
@@ -168,10 +132,7 @@ public class ParseContext {
      * @param warning the warning message
      */
     public void addWarning(String warning) {
-        warnings.add(warning);
-        if (config.isVerbose()) {
-            LOGGER.warning(warning);
-        }
+        diagnostics.addWarning(warning);
     }
 
     /**
@@ -180,9 +141,7 @@ public class ParseContext {
      * @param packageName the package name to record
      */
     public void addSourcePackage(String packageName) {
-        if (packageName != null && !packageName.isBlank()) {
-            sourcePackages.add(packageName);
-        }
+        types.addSourcePackage(packageName);
     }
 
     /**
@@ -191,81 +150,7 @@ public class ParseContext {
      * @return unmodifiable set of source package names
      */
     public Set<String> getSourcePackages() {
-        return Collections.unmodifiableSet(sourcePackages);
-    }
-
-    /**
-     * Extracts the simple name from a fully-qualified name.
-     * 
-     * @param fqn the fully-qualified name
-     * @return the simple name
-     */
-    private String extractSimpleName(String fqn) {
-        int lastDot = fqn.lastIndexOf('.');
-        return lastDot >= 0 ? fqn.substring(lastDot + 1) : fqn;
-    }
-
-    private void ensureTypeExists(String fqn) {
-        if (fqn == null || fqn.isBlank()) {
-            return;
-        }
-        if (typesByFqn.containsKey(fqn)) {
-            return;
-        }
-
-        UmlType placeholder = UmlType.builder()
-                .fqn(fqn)
-                .simpleName(extractSimpleName(fqn))
-                .kind(TypeKind.CLASS)
-                .visibility(no.ntnu.eitri.model.Visibility.PUBLIC)
-                .build();
-
-        typesByFqn.put(fqn, placeholder);
-    }
-
-    private String normalizeTypeName(String typeName) {
-        if (typeName == null) {
-            return null;
-        }
-
-        String base = typeName.trim();
-        if (base.isEmpty()) {
-            return null;
-        }
-
-        // Strip array notation
-        while (base.endsWith("[]")) {
-            base = base.substring(0, base.length() - 2).trim();
-        }
-
-        // Strip generic arguments
-        int genericStart = base.indexOf('<');
-        if (genericStart >= 0) {
-            base = base.substring(0, genericStart).trim();
-        }
-
-        // Strip wildcard bounds
-        if (base.startsWith("? extends ")) {
-            base = base.substring("? extends ".length()).trim();
-        } else if (base.startsWith("? super ")) {
-            base = base.substring("? super ".length()).trim();
-        } else if ("?".equals(base)) {
-            return null;
-        }
-
-        // Filter out Java primitives and void
-        if (isPrimitive(base)) {
-            return null;
-        }
-
-        return base;
-    }
-
-    private boolean isPrimitive(String type) {
-        return switch (type) {
-            case "void", "boolean", "byte", "short", "int", "long", "float", "double", "char" -> true;
-            default -> false;
-        };
+        return types.getSourcePackages();
     }
 
     /**
@@ -274,7 +159,7 @@ public class ParseContext {
      * @return list of warning messages
      */
     public List<String> getWarnings() {
-        return new ArrayList<>(warnings);
+        return diagnostics.getWarnings();
     }
 
     /**
@@ -283,7 +168,7 @@ public class ParseContext {
      * @return collection of types
      */
     public Collection<UmlType> getTypes() {
-        return typesByFqn.values();
+        return types.getTypes();
     }
 
     /**
@@ -312,67 +197,13 @@ public class ParseContext {
     public UmlModel build() {
         UmlModel.Builder modelBuilder = UmlModel.builder()
                 .name(diagramName)
-                .sourcePackages(sourcePackages);
+                .sourcePackages(types.getSourcePackages());
 
         // Add all types
-        typesByFqn.values().forEach(modelBuilder::addType);
-
-        // Resolve pending inheritance relations (now that all types are registered)
-        for (PendingInheritance pi : pendingInheritance) {
-            String targetFqn = resolveTypeReference(pi.toFqn(), pi.fromFqn());
-            if (targetFqn != null) {
-                UmlRelation relation = UmlRelation.builder()
-                        .fromTypeFqn(pi.fromFqn())
-                        .toTypeFqn(targetFqn)
-                        .kind(pi.kind())
-                        .build();
-                relations.add(relation);
-            }
-        }
-
-        // Deduplicate and validate relations
-        Map<String, UmlRelation> deduped = new HashMap<>();
-        for (UmlRelation rel : relations) {
-            // Skip relations to non-existent types
-            if (!typesByFqn.containsKey(rel.getFromTypeFqn()) || !typesByFqn.containsKey(rel.getToTypeFqn())) {
-                continue;
-            }
-
-            String key = rel.getFromTypeFqn() + "->" + rel.getToTypeFqn();
-            UmlRelation existing = deduped.get(key);
-            if (existing == null || isStronger(rel.getKind(), existing.getKind())) {
-                deduped.put(key, rel);
-            }
-        }
-
-        deduped.values().forEach(modelBuilder::addRelation);
+        types.getTypes().forEach(modelBuilder::addType);
+        relations.buildFinalRelations(types, typeResolver).forEach(modelBuilder::addRelation);
 
         return modelBuilder.build();
-    }
-
-    /**
-     * Determines if one relation kind is stronger than another.
-     * Strength order: NESTED > EXTENDS > IMPLEMENTS > COMPOSITION > AGGREGATION >
-     * ASSOCIATION > DEPENDENCY
-     * 
-     * @param a the first relation kind
-     * @param b the second relation kind
-     * @return true if a is stronger than b
-     */
-    private boolean isStronger(RelationKind a, RelationKind b) {
-        return strengthOf(a) > strengthOf(b);
-    }
-
-    private int strengthOf(RelationKind kind) {
-        return switch (kind) {
-            case NESTED -> 7; // Nesting is structural, highest priority
-            case EXTENDS -> 6;
-            case IMPLEMENTS -> 5;
-            case COMPOSITION -> 4;
-            case AGGREGATION -> 3;
-            case ASSOCIATION -> 2;
-            case DEPENDENCY -> 1;
-        };
     }
 
     /**
@@ -381,7 +212,7 @@ public class ParseContext {
      * @return type count
      */
     public int getTypeCount() {
-        return typesByFqn.size();
+        return types.getTypes().size();
     }
 
     /**
@@ -390,6 +221,6 @@ public class ParseContext {
      * @return relation count (before deduplication)
      */
     public int getRelationCount() {
-        return relations.size();
+        return relations.relationCount();
     }
 }
