@@ -50,7 +50,13 @@ public final class PlantUmlRenderer {
             }
         }
         
-        return nestedName.length() > 0 ? type.getPackageName().concat(".").concat(nestedName.toString()) : type.getFqn();
+        if (nestedName.length() > 0) {
+            String packageName = type.getPackageName();
+            return (packageName == null || packageName.isEmpty())
+                    ? nestedName.toString()
+                    : packageName.concat(".").concat(nestedName.toString());
+        }
+        return type.getFqn();
     }
 
     public String renderTypeDeclaration(UmlType type) {
