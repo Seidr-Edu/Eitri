@@ -44,4 +44,37 @@ class MainIntegrationTest {
 
         assertNotEquals(0, exitCode);
     }
+
+    @Test
+    void writesOutputFileOnSuccessfulRun() throws Exception {
+        Path src = tempDir.resolve("src");
+        Files.createDirectories(src);
+        Files.writeString(src.resolve("Sample.java"), "package com.example; public class Sample {}\n");
+        Path out = tempDir.resolve("diagram.puml");
+
+        int exitCode = new CommandLine(new Main()).execute(
+                "--src", src.toString(),
+                "--out", out.toString()
+        );
+
+        assertEquals(0, exitCode);
+        assertTrue(Files.exists(out));
+        assertTrue(Files.readString(out).contains("@startuml"));
+    }
+
+    @Test
+    void returnsNonZeroOnUnsupportedWriterExtension() throws Exception {
+        Path src = tempDir.resolve("src");
+        Files.createDirectories(src);
+        Files.writeString(src.resolve("Sample.java"), "public class Sample {}\n");
+        Path out = tempDir.resolve("diagram.puml");
+
+        int exitCode = new CommandLine(new Main()).execute(
+                "--src", src.toString(),
+                "--out", out.toString(),
+                "--writer", ".invalid"
+        );
+
+        assertNotEquals(0, exitCode);
+    }
 }
