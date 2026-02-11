@@ -27,19 +27,19 @@ public final class PlantUmlRenderer {
         if (!type.isNested()) {
             return type.getFqn();
         }
-        
+
         // For nested types, extract the nested path from FQN
         String fqn = type.getFqn();
         int lastDot = fqn.lastIndexOf('.');
         if (lastDot < 0) {
             return type.getFqn();
         }
-        
+
         // Find where the type hierarchy starts (first uppercase segment)
         String[] parts = fqn.split("\\.");
         StringBuilder nestedName = new StringBuilder();
         boolean foundFirstType = false;
-        
+
         for (String part : parts) {
             if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
                 if (foundFirstType) {
@@ -49,8 +49,8 @@ public final class PlantUmlRenderer {
                 foundFirstType = true;
             }
         }
-        
-        if (nestedName.length() > 0) {
+
+        if (!nestedName.isEmpty()) {
             String packageName = type.getPackageName();
             return (packageName == null || packageName.isEmpty())
                     ? nestedName.toString()
@@ -65,11 +65,11 @@ public final class PlantUmlRenderer {
         sb.append(visibilitySymbol(type.getVisibility()));
         sb.append(typeKeyword(type.getKind())).append(" ");
 
-        // Use alias if explicitly set, otherwise use display name with $ for nested types
+        // Use alias if explicitly set, otherwise use display name with $ for nested
+        // types
         if (type.getAlias() != null) {
             sb.append("\"").append(type.getAlias()).append("\" as ").append(displayNameForType(type));
-        }
-        else {
+        } else {
             sb.append(displayNameForType(type));
         }
 
@@ -136,10 +136,10 @@ public final class PlantUmlRenderer {
     }
 
     public String renderRelation(UmlRelation relation,
-                                 String fromTypeName,
-                                 String toTypeName,
-                                 boolean showLabels,
-                                 boolean showMultiplicities) {
+            String fromTypeName,
+            String toTypeName,
+            boolean showLabels,
+            boolean showMultiplicities) {
         StringBuilder sb = new StringBuilder();
 
         String leftSide;

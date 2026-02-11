@@ -59,7 +59,7 @@ public final class UmlType {
             // Once we hit an uppercase part, that's the start of the type hierarchy
             if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
                 // Return everything before this point (or empty string if no package)
-                return computedPackageName.length() > 0 ? computedPackageName.toString() : "";
+                return computedPackageName.isEmpty() ? "" : computedPackageName.toString();
             }
             if (i > 0) {
                 computedPackageName.append(".");
@@ -68,7 +68,7 @@ public final class UmlType {
         }
 
         // All parts were lowercase (shouldn't happen for valid Java)
-        return computedPackageName.length() > 0 ? computedPackageName.toString() : "";
+        return computedPackageName.isEmpty() ? "" : computedPackageName.toString();
     }
 
     public String getFqn() {
