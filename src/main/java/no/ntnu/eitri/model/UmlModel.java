@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Root container for the entire UML model.
@@ -18,6 +20,7 @@ public final class UmlModel {
     private final Map<String, UmlType> types;  // Keyed by type FQN
     private final List<UmlRelation> relations;
     private final List<UmlNote> notes;
+    private final Set<String> sourcePackages;  // Packages parsed from source files
 
     private UmlModel(Builder builder) {
         this.name = builder.name != null ? builder.name : "diagram";
@@ -30,6 +33,9 @@ public final class UmlModel {
         this.notes = builder.notes != null
                 ? new ArrayList<>(builder.notes)
                 : new ArrayList<>();
+        this.sourcePackages = builder.sourcePackages != null
+                ? new HashSet<>(builder.sourcePackages)
+                : new HashSet<>();
     }
 
     public String getName() {
@@ -140,6 +146,15 @@ public final class UmlModel {
                 .toList();
     }
 
+    /**
+     * Returns the packages that were directly parsed from source files.
+     * Used for package filtering (sibling/external package detection).
+     * @return unmodifiable set of source package names
+     */
+    public Set<String> getSourcePackages() {
+        return Collections.unmodifiableSet(sourcePackages);
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -149,6 +164,7 @@ public final class UmlModel {
         private Map<String, UmlType> types;
         private List<UmlRelation> relations;
         private List<UmlNote> notes;
+        private Set<String> sourcePackages;
 
         private Builder() {}
 
@@ -198,6 +214,11 @@ public final class UmlModel {
 
         public Builder notes(List<UmlNote> notes) {
             this.notes = notes;
+            return this;
+        }
+
+        public Builder sourcePackages(Collection<String> sourcePackages) {
+            this.sourcePackages = sourcePackages != null ? new HashSet<>(sourcePackages) : null;
             return this;
         }
 

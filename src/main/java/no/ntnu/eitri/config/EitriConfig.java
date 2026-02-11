@@ -43,6 +43,9 @@ public record EitriConfig(
         boolean showAssociation,
         boolean showDependency,
         boolean showNested,
+        boolean hideCommonPackages,
+        boolean hideExternalPackages,
+        boolean hideSiblingPackages,
         boolean verbose,
         boolean dryRun
 ) {
@@ -186,6 +189,18 @@ public record EitriConfig(
         return showNested;
     }
 
+    public boolean isHideCommonPackages() {
+        return hideCommonPackages;
+    }
+
+    public boolean isHideExternalPackages() {
+        return hideExternalPackages;
+    }
+
+    public boolean isHideSiblingPackages() {
+        return hideSiblingPackages;
+    }
+
     public boolean isVerbose() {
         return verbose;
     }
@@ -231,6 +246,9 @@ public record EitriConfig(
         private boolean showAssociation = true;
         private boolean showDependency = true;
         private boolean showNested = true;
+        private boolean hideCommonPackages = false;
+        private boolean hideExternalPackages = false;
+        private boolean hideSiblingPackages = false;
         private boolean verbose = false;
         private boolean dryRun = false;
 
@@ -404,6 +422,21 @@ public record EitriConfig(
             return this;
         }
 
+        public Builder hideCommonPackages(boolean hide) {
+            this.hideCommonPackages = hide;
+            return this;
+        }
+
+        public Builder hideExternalPackages(boolean hide) {
+            this.hideExternalPackages = hide;
+            return this;
+        }
+
+        public Builder hideSiblingPackages(boolean hide) {
+            this.hideSiblingPackages = hide;
+            return this;
+        }
+
         public Builder verbose(boolean verbose) {
             this.verbose = verbose;
             return this;
@@ -448,6 +481,9 @@ public record EitriConfig(
                     showAssociation,
                     showDependency,
                     showNested,
+                    hideCommonPackages,
+                    hideExternalPackages,
+                    hideSiblingPackages,
                     verbose,
                     dryRun
             );

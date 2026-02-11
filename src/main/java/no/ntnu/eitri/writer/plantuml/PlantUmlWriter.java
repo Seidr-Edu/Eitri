@@ -9,6 +9,7 @@ import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
 import no.ntnu.eitri.model.UmlType;
 import no.ntnu.eitri.model.Visibility;
+import no.ntnu.eitri.parser.PackageClassifier;
 import no.ntnu.eitri.writer.DiagramWriter;
 import no.ntnu.eitri.writer.WriteException;
 
@@ -30,7 +31,8 @@ import java.util.stream.Collectors;
 /**
  * PlantUML class diagram writer.
  * 
- * <p>This writer generates PlantUML class diagram syntax from a UmlModel,
+ * <p>
+ * This writer generates PlantUML class diagram syntax from a UmlModel,
  * applying all configuration options for filtering and display.
  */
 public class PlantUmlWriter implements DiagramWriter {
@@ -75,14 +77,14 @@ public class PlantUmlWriter implements DiagramWriter {
     @Override
     public String render(UmlModel model, EitriConfig config) {
         StringWriter sw = new StringWriter();
-        
+
         try {
             renderTo(model, config, sw);
         } catch (IOException e) {
             // StringWriter doesn't throw IOException
             throw new WriteException("Unexpected IO error", e);
         }
-        
+
         return sw.toString();
     }
 
@@ -115,6 +117,13 @@ public class PlantUmlWriter implements DiagramWriter {
             typeNames.put(type.getFqn(), renderer.displayNameForType(type));
         }
 
+        // Collect rendered types (those passing all filters)
+        Set<String> sourcePackages = model.getSourcePackages();
+        Set<String> renderedTypeFqns = model.getTypes().stream()
+                .filter(t -> shouldRenderType(t, config, linkedTypes, sourcePackages))
+                .map(UmlType::getFqn)
+                .collect(Collectors.toSet());
+
         // Render types grouped by package
         renderTypesGroupedByPackage(model, config, linkedTypes, sb);
 
@@ -124,7 +133,7 @@ public class PlantUmlWriter implements DiagramWriter {
 
         // Render relations
         for (UmlRelation relation : model.getRelations()) {
-            if (shouldRenderRelation(relation, config, nestedTypeFqns)) {
+            if (shouldRenderRelation(relation, config, nestedTypeFqns, renderedTypeFqns)) {
                 renderRelation(relation, config, typeNames, sb);
             }
         }
@@ -136,8 +145,8 @@ public class PlantUmlWriter implements DiagramWriter {
     }
 
     /**
-    * Renders global PlantUML settings based on configuration.
-    */
+     * Renders global PlantUML settings based on configuration.
+     */
     private void renderGlobalSettings(EitriConfig config, StringBuilder sb) {
         if (config.isHideCircle()) {
             sb.append("hide circle\n");
@@ -151,7 +160,7 @@ public class PlantUmlWriter implements DiagramWriter {
         if (config.isHideEmptyMembers()) {
             sb.append("hide empty members\n");
         }
-        if(config.getGroupInheritance() > 1) {
+        if (config.getGroupInheritance() > 1) {
             sb.append("skinparam groupInheritance ").append(config.getGroupInheritance()).append("\n");
         }
         if (config.getClassAttributeIconSize() != 8 && config.getClassAttributeIconSize() > -1) { // 8 is PlantUML
@@ -167,15 +176,16 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Renders types grouped by their package using PlantUML package syntax.
      */
-    private void renderTypesGroupedByPackage(UmlModel model, EitriConfig config, 
-                                               Set<String> linkedTypes, StringBuilder sb) {
+    private void renderTypesGroupedByPackage(UmlModel model, EitriConfig config,
+            Set<String> linkedTypes, StringBuilder sb) {
+        Set<String> sourcePackages = model.getSourcePackages();
+
         // Group types by package
         Map<String, List<UmlType>> byPackage = model.getTypes().stream()
-                .filter(t -> shouldRenderType(t, config, linkedTypes))
+                .filter(t -> shouldRenderType(t, config, linkedTypes, sourcePackages))
                 .collect(Collectors.groupingBy(
                         t -> t.getPackageName() != null ? t.getPackageName() : "",
-                        Collectors.toList()
-                ));
+                        Collectors.toList()));
 
         // Sort packages for consistent output
         List<String> packages = new ArrayList<>(byPackage.keySet());
@@ -195,7 +205,7 @@ public class PlantUmlWriter implements DiagramWriter {
             // Render types in this package
             for (UmlType type : types) {
                 if (!pkg.isEmpty()) {
-                    sb.append("  ");  // Indent within package
+                    sb.append("  "); // Indent within package
                 }
                 renderType(type, config, sb);
                 sb.append("\n");
@@ -230,8 +240,21 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Determines if a type should be rendered based on configuration.
      */
-    private boolean shouldRenderType(UmlType type, EitriConfig config, Set<String> linkedTypes) {
+    private boolean shouldRenderType(UmlType type, EitriConfig config, Set<String> linkedTypes,
+            Set<String> sourcePackages) {
         if (!config.isShowNested() && type.isNested()) {
+            return false;
+        }
+
+        // Package-based filtering
+        String pkg = type.getPackageName();
+        if (config.isHideCommonPackages() && PackageClassifier.isCommonPackage(pkg)) {
+            return false;
+        }
+        if (config.isHideExternalPackages() && PackageClassifier.isExternalPackage(pkg, sourcePackages)) {
+            return false;
+        }
+        if (config.isHideSiblingPackages() && PackageClassifier.isSiblingPackage(pkg, sourcePackages)) {
             return false;
         }
 
@@ -241,16 +264,25 @@ public class PlantUmlWriter implements DiagramWriter {
 
     /**
      * Determines if a relation should be rendered based on configuration.
+     * Relations to or from hidden types (package-filtered, nested, etc.) are
+     * excluded.
      */
-    private boolean shouldRenderRelation(UmlRelation relation, EitriConfig config, Set<String> nestedTypeFqns) {
+    private boolean shouldRenderRelation(UmlRelation relation, EitriConfig config,
+            Set<String> nestedTypeFqns, Set<String> renderedTypeFqns) {
+        // Skip relations involving types that were filtered out
+        if (!renderedTypeFqns.contains(relation.getFromTypeFqn())
+                || !renderedTypeFqns.contains(relation.getToTypeFqn())) {
+            return false;
+        }
+
         if (!config.isShowNested()
                 && (nestedTypeFqns.contains(relation.getFromTypeFqn())
-                || nestedTypeFqns.contains(relation.getToTypeFqn()))) {
+                        || nestedTypeFqns.contains(relation.getToTypeFqn()))) {
             return false;
         }
 
         RelationKind kind = relation.getKind();
-        
+
         return switch (kind) {
             case EXTENDS -> config.isShowInheritance();
             case IMPLEMENTS -> config.isShowImplements();
@@ -295,7 +327,8 @@ public class PlantUmlWriter implements DiagramWriter {
         if (!config.isHideMethods()) {
             for (UmlMethod method : type.getMethods()) {
                 if (shouldRenderMember(method.getVisibility(), config)) {
-                    sb.append("    ").append(renderer.renderMethod(method, config.isShowVoidReturnTypes())).append("\n");
+                    sb.append("    ").append(renderer.renderMethod(method, config.isShowVoidReturnTypes()))
+                            .append("\n");
                 }
             }
         }
@@ -306,11 +339,12 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Renders a relation.
      */
-    private void renderRelation(UmlRelation relation, EitriConfig config, 
-                                 Map<String, String> typeNames, StringBuilder sb) {
+    private void renderRelation(UmlRelation relation, EitriConfig config,
+            Map<String, String> typeNames, StringBuilder sb) {
         String fromName = typeNames.getOrDefault(relation.getFromTypeFqn(), relation.getFromTypeFqn());
         String toName = typeNames.getOrDefault(relation.getToTypeFqn(), relation.getToTypeFqn());
-        sb.append(renderer.renderRelation(relation, fromName, toName, config.isShowLabels(), config.isShowMultiplicities()));
+        sb.append(renderer.renderRelation(relation, fromName, toName, config.isShowLabels(),
+                config.isShowMultiplicities()));
         sb.append("\n");
     }
 
