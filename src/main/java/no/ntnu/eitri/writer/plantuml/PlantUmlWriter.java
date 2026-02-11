@@ -9,7 +9,7 @@ import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
 import no.ntnu.eitri.model.UmlType;
 import no.ntnu.eitri.model.Visibility;
-import no.ntnu.eitri.parser.PackageClassifier;
+import no.ntnu.eitri.util.PackageClassifier;
 import no.ntnu.eitri.writer.DiagramWriter;
 import no.ntnu.eitri.writer.WriteException;
 
