@@ -8,19 +8,19 @@ import java.util.Objects;
  * A UML type element (class, interface, enum, annotation, record).
  */
 public final class UmlType {
-    private final String fqn;             // Unique identifier (fully qualified name)
-    private final String simpleName;      // Simple name
-    private final String alias;           // Optional alias if name clashes occur
-    private final String packageName;     // Computed package name
+    private final String fqn; // Unique identifier (fully qualified name)
+    private final String simpleName; // Simple name
+    private final String alias; // Optional alias if name clashes occur
+    private final String packageName; // Computed package name
     private final TypeKind kind;
     private final Visibility visibility;
     private final List<UmlStereotype> stereotypes;
-    private final List<String> tags;      // PlantUML $tags for hide/show
-    private final String style;           // Optional inline style (e.g., "#back:palegreen")
+    private final List<String> tags; // PlantUML $tags for hide/show
+    private final String style; // Optional inline style (e.g., "#back:palegreen")
     private final List<UmlGeneric> generics;
     private final List<UmlField> fields;
     private final List<UmlMethod> methods;
-    private final String outerTypeFqn;  // FQN of enclosing type for nested types
+    private final String outerTypeFqn; // FQN of enclosing type for nested types
     private final String outerTypeSimpleName; // Simple name of enclosing type
 
     private UmlType(Builder builder) {
@@ -52,23 +52,23 @@ public final class UmlType {
         // Parse FQN to find where package ends and type hierarchy begins
         // Package components are lowercase, type names start with uppercase
         String[] parts = fqn.split("\\.");
-        StringBuilder packageName = new StringBuilder();
+        StringBuilder computedPackageName = new StringBuilder();
 
         for (int i = 0; i < parts.length; i++) {
             String part = parts[i];
             // Once we hit an uppercase part, that's the start of the type hierarchy
             if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
                 // Return everything before this point (or empty string if no package)
-                return packageName.length() > 0 ? packageName.toString() : "";
+                return computedPackageName.length() > 0 ? computedPackageName.toString() : "";
             }
             if (i > 0) {
-                packageName.append(".");
+                computedPackageName.append(".");
             }
-            packageName.append(part);
+            computedPackageName.append(part);
         }
 
         // All parts were lowercase (shouldn't happen for valid Java)
-        return packageName.length() > 0 ? packageName.toString() : "";
+        return computedPackageName.length() > 0 ? computedPackageName.toString() : "";
     }
 
     public String getFqn() {
@@ -86,7 +86,6 @@ public final class UmlType {
     public String getPackageName() {
         return packageName;
     }
-
 
     public TypeKind getKind() {
         return kind;
@@ -122,6 +121,7 @@ public final class UmlType {
 
     /**
      * Returns the FQN of the enclosing type, or null if this is a top-level type.
+     * 
      * @return the outer type FQN, or null
      */
     public String getOuterTypeFqn() {
@@ -129,7 +129,9 @@ public final class UmlType {
     }
 
     /**
-     * Returns the simple name of the enclosing type, or null if this is a top-level type.
+     * Returns the simple name of the enclosing type, or null if this is a top-level
+     * type.
+     * 
      * @return the outer type simple name, or null
      */
     public String getOuterTypeSimpleName() {
@@ -138,6 +140,7 @@ public final class UmlType {
 
     /**
      * Checks if this is a nested type (inner class, static nested class, etc.).
+     * 
      * @return true if this type is nested within another type
      */
     public boolean isNested() {
@@ -161,7 +164,9 @@ public final class UmlType {
         private List<UmlField> fields;
         private List<UmlMethod> methods;
         private String outerTypeFqn;
-        private Builder() {}
+
+        private Builder() {
+        }
 
         public Builder fqn(String fqn) {
             this.fqn = fqn;
@@ -258,8 +263,10 @@ public final class UmlType {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof UmlType that)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof UmlType that))
+            return false;
         return fqn.equals(that.fqn);
     }
 
