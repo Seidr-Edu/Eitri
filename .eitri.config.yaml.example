@@ -16,6 +16,9 @@ visibility:
   hidePrivate: false        # Hide private members
   hideProtected: false      # Hide protected members
   hidePackage: false        # Hide package-private members
+  hideCommonPackages: false  # Hide types from Java platform packages (java.*, javax.*, sun.*, jdk.*)
+  hideExternalPackages: false # Hide types from packages outside the project root
+  hideSiblingPackages: false  # Hide types from sibling packages not being parsed
 
 # Member filtering
 members:

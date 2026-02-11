@@ -74,6 +74,12 @@ public final class ConfigLoader {
                 EitriConfig::isHideProtected, EitriConfig.Builder::hideProtected),
             new BoolProp(SECTION_VISIBILITY, "hidePackage",
                 EitriConfig::isHidePackage, EitriConfig.Builder::hidePackage),
+            new BoolProp(SECTION_VISIBILITY, "hideCommonPackages",
+                EitriConfig::isHideCommonPackages, EitriConfig.Builder::hideCommonPackages),
+            new BoolProp(SECTION_VISIBILITY, "hideExternalPackages",
+                EitriConfig::isHideExternalPackages, EitriConfig.Builder::hideExternalPackages),
+            new BoolProp(SECTION_VISIBILITY, "hideSiblingPackages",
+                EitriConfig::isHideSiblingPackages, EitriConfig.Builder::hideSiblingPackages),
 
             // Members
             new BoolProp(SECTION_MEMBERS, "hideFields",

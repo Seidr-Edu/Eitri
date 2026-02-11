@@ -10,5 +10,9 @@
 	"files.watcherExclude": {
 		"**/repos/**": true
 	},
-	"java.configuration.updateBuildConfiguration": "interactive"
+	"java.configuration.updateBuildConfiguration": "interactive",
+	"[java]": {
+		"editor.defaultFormatter": "redhat.java"
+	},
+	"editor.formatOnSave": true
 }

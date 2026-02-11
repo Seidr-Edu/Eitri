@@ -9,9 +9,12 @@ import no.ntnu.eitri.model.UmlType;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -46,6 +49,9 @@ public class ParseContext {
     /** Warnings collected during parsing. */
     private final List<String> warnings = new ArrayList<>();
 
+    /** Packages that were directly parsed from source files. */
+    private final Set<String> sourcePackages = new HashSet<>();
+
     /**
      * Represents a pending inheritance relation (extends/implements) to be resolved
      * after all types are registered.
@@ -78,6 +84,9 @@ public class ParseContext {
             throw new IllegalArgumentException("Type already registered: " + fqn);
         }
         typesByFqn.put(fqn, type);
+
+        // Record the package as a source package (parsed from actual source files)
+        addSourcePackage(type.getPackageName());
     }
 
     /**
@@ -159,6 +168,26 @@ public class ParseContext {
         if (config.isVerbose()) {
             LOGGER.warning(warning);
         }
+    }
+
+    /**
+     * Records a package as directly parsed from source files.
+     * 
+     * @param packageName the package name to record
+     */
+    public void addSourcePackage(String packageName) {
+        if (packageName != null && !packageName.isBlank()) {
+            sourcePackages.add(packageName);
+        }
+    }
+
+    /**
+     * Returns the packages that were directly parsed from source files.
+     * 
+     * @return unmodifiable set of source package names
+     */
+    public Set<String> getSourcePackages() {
+        return Collections.unmodifiableSet(sourcePackages);
     }
 
     /**
@@ -277,7 +306,8 @@ public class ParseContext {
      */
     public UmlModel build() {
         UmlModel.Builder modelBuilder = UmlModel.builder()
-                .name(diagramName);
+                .name(diagramName)
+                .sourcePackages(sourcePackages);
 
         // Add all types
         typesByFqn.values().forEach(modelBuilder::addType);
