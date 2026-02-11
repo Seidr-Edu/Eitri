@@ -45,6 +45,5 @@ display:
   showNotes: true           # Show notes annotations (does nothing now)
   showMultiplicities: true  # Show relation multiplicities
   showLabels: true          # Show relation labels
-  showGhostTypes: true      # Show external/ghost types
   showReadOnly: true        # Show read-only modifier for fields
   showVoidReturnTypes: true # Show : void on methods

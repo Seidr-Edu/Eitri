@@ -35,9 +35,9 @@ class UmlModelTest {
     @Test
     @DisplayName("Types are sorted by package then name")
     void typesSorted() {
-        UmlType a = UmlType.builder().simpleName("A").build();
-        UmlType b = UmlType.builder().simpleName("B").build();
-        UmlType c = UmlType.builder().simpleName("C").build();
+        UmlType a = UmlType.builder().fqn("com.example.A").simpleName("A").build();
+        UmlType b = UmlType.builder().fqn("com.example.B").simpleName("B").build();
+        UmlType c = UmlType.builder().fqn("acme.example.C").simpleName("C").build();
 
         UmlModel model = UmlModel.builder()
                 .addType(b)
@@ -52,9 +52,9 @@ class UmlModelTest {
     @Test
     @DisplayName("Packages list is distinct and sorted")
     void packagesList() {
-        UmlType a = UmlType.builder().simpleName("A").build();
-        UmlType b = UmlType.builder().simpleName("B").build();
-        UmlType c = UmlType.builder().simpleName("C").build();
+        UmlType a = UmlType.builder().fqn("com.example.A").simpleName("A").build();
+        UmlType b = UmlType.builder().fqn("com.example.B").simpleName("B").build();
+        UmlType c = UmlType.builder().fqn("com.example.C").simpleName("C").build();
 
         UmlModel model = UmlModel.builder()
                 .addType(a)
@@ -62,21 +62,21 @@ class UmlModelTest {
                 .addType(c)
                 .build();
 
-        assertEquals(List.of("aaa", "pkg"), model.getPackages());
+        assertEquals(List.of("com.example"), model.getPackages());
     }
 
     @Test
     @DisplayName("Types in package and default package")
     void typesInPackage() {
-        UmlType pkgType = UmlType.builder().simpleName("A").build();
-        UmlType defaultType = UmlType.builder().simpleName("B").build();
+        UmlType pkgType = UmlType.builder().fqn("com.example.A").simpleName("A").build();
+        UmlType defaultType = UmlType.builder().fqn("B").simpleName("B").build();
 
         UmlModel model = UmlModel.builder()
                 .addType(pkgType)
                 .addType(defaultType)
                 .build();
 
-        assertEquals(List.of(pkgType), model.getTypesInPackage("pkg"));
+        assertEquals(List.of(pkgType), model.getTypesInPackage("com.example"));
         assertEquals(List.of(defaultType), model.getTypesInDefaultPackage());
     }
 
