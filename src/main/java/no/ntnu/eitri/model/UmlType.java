@@ -53,22 +53,22 @@ public final class UmlType {
         // Package components are lowercase, type names start with uppercase
         String[] parts = fqn.split("\\.");
         StringBuilder packageName = new StringBuilder();
-        
+
         for (int i = 0; i < parts.length; i++) {
             String part = parts[i];
             // Once we hit an uppercase part, that's the start of the type hierarchy
             if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
-                // Return everything before this point (or null if no package)
-                return packageName.length() > 0 ? packageName.toString() : null;
+                // Return everything before this point (or empty string if no package)
+                return packageName.length() > 0 ? packageName.toString() : "";
             }
             if (i > 0) {
                 packageName.append(".");
             }
             packageName.append(part);
         }
-        
+
         // All parts were lowercase (shouldn't happen for valid Java)
-        return packageName.length() > 0 ? packageName.toString() : null;
+        return packageName.length() > 0 ? packageName.toString() : "";
     }
 
     public String getFqn() {

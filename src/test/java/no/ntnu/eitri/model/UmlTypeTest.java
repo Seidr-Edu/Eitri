@@ -65,7 +65,7 @@ class UmlTypeTest {
         void displayNamePreserved() {
             UmlType type = UmlType.builder()
                     .fqn("com.example.OrderHandler")
-                    .simpleName("Order")
+                    .simpleName("OrderHandler")
                     .alias("Order Handler")
                     .build();
 
