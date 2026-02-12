@@ -73,4 +73,21 @@ class TypeVisitorFeatureTest {
         assertFalse(context.getWarnings().isEmpty());
         assertTrue(context.getWarnings().stream().anyMatch(w -> w.contains("Failed to resolve type 'UnknownType'")));
     }
+
+    @Test
+    void recordTypesAreMarkedWithRecordStereotype() {
+        String source = """
+                package com.example;
+                public record Point(int x, int y) {
+                }
+                """;
+
+        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        CompilationUnit cu = parser.parse(source).getResult().orElseThrow();
+        cu.accept(new TypeVisitor(context), null);
+
+        UmlType record = context.build().getType("com.example.Point").orElseThrow();
+        assertEquals(TypeKind.RECORD, record.getKind());
+        assertTrue(record.getStereotypes().stream().anyMatch(s -> "record".equals(s.name())));
+    }
 }
