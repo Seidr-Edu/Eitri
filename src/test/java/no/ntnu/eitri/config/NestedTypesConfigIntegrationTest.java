@@ -45,6 +45,18 @@ class NestedTypesConfigIntegrationTest {
       }
       """;
 
+  private int executeInWorkingDirectory(Path workingDirectory, String... args) {
+    String originalUserDir = System.getProperty("user.dir");
+    try {
+      System.setProperty("user.dir", workingDirectory.toString());
+      return new CommandLine(new Main()).execute(args);
+    } finally {
+      if (originalUserDir != null) {
+        System.setProperty("user.dir", originalUserDir);
+      }
+    }
+  }
+
   @Test
   void includesNestedTypesWhenConfiguredToShow() throws Exception {
     Path src = tempDir.resolve("src");
@@ -59,7 +71,7 @@ class NestedTypesConfigIntegrationTest {
 
     Path out = tempDir.resolve("diagram.puml");
 
-    int exitCode = new CommandLine(new Main()).execute(
+    int exitCode = executeInWorkingDirectory(tempDir,
         "--src", src.toString(),
         "--out", out.toString(),
         "--config", configFile.toString());
@@ -105,7 +117,7 @@ class NestedTypesConfigIntegrationTest {
 
     Path out = tempDir.resolve("diagram.puml");
 
-    int exitCode = new CommandLine(new Main()).execute(
+    int exitCode = executeInWorkingDirectory(tempDir,
         "--src", src.toString(),
         "--out", out.toString(),
         "--config", configFile.toString());
@@ -146,7 +158,7 @@ class NestedTypesConfigIntegrationTest {
 
     Path out = tempDir.resolve("diagram.puml");
 
-    int exitCode = new CommandLine(new Main()).execute(
+    int exitCode = executeInWorkingDirectory(tempDir,
         "--src", src.toString(),
         "--out", out.toString());
 
