@@ -1,6 +1,5 @@
 package no.ntnu.eitri.parser;
 
-import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.UmlRelation;
 
 import java.util.ArrayList;
@@ -48,29 +47,27 @@ final class RelationStore {
                 continue;
             }
 
-            String key = relation.getFromTypeFqn() + "->" + relation.getToTypeFqn();
-            UmlRelation existing = deduped.get(key);
-            if (existing == null || isStronger(relation.getKind(), existing.getKind())) {
-                deduped.put(key, relation);
-            }
+            String key = relationContextKey(relation);
+            deduped.putIfAbsent(key, relation);
         }
 
         return new ArrayList<>(deduped.values());
     }
 
-    private boolean isStronger(RelationKind a, RelationKind b) {
-        return strengthOf(a) > strengthOf(b);
-    }
-
-    private int strengthOf(RelationKind kind) {
-        return switch (kind) {
-            case NESTED -> 7;
-            case EXTENDS -> 6;
-            case IMPLEMENTS -> 5;
-            case COMPOSITION -> 4;
-            case AGGREGATION -> 3;
-            case ASSOCIATION -> 2;
-            case DEPENDENCY -> 1;
-        };
+    /**
+     * Dedupes only semantically identical relations.
+     */
+    private String relationContextKey(UmlRelation relation) {
+        return new StringBuilder()
+                .append(relation.getFromTypeFqn())
+                .append("->")
+                .append(relation.getToTypeFqn())
+                .append("|kind:").append(relation.getKind())
+                .append("|fromMultiplicity:").append(relation.getFromMultiplicity())
+                .append("|toMultiplicity:").append(relation.getToMultiplicity())
+                .append("|fromMember:").append(relation.getFromMember())
+                .append("|toMember:").append(relation.getToMember())
+                .append("|label:").append(relation.getLabel())
+                .toString();
     }
 }
