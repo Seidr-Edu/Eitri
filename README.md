@@ -10,15 +10,16 @@ Eitri is a CLI tool that parses source directories and generates class diagrams 
 
 ### Features
 
-- **Type extraction**: Classes, interfaces, enums, annotations, records
+- **Type extraction**: Classes, interfaces, enums, annotations, records (including nested types)
 - **Member extraction**: Fields, methods, constructors with full signatures
 - **Relationship detection**:
   - Inheritance (`extends`) and implementation (`implements`)
   - Composition, aggregation, association (from fields)
   - Dependencies (from method parameters/return types)
+  - Nested type relationships
 - **Package grouping**: Types organized by package in the diagram
 - **Pluggable pipeline**: Parsers and writers are discovered via registries (file extension based)
-- **Highly configurable**: Filter members by visibility, hide/show relation types, customize layout
+- **Highly configurable**: Filter members by visibility, hide/show relation types, toggle nested types, customize layout
 - **YAML configuration**: Store settings in a config file for reproducibility
 - **Multiple source paths**: Combine sources from multiple directories
 
@@ -117,6 +118,25 @@ java -jar eitri.jar --config eitri.yaml --src src/main/java --out diagram.puml
 ```
 
 CLI arguments override YAML settings.
+
+### Hiding Nested Types
+
+To simplify diagrams and reduce implementation details, you can hide nested classes, enums, records, and interfaces using the `showNested` configuration:
+
+```yaml
+relations:
+  showNested: false  # Hide nested types and their relationships
+```
+
+This is useful when:
+- You want to focus on the high-level architecture
+- Nested types (like inner classes, builder patterns, or nested enums) add noise to the diagram
+- You're presenting to stakeholders who need a simplified view
+
+When `showNested` is `false`:
+- Nested types (e.g., `Outer.Inner`, `Container.Builder`) are excluded from the diagram
+- Relations involving nested types are also filtered out
+- Only top-level types in each package are shown
 
 ## 📊 Output Example
 
