@@ -2,7 +2,9 @@ package no.ntnu.eitri.writer;
 
 import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.config.LayoutDirection;
+import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.TypeKind;
+import no.ntnu.eitri.model.UmlField;
 import no.ntnu.eitri.model.UmlMethod;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
@@ -376,5 +378,79 @@ class PlantUmlWriterTest {
         String output = new PlantUmlWriter().render(model, EitriConfig.builder().build());
         long count = output.lines().filter(line -> line.equals("com.example.Source -- \"1\" com.example.Target")).count();
         assertEquals(1, count);
+    }
+
+    @Test
+    void usesVisibleFromMemberAsFallbackRelationLabel() {
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .visibility(Visibility.PUBLIC)
+                .addField(UmlField.builder()
+                        .name("repository")
+                        .type("com.example.Dependency")
+                        .visibility(Visibility.PUBLIC)
+                        .build())
+                .build();
+        UmlType dependency = UmlType.builder()
+                .fqn("com.example.Dependency")
+                .simpleName("Dependency")
+                .visibility(Visibility.PUBLIC)
+                .build();
+        UmlRelation relation = UmlRelation.builder()
+                .fromTypeFqn(owner.getFqn())
+                .toTypeFqn(dependency.getFqn())
+                .kind(RelationKind.ASSOCIATION)
+                .fromMember("repository")
+                .build();
+        UmlModel model = UmlModel.builder()
+                .addType(owner)
+                .addType(dependency)
+                .addRelation(relation)
+                .build();
+
+        EitriConfig config = EitriConfig.builder().showLabels(true).build();
+        String output = new PlantUmlWriter().render(model, config);
+        assertTrue(output.contains("com.example.Owner -- com.example.Dependency : repository"));
+    }
+
+    @Test
+    void hiddenMembersDoNotLeakAsRelationLabels() {
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .visibility(Visibility.PUBLIC)
+                .addField(UmlField.builder().name("privateRepo").type("com.example.PrivateDep").visibility(Visibility.PRIVATE).build())
+                .addField(UmlField.builder().name("protectedRepo").type("com.example.ProtectedDep").visibility(Visibility.PROTECTED).build())
+                .addField(UmlField.builder().name("packageRepo").type("com.example.PackageDep").visibility(Visibility.PACKAGE).build())
+                .build();
+        UmlType privateDep = UmlType.builder().fqn("com.example.PrivateDep").simpleName("PrivateDep").visibility(Visibility.PUBLIC).build();
+        UmlType protectedDep = UmlType.builder().fqn("com.example.ProtectedDep").simpleName("ProtectedDep").visibility(Visibility.PUBLIC).build();
+        UmlType packageDep = UmlType.builder().fqn("com.example.PackageDep").simpleName("PackageDep").visibility(Visibility.PUBLIC).build();
+
+        UmlModel model = UmlModel.builder()
+                .addType(owner)
+                .addType(privateDep)
+                .addType(protectedDep)
+                .addType(packageDep)
+                .addRelation(UmlRelation.builder().fromTypeFqn(owner.getFqn()).toTypeFqn(privateDep.getFqn()).kind(RelationKind.ASSOCIATION).fromMember("privateRepo").build())
+                .addRelation(UmlRelation.builder().fromTypeFqn(owner.getFqn()).toTypeFqn(protectedDep.getFqn()).kind(RelationKind.ASSOCIATION).fromMember("protectedRepo").build())
+                .addRelation(UmlRelation.builder().fromTypeFqn(owner.getFqn()).toTypeFqn(packageDep.getFqn()).kind(RelationKind.ASSOCIATION).fromMember("packageRepo").build())
+                .build();
+
+        EitriConfig config = EitriConfig.builder()
+                .showLabels(true)
+                .hidePrivate(true)
+                .hideProtected(true)
+                .hidePackage(true)
+                .build();
+
+        String output = new PlantUmlWriter().render(model, config);
+        assertTrue(output.contains("com.example.Owner -- com.example.PrivateDep"));
+        assertTrue(output.contains("com.example.Owner -- com.example.ProtectedDep"));
+        assertTrue(output.contains("com.example.Owner -- com.example.PackageDep"));
+        assertFalse(output.contains(": privateRepo"));
+        assertFalse(output.contains(": protectedRepo"));
+        assertFalse(output.contains(": packageRepo"));
     }
 }
