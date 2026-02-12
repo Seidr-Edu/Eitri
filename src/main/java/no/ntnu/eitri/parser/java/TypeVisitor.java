@@ -172,10 +172,6 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
             builder.addStereotype(FINAL_STEREOTYPE);
         }
 
-        if (kind == TypeKind.RECORD) {
-            builder.addStereotype(RECORD_STEREOTYPE);
-        }
-
         addGenerics(n.getTypeParameters(), builder);
         addFields(n.getFields(), builder);
         addMethods(n.getMethods(), builder);
@@ -284,6 +280,7 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         TypeBuildContext typeBuild = createTypeBuildContext(n, TypeKind.RECORD);
         String typeFqn = typeBuild.typeFqn();
         UmlType.Builder builder = typeBuild.builder();
+        builder.addStereotype(RECORD_STEREOTYPE);
         addGenerics(n.getTypeParameters(), builder);
 
         // Record components as fields
