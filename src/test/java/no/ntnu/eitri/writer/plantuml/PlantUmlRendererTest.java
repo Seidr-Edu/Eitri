@@ -334,8 +334,8 @@ class PlantUmlRendererTest {
         }
 
         @Test
-        @DisplayName("Uses fromMember as fallback label when explicit label is missing")
-        void fallbackFromMemberLabel() {
+        @DisplayName("Uses only explicit relation labels")
+        void noFallbackFromMemberLabel() {
             UmlRelation relation = UmlRelation.builder()
                     .fromTypeFqn("Owner")
                     .toTypeFqn("Dependency")
@@ -343,7 +343,7 @@ class PlantUmlRendererTest {
                     .fromMember("repository")
                     .build();
 
-            assertEquals("Owner -- Dependency : repository",
+            assertEquals("Owner -- Dependency",
                     renderer.renderRelation(relation, "Owner", "Dependency", true, true));
         }
     }

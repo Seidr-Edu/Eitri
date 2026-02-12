@@ -171,28 +171,12 @@ public final class PlantUmlRenderer {
             sb.append(rightSide);
         }
 
-        String relationLabel = resolveRelationLabel(relation);
+        String relationLabel = relation.getLabel();
         if (showLabels && relationLabel != null && !relationLabel.isBlank()) {
             sb.append(" : ").append(relationLabel);
         }
 
         return sb.toString();
-    }
-
-    private String resolveRelationLabel(UmlRelation relation) {
-        if (relation.getLabel() != null && !relation.getLabel().isBlank()) {
-            return relation.getLabel();
-        }
-
-        // Field/member-origin relations often only set fromMember.
-        // Use it as a fallback label so showLabels=true produces useful output.
-        // TODO: Consider if this is the best approach. Types not modeled due to config
-        // settings might leak here.
-        if (!relation.isMemberRelation() && relation.getFromMember() != null && !relation.getFromMember().isBlank()) {
-            return relation.getFromMember();
-        }
-
-        return null;
     }
 
     private String renderMethodSignature(UmlMethod method) {
