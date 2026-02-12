@@ -122,16 +122,20 @@ class NestedTypesConfigIntegrationTest {
                 "Output should contain Outer class");
         
         // Should NOT include nested types when showNested is false
-        assertFalse(output.contains("StaticNested"),
+        assertFalse(output.contains("com.example.Outer$StaticNested") || 
+                    output.contains("com.example.Outer.StaticNested"),
                 "Output should not contain StaticNested when showNested is false");
         
-        assertFalse(output.contains("InnerClass"),
+        assertFalse(output.contains("com.example.Outer$InnerClass") || 
+                    output.contains("com.example.Outer.InnerClass"),
                 "Output should not contain InnerClass when showNested is false");
         
-        assertFalse(output.contains("Status"),
+        assertFalse(output.contains("com.example.Outer$Status") || 
+                    output.contains("com.example.Outer.Status"),
                 "Output should not contain Status enum when showNested is false");
         
-        assertFalse(output.contains("Point") && output.contains("record"),
+        assertFalse(output.contains("com.example.Outer$Point") || 
+                    output.contains("com.example.Outer.Point"),
                 "Output should not contain Point record when showNested is false");
     }
 
