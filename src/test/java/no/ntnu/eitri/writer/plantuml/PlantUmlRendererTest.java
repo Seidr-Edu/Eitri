@@ -332,6 +332,20 @@ class PlantUmlRendererTest {
             assertEquals("Outer +-- Inner : nested",
                     renderer.renderRelation(relation, "Outer", "Inner", true, true));
         }
+
+        @Test
+        @DisplayName("Uses fromMember as fallback label when explicit label is missing")
+        void fallbackFromMemberLabel() {
+            UmlRelation relation = UmlRelation.builder()
+                    .fromTypeFqn("Owner")
+                    .toTypeFqn("Dependency")
+                    .kind(RelationKind.ASSOCIATION)
+                    .fromMember("repository")
+                    .build();
+
+            assertEquals("Owner -- Dependency : repository",
+                    renderer.renderRelation(relation, "Owner", "Dependency", true, true));
+        }
     }
 
     @Test

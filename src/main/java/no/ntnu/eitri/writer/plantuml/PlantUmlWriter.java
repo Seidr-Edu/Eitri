@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -131,12 +132,14 @@ public class PlantUmlWriter implements DiagramWriter {
 
         Set<String> nestedTypeFqns = collectNestedTypeFqns(model);
 
-        // Render relations
+        // Render relations (deduped by rendered line to avoid visual duplicates)
+        Set<String> renderedRelationLines = new LinkedHashSet<>();
         for (UmlRelation relation : model.getRelations()) {
             if (shouldRenderRelation(relation, config, nestedTypeFqns, renderedTypeFqns)) {
-                renderRelation(relation, config, typeNames, sb);
+                renderedRelationLines.add(renderRelation(relation, config, typeNames));
             }
         }
+        renderedRelationLines.forEach(line -> sb.append(line).append("\n"));
 
         // End diagram
         sb.append("\n@enduml\n");
@@ -339,13 +342,12 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Renders a relation.
      */
-    private void renderRelation(UmlRelation relation, EitriConfig config,
-            Map<String, String> typeNames, StringBuilder sb) {
+    private String renderRelation(UmlRelation relation, EitriConfig config,
+            Map<String, String> typeNames) {
         String fromName = typeNames.getOrDefault(relation.getFromTypeFqn(), relation.getFromTypeFqn());
         String toName = typeNames.getOrDefault(relation.getToTypeFqn(), relation.getToTypeFqn());
-        sb.append(renderer.renderRelation(relation, fromName, toName, config.isShowLabels(),
-                config.isShowMultiplicities()));
-        sb.append("\n");
+        return renderer.renderRelation(relation, fromName, toName, config.isShowLabels(),
+                config.isShowMultiplicities());
     }
 
     private String toPlantUmlDirection(LayoutDirection direction) {

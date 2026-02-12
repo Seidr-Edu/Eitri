@@ -347,4 +347,34 @@ class PlantUmlWriterTest {
         assertFalse(output.contains("+class no.ntnu.eitri.model.ModelType"));
         assertFalse(output.contains("no.ntnu.eitri.parser.Source -- no.ntnu.eitri.model.ModelType"));
     }
+
+    @Test
+    void dedupesVisuallyIdenticalRelationsInRenderedOutput() {
+        UmlType source = UmlType.builder().fqn("com.example.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlType target = UmlType.builder().fqn("com.example.Target").simpleName("Target").visibility(Visibility.PUBLIC).build();
+
+        UmlRelation first = UmlRelation.builder()
+                .fromTypeFqn(source.getFqn())
+                .toTypeFqn(target.getFqn())
+                .kind(no.ntnu.eitri.model.RelationKind.ASSOCIATION)
+                .toMultiplicity("1")
+                .build();
+        UmlRelation second = UmlRelation.builder()
+                .fromTypeFqn(source.getFqn())
+                .toTypeFqn(target.getFqn())
+                .kind(no.ntnu.eitri.model.RelationKind.ASSOCIATION)
+                .toMultiplicity("1")
+                .build();
+
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addType(target)
+                .addRelation(first)
+                .addRelation(second)
+                .build();
+
+        String output = new PlantUmlWriter().render(model, EitriConfig.builder().build());
+        long count = output.lines().filter(line -> line.equals("com.example.Source -- \"1\" com.example.Target")).count();
+        assertEquals(1, count);
+    }
 }
