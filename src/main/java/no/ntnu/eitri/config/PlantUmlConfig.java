@@ -34,7 +34,7 @@ public record PlantUmlConfig(
         boolean showNested,
         boolean hideCommonPackages,
         boolean hideExternalPackages,
-        boolean hideSiblingPackages) {
+        boolean hideSiblingPackages) implements WriterConfig {
 
     public PlantUmlConfig {
         diagramName = diagramName != null ? diagramName : "diagram";

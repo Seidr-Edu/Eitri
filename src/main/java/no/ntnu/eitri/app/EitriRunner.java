@@ -7,8 +7,8 @@ import no.ntnu.eitri.config.ConfigException;
 import no.ntnu.eitri.config.ConfigResolution;
 import no.ntnu.eitri.config.ConfigService;
 import no.ntnu.eitri.config.OutputPathInitializer;
-import no.ntnu.eitri.config.PlantUmlConfig;
 import no.ntnu.eitri.config.RunConfig;
+import no.ntnu.eitri.config.WriterConfig;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseException;
 import no.ntnu.eitri.parser.SourceParser;
@@ -44,14 +44,13 @@ public class EitriRunner {
         try {
             ConfigResolution resolution = resolveConfig(cliOptions);
             RunConfig runConfig = resolution.runConfig();
-            PlantUmlConfig plantUmlConfig = resolution.plantUmlConfig();
 
             logResolvedConfig(resolution);
 
             UmlModel model = parseSources(runConfig);
 
             if (runConfig.dryRun()) {
-                runDryRun(model, runConfig, plantUmlConfig);
+                runDryRun(model, runConfig, resolution);
                 return new RunResult(
                         0,
                         null,
@@ -61,7 +60,7 @@ public class EitriRunner {
                         true);
             }
 
-            writeOutput(model, runConfig, plantUmlConfig);
+            writeOutput(model, runConfig, resolution);
             return new RunResult(
                     0,
                     null,
@@ -129,25 +128,25 @@ public class EitriRunner {
         return model;
     }
 
-    private void runDryRun(UmlModel model, RunConfig runConfig, PlantUmlConfig plantUmlConfig) {
+    private void runDryRun(UmlModel model, RunConfig runConfig, ConfigResolution resolution) throws ConfigException {
         LOGGER.log(Level.INFO, "Dry run: Parsed {0} types from {1} source path(s)",
                 new Object[]{model.getTypes().size(), runConfig.sourcePaths().size()});
         LOGGER.log(Level.INFO, "         Would write to: {0}", runConfig.outputPath());
 
         if (runConfig.verbose()) {
-            DiagramWriter writer = resolveWriter(runConfig);
-            String rendered = writer.render(model, plantUmlConfig);
+            DiagramWriter<?> writer = resolveWriter(runConfig);
+            String rendered = renderWithResolvedConfig(writer, model, resolution);
             LOGGER.info("\n--- Generated ---");
             LOGGER.info(rendered);
             LOGGER.info("--- End ---\n");
         }
     }
 
-    private void writeOutput(UmlModel model, RunConfig runConfig, PlantUmlConfig plantUmlConfig)
+    private void writeOutput(UmlModel model, RunConfig runConfig, ConfigResolution resolution)
             throws ConfigException, WriteException {
         OutputPathInitializer.initialize(runConfig.outputPath());
-        DiagramWriter writer = resolveWriter(runConfig);
-        writer.write(model, plantUmlConfig, runConfig.outputPath());
+        DiagramWriter<?> writer = resolveWriter(runConfig);
+        writeWithResolvedConfig(writer, model, runConfig.outputPath(), resolution);
 
         LOGGER.log(Level.INFO, "Generated {0} with {1} types and {2} relations.",
                 new Object[]{runConfig.outputPath(), model.getTypes().size(), model.getRelations().size()});
@@ -166,7 +165,7 @@ public class EitriRunner {
                 .orElseThrow(() -> new ParseException("No parser registered for extension: " + resolvedExtension));
     }
 
-    private DiagramWriter resolveWriter(RunConfig runConfig) {
+    private DiagramWriter<?> resolveWriter(RunConfig runConfig) {
         String extension = runConfig.writerExtension();
         if (extension == null) {
             extension = PathExtension.fromPath(runConfig.outputPath());
@@ -180,6 +179,19 @@ public class EitriRunner {
                         () -> new WriteException(
                                 "No writer registered for extension: " + resolvedExtension,
                                 runConfig.outputPath()));
+    }
+
+    private <C extends WriterConfig> String renderWithResolvedConfig(
+            DiagramWriter<C> writer, UmlModel model, ConfigResolution resolution) throws ConfigException {
+        C config = resolution.writerConfig(writer.configType());
+        return writer.render(model, config);
+    }
+
+    private <C extends WriterConfig> void writeWithResolvedConfig(
+            DiagramWriter<C> writer, UmlModel model, Path outputPath, ConfigResolution resolution)
+            throws ConfigException, WriteException {
+        C config = resolution.writerConfig(writer.configType());
+        writer.write(model, config, outputPath);
     }
 
     private String detectSourceExtension(RunConfig runConfig) {

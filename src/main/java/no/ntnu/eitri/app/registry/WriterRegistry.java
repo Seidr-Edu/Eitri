@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  */
 public final class WriterRegistry {
 
-    private final Map<String, Supplier<DiagramWriter>> byExtension = new LinkedHashMap<>();
+    private final Map<String, Supplier<DiagramWriter<?>>> byExtension = new LinkedHashMap<>();
     private String defaultExtension;
 
     private WriterRegistry() {}
@@ -29,10 +29,10 @@ public final class WriterRegistry {
         return registry;
     }
 
-    public Optional<DiagramWriter> getByExtension(String extension) {
+    public Optional<DiagramWriter<?>> getByExtension(String extension) {
         String normalized = ExtensionNormalizer.normalizeExtension(extension);
         if (normalized == null) return Optional.empty();
-        Supplier<DiagramWriter> supplier = byExtension.get(normalized);
+        Supplier<DiagramWriter<?>> supplier = byExtension.get(normalized);
         return supplier == null ? Optional.empty() : Optional.of(supplier.get());
     }
 
@@ -49,7 +49,7 @@ public final class WriterRegistry {
         return defaultExtension;
     }
 
-    private void register(Supplier<DiagramWriter> supplier, String extension) {
+    private void register(Supplier<DiagramWriter<?>> supplier, String extension) {
         String normalized = ExtensionNormalizer.normalizeExtension(extension);
         if (normalized == null) return;
 
@@ -65,7 +65,7 @@ public final class WriterRegistry {
         for (DiagramWriter writer : loader) {
             // Creates new DiagramWriter instances via reflection, avoiding shared instances.
             Class<? extends DiagramWriter> writerClass = writer.getClass();
-            Supplier<DiagramWriter> supplier = () -> {
+            Supplier<DiagramWriter<?>> supplier = () -> {
                 try {
                     return writerClass.getDeclaredConstructor().newInstance();
                 } catch (ReflectiveOperationException e) {

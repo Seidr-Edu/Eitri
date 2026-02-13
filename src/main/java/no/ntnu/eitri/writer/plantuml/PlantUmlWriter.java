@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * This writer generates PlantUML class diagram syntax from a UmlModel,
  * applying all configuration options for filtering and display.
  */
-public class PlantUmlWriter implements DiagramWriter {
+public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
 
     private static final String NAME = "PlantUML";
     private static final String FILE_EXTENSION = ".puml";
@@ -51,6 +51,11 @@ public class PlantUmlWriter implements DiagramWriter {
     @Override
     public String getFileExtension() {
         return FILE_EXTENSION;
+    }
+
+    @Override
+    public Class<PlantUmlConfig> configType() {
+        return PlantUmlConfig.class;
     }
 
     @Override
