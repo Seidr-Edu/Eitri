@@ -32,8 +32,17 @@ class ParseContextTest {
 
         assertNull(context.resolveTypeReference("int", "Owner.field"));
         assertNull(context.resolveTypeReference("?", "Owner.field"));
-        assertEquals("Number", context.resolveTypeReference("? extends Number", "Owner.field"));
-        assertEquals("Number", context.resolveTypeReference("? super Number", "Owner.field"));
+        assertNull(context.resolveTypeReference("? extends Number", "Owner.field"));
+        assertNull(context.resolveTypeReference("? super Number", "Owner.field"));
+    }
+
+    @Test
+    void resolveTypeReferenceSkipsUnqualifiedTypesWithoutCreatingPlaceholders() {
+        ParseContext context = new ParseContext(false);
+
+        assertNull(context.resolveTypeReference("T", "Owner.field"));
+        assertNull(context.resolveTypeReference("UnknownType", "Owner.field"));
+        assertTrue(context.getTypes().isEmpty());
     }
 
     @Test

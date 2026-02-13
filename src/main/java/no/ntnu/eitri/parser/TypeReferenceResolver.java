@@ -21,6 +21,10 @@ final class TypeReferenceResolver {
             return null;
         }
 
+        if (!isFullyQualifiedTypeName(normalized)) {
+            return null;
+        }
+
         if (registry.hasType(normalized)) {
             return normalized;
         }
@@ -60,5 +64,9 @@ final class TypeReferenceResolver {
             case "void", "boolean", "byte", "short", "int", "long", "float", "double", "char" -> true;
             default -> false;
         };
+    }
+
+    private boolean isFullyQualifiedTypeName(String type) {
+        return type.indexOf('.') >= 0;
     }
 }
