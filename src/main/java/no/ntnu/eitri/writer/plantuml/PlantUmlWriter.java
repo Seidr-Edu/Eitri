@@ -130,7 +130,7 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
 
     private void renderRelations(UmlModel model, PlantUmlConfig config, RenderContext context, StringBuilder sb) {
         Set<String> renderedRelationLines = new LinkedHashSet<>();
-        for (UmlRelation relation : model.getRelations()) {
+        for (UmlRelation relation : model.getRelationsSorted()) {
             if (shouldRenderRelation(relation, config, context)) {
                 renderedRelationLines.add(renderRelation(relation, config, context));
             }

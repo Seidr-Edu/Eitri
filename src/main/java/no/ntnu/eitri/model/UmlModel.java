@@ -17,10 +17,10 @@ import java.util.Set;
  */
 public final class UmlModel {
     private final String name;
-    private final Map<String, UmlType> types;  // Keyed by type FQN
+    private final Map<String, UmlType> types; // Keyed by type FQN
     private final List<UmlRelation> relations;
     private final List<UmlNote> notes;
-    private final Set<String> sourcePackages;  // Packages parsed from source files
+    private final Set<String> sourcePackages; // Packages parsed from source files
 
     private UmlModel(Builder builder) {
         this.name = builder.name != null ? builder.name : "diagram";
@@ -44,6 +44,7 @@ public final class UmlModel {
 
     /**
      * Returns all types in the model.
+     * 
      * @return unmodifiable collection of types
      */
     public Collection<UmlType> getTypes() {
@@ -52,6 +53,7 @@ public final class UmlModel {
 
     /**
      * Returns types sorted by package then name for deterministic output.
+     * 
      * @return sorted list of types
      */
     public List<UmlType> getTypesSorted() {
@@ -63,6 +65,7 @@ public final class UmlModel {
 
     /**
      * Looks up a type by its fully qualified name.
+     * 
      * @param typeFqn the fully qualified name of type
      * @return the type, or empty if not found
      */
@@ -72,6 +75,7 @@ public final class UmlModel {
 
     /**
      * Checks if a type exists in the model.
+     * 
      * @param typeFqn the fully qualified name of type
      * @return true if the type exists
      */
@@ -81,6 +85,7 @@ public final class UmlModel {
 
     /**
      * Returns all relations in the model.
+     * 
      * @return unmodifiable list of relations
      */
     public List<UmlRelation> getRelations() {
@@ -89,21 +94,21 @@ public final class UmlModel {
 
     /**
      * Returns relations sorted for deterministic output.
-     * Hierarchy relations first, then by kind, then by type FQNs.
-     * @return sorted list of relations
+     * Sorts by from-type FQN then to-type FQN.
+     * 
+     * @return unmodifiable sorted list of relations
      */
     public List<UmlRelation> getRelationsSorted() {
-        return relations.stream()
+        return Collections.unmodifiableList(relations.stream()
                 .sorted(Comparator
-                        .comparing((UmlRelation r) -> !r.getKind().isHierarchy())  // hierarchy first
-                        .thenComparing(r -> r.getKind().ordinal())
-                        .thenComparing(UmlRelation::getFromTypeFqn)
+                        .comparing(UmlRelation::getFromTypeFqn)
                         .thenComparing(UmlRelation::getToTypeFqn))
-                .toList();
+                .toList());
     }
 
     /**
      * Returns all notes in the model.
+     * 
      * @return unmodifiable list of notes
      */
     public List<UmlNote> getNotes() {
@@ -112,6 +117,7 @@ public final class UmlModel {
 
     /**
      * Returns all unique package names in the model, sorted.
+     * 
      * @return sorted list of package names
      */
     public List<String> getPackages() {
@@ -125,6 +131,7 @@ public final class UmlModel {
 
     /**
      * Returns types in a specific package.
+     * 
      * @param packageName the package name
      * @return list of types in that package
      */
@@ -137,6 +144,7 @@ public final class UmlModel {
 
     /**
      * Returns types without a package (default package).
+     * 
      * @return list of types in default package
      */
     public List<UmlType> getTypesInDefaultPackage() {
@@ -149,6 +157,7 @@ public final class UmlModel {
     /**
      * Returns the packages that were directly parsed from source files.
      * Used for package filtering (sibling/external package detection).
+     * 
      * @return unmodifiable set of source package names
      */
     public Set<String> getSourcePackages() {
@@ -166,7 +175,8 @@ public final class UmlModel {
         private List<UmlNote> notes;
         private Set<String> sourcePackages;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         public Builder name(String name) {
             this.name = name;
