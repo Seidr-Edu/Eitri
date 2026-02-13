@@ -269,4 +269,25 @@ class RelationDetectorTest {
         assertEquals(enumType.getFqn(), model.getRelations().getFirst().getToTypeFqn());
         assertEquals("1", model.getRelations().getFirst().getToMultiplicity());
     }
+
+    @Test
+    void staticSelfTypeFieldDoesNotCreateRelation() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Singleton")
+                .simpleName("Singleton")
+                .addField(UmlField.builder()
+                        .name("INSTANCE")
+                        .type("com.example.Singleton")
+                        .isStatic(true)
+                        .isFinal(true)
+                        .build())
+                .build();
+        context.addType(owner);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(0, model.getRelations().size());
+    }
 }

@@ -103,7 +103,7 @@ public class RelationDetector {
             if (genericContent != null) {
                 for (String elementType : genericContent.split(",")) {
                     String resolvedElement = context.normalizeToValidFqn(elementType.trim());
-                    if (resolvedElement != null) {
+                    if (resolvedElement != null && !shouldSkipStaticSelfFieldRelation(ownerFqn, field, resolvedElement)) {
                         UmlRelation relation = UmlRelation.builder()
                                 .fromTypeFqn(ownerFqn)
                                 .toTypeFqn(resolvedElement)
@@ -122,7 +122,7 @@ public class RelationDetector {
         if (fieldType.endsWith("[]")) {
             String elementType = fieldType.substring(0, fieldType.length() - 2);
             String resolvedType = context.normalizeToValidFqn(elementType);
-            if (resolvedType != null) {
+            if (resolvedType != null && !shouldSkipStaticSelfFieldRelation(ownerFqn, field, resolvedType)) {
                 UmlRelation relation = UmlRelation.builder()
                         .fromTypeFqn(ownerFqn)
                         .toTypeFqn(resolvedType)
@@ -137,7 +137,7 @@ public class RelationDetector {
 
         // Simple field reference
         String resolvedType = context.normalizeToValidFqn(fieldType);
-        if (resolvedType != null) {
+        if (resolvedType != null && !shouldSkipStaticSelfFieldRelation(ownerFqn, field, resolvedType)) {
             // Determine if composition or association based on field modifiers
             RelationKind kind = determineFieldRelationKind(ownerFqn, field, resolvedType);
 
@@ -156,6 +156,10 @@ public class RelationDetector {
 
             context.addRelation(relBuilder.build());
         }
+    }
+
+    private boolean shouldSkipStaticSelfFieldRelation(String ownerFqn, UmlField field, String targetFqn) {
+        return field.isStatic() && ownerFqn.equals(targetFqn);
     }
 
     /**
