@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,5 +55,36 @@ class JavaSourceParserBehaviorTest {
         UmlModel model = parser.parse(List.of(file), runConfig);
 
         assertEquals(1, model.getTypes().stream().filter(t -> t.getFqn().equals("com.example.Single")).count());
+    }
+
+    @Test
+    void skipsTestDirectoriesByDefault() throws Exception {
+        Path mainSrc = tempDir.resolve("src/main/java");
+        Path testSrc = tempDir.resolve("src/test/java");
+        Files.createDirectories(mainSrc);
+        Files.createDirectories(testSrc);
+        Files.writeString(mainSrc.resolve("Main.java"), "package com.example; public class Main {}");
+        Files.writeString(testSrc.resolve("MainTest.java"), "package com.example; public class MainTest {}");
+
+        JavaSourceParser parser = new JavaSourceParser();
+        RunConfig runConfig = new RunConfig(List.of(tempDir), tempDir.resolve("out.puml"), null, null, false, false);
+        UmlModel model = parser.parse(List.of(tempDir), runConfig);
+
+        assertTrue(model.hasType("com.example.Main"));
+        assertFalse(model.hasType("com.example.MainTest"));
+    }
+
+    @Test
+    void isTestDirectoryMatchesSrcTest() {
+        assertTrue(JavaSourceParser.isTestDirectory(Path.of("/project/src/test")));
+        assertTrue(JavaSourceParser.isTestDirectory(Path.of("src/test")));
+    }
+
+    @Test
+    void isTestDirectoryRejectsNonTestPaths() {
+        assertFalse(JavaSourceParser.isTestDirectory(Path.of("/project/src/main")));
+        assertFalse(JavaSourceParser.isTestDirectory(Path.of("/project/test")));
+        assertFalse(JavaSourceParser.isTestDirectory(Path.of("/project/src/test/java")));
+        assertFalse(JavaSourceParser.isTestDirectory(Path.of("test")));
     }
 }

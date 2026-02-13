@@ -167,6 +167,14 @@ public class JavaSourceParser implements SourceParser {
         try {
             Files.walkFileTree(sourcePath, new SimpleFileVisitor<>() {
                 @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                    if (isTestDirectory(dir)) {
+                        return FileVisitResult.SKIP_SUBTREE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     addJavaFileIfMatches(file, javaFiles);
                     return FileVisitResult.CONTINUE;
@@ -181,6 +189,21 @@ public class JavaSourceParser implements SourceParser {
         } catch (IOException e) {
             throw new ParseException("Failed to walk source path: " + sourcePath, e);
         }
+    }
+
+    /**
+     * Returns {@code true} if the directory is a test source root.
+     * Matches directories named {@code test} directly under a {@code src} parent,
+     * following the standard Maven/Gradle {@code src/test/java} convention.
+     */
+    static boolean isTestDirectory(Path dir) {
+        Path name = dir.getFileName();
+        Path parent = dir.getParent();
+        return name != null
+                && parent != null
+                && name.toString().equals("test")
+                && parent.getFileName() != null
+                && parent.getFileName().toString().equals("src");
     }
 
     private void logTypeResolutionStats(TypeResolutionStats stats) {
