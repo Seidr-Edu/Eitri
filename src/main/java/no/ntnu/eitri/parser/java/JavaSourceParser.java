@@ -11,8 +11,9 @@ import no.ntnu.eitri.config.RunConfig;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseContext;
 import no.ntnu.eitri.parser.ParseException;
+import no.ntnu.eitri.parser.ParseReport;
 import no.ntnu.eitri.parser.SourceParser;
-import no.ntnu.eitri.parser.TypeResolutionStats;
+import no.ntnu.eitri.parser.resolution.TypeResolutionStats;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -75,10 +76,11 @@ public class JavaSourceParser implements SourceParser {
         relationDetector.detectRelations();
 
         if (runConfig.verbose()) {
+            ParseReport report = context.getReport();
             LOGGER.log(Level.INFO, "Detected {0} total relations (including detected)", context.getRelationCount());
-            logTypeResolutionStats(context.getTypeResolutionStats());
-            if (!context.getWarnings().isEmpty()) {
-                LOGGER.log(Level.INFO, "Collected {0} warnings", context.getWarnings().size());
+            logTypeResolutionStats(report.typeResolutionStats());
+            if (report.warningCount() > 0) {
+                LOGGER.log(Level.INFO, "Collected {0} warnings", report.warningCount());
             }
         }
 

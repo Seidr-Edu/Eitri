@@ -1,9 +1,9 @@
-package no.ntnu.eitri.parser;
+package no.ntnu.eitri.parser.resolution;
 
 /**
  * Normalizes and resolves type references against a registry.
  */
-final class TypeReferenceResolver {
+public final class TypeReferenceResolver {
 
     private final TypeRegistry registry;
     private int totalRequests;
@@ -15,11 +15,11 @@ final class TypeReferenceResolver {
     private int skippedPrimitive;
     private int skippedNonFqn;
 
-    TypeReferenceResolver(TypeRegistry registry) {
+    public TypeReferenceResolver(TypeRegistry registry) {
         this.registry = registry;
     }
 
-    String resolveTypeReference(String fqn) {
+    public String resolveTypeReference(String fqn) {
         totalRequests++;
 
         if (fqn == null || fqn.isEmpty()) {
@@ -51,7 +51,7 @@ final class TypeReferenceResolver {
         return normalized;
     }
 
-    TypeResolutionStats getStatsSnapshot() {
+    public TypeResolutionStats getStatsSnapshot() {
         return new TypeResolutionStats(
                 totalRequests,
                 resolvedReferences,

@@ -1,4 +1,4 @@
-package no.ntnu.eitri.parser;
+package no.ntnu.eitri.parser.resolution;
 
 /**
  * Aggregated statistics for type-reference resolution during parsing.

@@ -1,4 +1,4 @@
-package no.ntnu.eitri.parser;
+package no.ntnu.eitri.parser.resolution;
 
 import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlType;
@@ -14,12 +14,12 @@ import java.util.Set;
 /**
  * Stores discovered types and tracked source packages during parsing.
  */
-final class TypeRegistry {
+public final class TypeRegistry {
 
     private final Map<String, UmlType> typesByFqn = new HashMap<>();
     private final Set<String> sourcePackages = new HashSet<>();
 
-    void addType(UmlType type) {
+    public void addType(UmlType type) {
         String fqn = type.getFqn();
         if (typesByFqn.containsKey(fqn)) {
             throw new IllegalArgumentException("Type already registered: " + fqn);
@@ -28,15 +28,15 @@ final class TypeRegistry {
         addSourcePackage(type.getPackageName());
     }
 
-    UmlType getType(String fqn) {
+    public UmlType getType(String fqn) {
         return typesByFqn.get(fqn);
     }
 
-    boolean hasType(String fqn) {
+    public boolean hasType(String fqn) {
         return typesByFqn.containsKey(fqn);
     }
 
-    void ensureTypeExists(String fqn) {
+    public void ensureTypeExists(String fqn) {
         if (fqn == null || fqn.isBlank() || typesByFqn.containsKey(fqn)) {
             return;
         }
@@ -51,17 +51,17 @@ final class TypeRegistry {
         typesByFqn.put(fqn, placeholder);
     }
 
-    Collection<UmlType> getTypes() {
+    public Collection<UmlType> getTypes() {
         return typesByFqn.values();
     }
 
-    void addSourcePackage(String packageName) {
+    public void addSourcePackage(String packageName) {
         if (packageName != null && !packageName.isBlank()) {
             sourcePackages.add(packageName);
         }
     }
 
-    Set<String> getSourcePackages() {
+    public Set<String> getSourcePackages() {
         return Collections.unmodifiableSet(sourcePackages);
     }
 

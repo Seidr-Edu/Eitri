@@ -4,6 +4,11 @@ import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
 import no.ntnu.eitri.model.UmlType;
+import no.ntnu.eitri.parser.diagnostics.ParseDiagnostics;
+import no.ntnu.eitri.parser.relations.RelationStore;
+import no.ntnu.eitri.parser.resolution.TypeReferenceResolver;
+import no.ntnu.eitri.parser.resolution.TypeRegistry;
+import no.ntnu.eitri.parser.resolution.TypeResolutionStats;
 
 import java.util.Collection;
 import java.util.List;
@@ -125,6 +130,15 @@ public class ParseContext {
      */
     public TypeResolutionStats getTypeResolutionStats() {
         return typeResolver.getStatsSnapshot();
+    }
+
+    /**
+     * Returns parser report containing warnings and type-resolution metrics.
+     *
+     * @return parser report snapshot
+     */
+    public ParseReport getReport() {
+        return new ParseReport(diagnostics.getWarnings(), typeResolver.getStatsSnapshot());
     }
 
     /**

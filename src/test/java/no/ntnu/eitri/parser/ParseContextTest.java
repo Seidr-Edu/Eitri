@@ -4,6 +4,7 @@ import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
 import no.ntnu.eitri.model.UmlType;
+import no.ntnu.eitri.parser.resolution.TypeResolutionStats;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -137,5 +138,22 @@ class ParseContextTest {
         assertEquals(1, stats.skippedWildcard());
         assertEquals(1, stats.skippedNullOrEmpty());
         assertEquals(4, stats.skippedTotal());
+    }
+
+    @Test
+    void parseReportWrapsWarningsAndResolutionStats() {
+        ParseContext context = new ParseContext(false);
+        context.addWarning("warn-1");
+        context.addWarning("warn-2");
+        context.resolveTypeReference("T", "Owner.field");
+        context.resolveTypeReference("com.example.Valid", "Owner.field");
+
+        ParseReport report = context.getReport();
+
+        assertEquals(2, report.warningCount());
+        assertEquals(List.of("warn-1", "warn-2"), report.warnings());
+        assertEquals(2, report.typeResolutionStats().totalRequests());
+        assertEquals(1, report.typeResolutionStats().skippedNonFqn());
+        assertEquals(1, report.typeResolutionStats().resolvedReferences());
     }
 }
