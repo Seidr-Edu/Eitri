@@ -30,8 +30,7 @@ class ConfigServiceTest {
                 ".java",
                 ".puml",
                 false,
-                false
-        );
+                false);
 
         ConfigException ex = assertThrows(ConfigException.class, () -> new ConfigService().resolve(options));
         assertTrue(ex.getMessage().contains("Config file not found"));
@@ -58,8 +57,7 @@ class ConfigServiceTest {
                 ".java",
                 ".puml",
                 false,
-                false
-        );
+                false);
 
         ConfigResolution resolution = new ConfigService().resolve(options);
 
@@ -87,14 +85,13 @@ class ConfigServiceTest {
                     ".java",
                     ".puml",
                     false,
-                    false
-            );
+                    false);
 
             ConfigResolution resolution = new ConfigService().resolve(options);
 
             assertNull(resolution.configFileUsed());
             assertEquals("diagram", resolution.plantUmlConfig().diagramName());
-            assertTrue(resolution.plantUmlConfig().showNested());
+            assertFalse(resolution.plantUmlConfig().showNested());
         } finally {
             System.setProperty("user.dir", previous);
         }
@@ -124,8 +121,7 @@ class ConfigServiceTest {
                     ".java",
                     ".puml",
                     false,
-                    false
-            );
+                    false);
 
             ConfigResolution resolution = new ConfigService().resolve(options);
             assertEquals(defaultConfig, resolution.configFileUsed());

@@ -166,7 +166,7 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
      * Renders global PlantUML settings based on configuration.
      */
     private void renderGlobalSettings(PlantUmlConfig config, StringBuilder sb) {
-        if (config.hideCircle()) {
+        if (!config.showCircle()) {
             sb.append("hide circle\n");
         }
         if (config.hideEmptyFields()) {
@@ -276,8 +276,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
             return false;
         }
 
-        // Check hideUnlinked
-        return !config.hideUnlinked() || linkedTypes.contains(type.getFqn());
+        // Check showUnlinked
+        return config.showUnlinked() || linkedTypes.contains(type.getFqn());
     }
 
     /**

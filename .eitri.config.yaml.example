@@ -15,8 +15,8 @@ writers:
     hideEmptyMethods: false         # Hide methods compartment on types with no methods
     hideEmptyMembers: true          # Hide fields/methods compartments on types with no members
 
-    hideCircle: false               # Hide circle for lollipop interfaces
-    hideUnlinked: false             # Hide types with no relations
+    showCircle: true                # Hide circle for lollipop interfaces
+    showUnlinked: true              # Hide types with no relations
     showStereotypes: true           # Show stereotypes (e.g., <<abstract>>)
     showGenerics: true              # Show generic notation in PlantUML
     showNotes: true                 # Show notes annotations (does nothing now)

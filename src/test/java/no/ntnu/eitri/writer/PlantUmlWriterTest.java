@@ -190,7 +190,7 @@ class PlantUmlWriterTest {
                                 .addRelation(assoc)
                                 .build();
 
-                PlantUmlConfig config = config("showNested", false, "hideUnlinked", false);
+                PlantUmlConfig config = config("showNested", false, "showUnlinked", false);
 
                 PlantUmlWriter writer = new PlantUmlWriter();
                 String output = writer.render(model, config);
@@ -384,7 +384,7 @@ class PlantUmlWriterTest {
                                 .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
                                 .build();
 
-                PlantUmlConfig config = config("showAssociation", true);
+                PlantUmlConfig config = config("showAssociation", true, "hideCommonPackages", false);
 
                 String output = new PlantUmlWriter().render(model, config);
 
