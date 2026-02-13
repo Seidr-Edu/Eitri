@@ -20,7 +20,8 @@ public final class WriterRegistry {
     private final Map<String, Supplier<DiagramWriter<?>>> byExtension = new LinkedHashMap<>();
     private String defaultExtension;
 
-    private WriterRegistry() {}
+    private WriterRegistry() {
+    }
 
     public static WriterRegistry defaultRegistry() {
         WriterRegistry registry = new WriterRegistry();
@@ -31,7 +32,8 @@ public final class WriterRegistry {
 
     public Optional<DiagramWriter<?>> getByExtension(String extension) {
         String normalized = ExtensionNormalizer.normalizeExtension(extension);
-        if (normalized == null) return Optional.empty();
+        if (normalized == null)
+            return Optional.empty();
         Supplier<DiagramWriter<?>> supplier = byExtension.get(normalized);
         return supplier == null ? Optional.empty() : Optional.of(supplier.get());
     }
@@ -51,7 +53,8 @@ public final class WriterRegistry {
 
     private void register(Supplier<DiagramWriter<?>> supplier, String extension) {
         String normalized = ExtensionNormalizer.normalizeExtension(extension);
-        if (normalized == null) return;
+        if (normalized == null)
+            return;
 
         if (defaultExtension == null) {
             defaultExtension = normalized;
@@ -59,12 +62,15 @@ public final class WriterRegistry {
         byExtension.putIfAbsent(normalized, supplier);
     }
 
-    @SuppressWarnings("null")
     private void registerFromServiceLoader() {
-        ServiceLoader<DiagramWriter> loader = ServiceLoader.load(DiagramWriter.class);
-        for (DiagramWriter writer : loader) {
-            // Creates new DiagramWriter instances via reflection, avoiding shared instances.
-            Class<? extends DiagramWriter> writerClass = writer.getClass();
+        @SuppressWarnings("unchecked")
+        ServiceLoader<DiagramWriter<?>> loader = (ServiceLoader<DiagramWriter<?>>) (ServiceLoader<?>) ServiceLoader
+                .load(DiagramWriter.class);
+        for (DiagramWriter<?> writer : loader) {
+            // Creates new DiagramWriter instances via reflection, avoiding shared
+            // instances.
+            @SuppressWarnings("unchecked")
+            Class<? extends DiagramWriter<?>> writerClass = (Class<? extends DiagramWriter<?>>) writer.getClass();
             Supplier<DiagramWriter<?>> supplier = () -> {
                 try {
                     return writerClass.getDeclaredConstructor().newInstance();
