@@ -6,37 +6,67 @@ package no.ntnu.eitri.parser;
 final class TypeReferenceResolver {
 
     private final TypeRegistry registry;
+    private int totalRequests;
+    private int resolvedReferences;
+    private int placeholdersCreated;
+    private int reusedKnownTypes;
+    private int skippedNullOrEmpty;
+    private int skippedWildcard;
+    private int skippedPrimitive;
+    private int skippedNonFqn;
 
     TypeReferenceResolver(TypeRegistry registry) {
         this.registry = registry;
     }
 
     String resolveTypeReference(String fqn) {
+        totalRequests++;
+
         if (fqn == null || fqn.isEmpty()) {
+            skippedNullOrEmpty++;
             return null;
         }
 
-        String normalized = normalizeTypeName(fqn);
-        if (normalized == null || normalized.isEmpty()) {
+        NormalizationResult normalization = normalizeTypeName(fqn);
+        if (normalization.skipReason() != null) {
+            incrementSkipCounter(normalization.skipReason());
             return null;
         }
+        String normalized = normalization.normalized();
 
         if (!isFullyQualifiedTypeName(normalized)) {
+            skippedNonFqn++;
             return null;
         }
 
         if (registry.hasType(normalized)) {
+            reusedKnownTypes++;
+            resolvedReferences++;
             return normalized;
         }
 
         registry.ensureTypeExists(normalized);
+        placeholdersCreated++;
+        resolvedReferences++;
         return normalized;
     }
 
-    private String normalizeTypeName(String typeName) {
+    TypeResolutionStats getStatsSnapshot() {
+        return new TypeResolutionStats(
+                totalRequests,
+                resolvedReferences,
+                placeholdersCreated,
+                reusedKnownTypes,
+                skippedNullOrEmpty,
+                skippedWildcard,
+                skippedPrimitive,
+                skippedNonFqn);
+    }
+
+    private NormalizationResult normalizeTypeName(String typeName) {
         String base = typeName.trim();
         if (base.isEmpty()) {
-            return null;
+            return new NormalizationResult(null, SkipReason.NULL_OR_EMPTY);
         }
 
         while (base.endsWith("[]")) {
@@ -53,10 +83,14 @@ final class TypeReferenceResolver {
         } else if (base.startsWith("? super ")) {
             base = base.substring("? super ".length()).trim();
         } else if ("?".equals(base)) {
-            return null;
+            return new NormalizationResult(null, SkipReason.WILDCARD);
         }
 
-        return isPrimitive(base) ? null : base;
+        if (isPrimitive(base)) {
+            return new NormalizationResult(null, SkipReason.PRIMITIVE);
+        }
+
+        return new NormalizationResult(base, null);
     }
 
     private boolean isPrimitive(String type) {
@@ -68,5 +102,22 @@ final class TypeReferenceResolver {
 
     private boolean isFullyQualifiedTypeName(String type) {
         return type.indexOf('.') >= 0;
+    }
+
+    private void incrementSkipCounter(SkipReason reason) {
+        switch (reason) {
+            case NULL_OR_EMPTY -> skippedNullOrEmpty++;
+            case WILDCARD -> skippedWildcard++;
+            case PRIMITIVE -> skippedPrimitive++;
+        }
+    }
+
+    private enum SkipReason {
+        NULL_OR_EMPTY,
+        WILDCARD,
+        PRIMITIVE
+    }
+
+    private record NormalizationResult(String normalized, SkipReason skipReason) {
     }
 }

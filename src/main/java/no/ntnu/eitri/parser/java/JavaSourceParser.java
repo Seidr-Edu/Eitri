@@ -12,6 +12,7 @@ import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseContext;
 import no.ntnu.eitri.parser.ParseException;
 import no.ntnu.eitri.parser.SourceParser;
+import no.ntnu.eitri.parser.TypeResolutionStats;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -75,6 +76,7 @@ public class JavaSourceParser implements SourceParser {
 
         if (runConfig.verbose()) {
             LOGGER.log(Level.INFO, "Detected {0} total relations (including detected)", context.getRelationCount());
+            logTypeResolutionStats(context.getTypeResolutionStats());
             if (!context.getWarnings().isEmpty()) {
                 LOGGER.log(Level.INFO, "Collected {0} warnings", context.getWarnings().size());
             }
@@ -176,6 +178,27 @@ public class JavaSourceParser implements SourceParser {
             });
         } catch (IOException e) {
             throw new ParseException("Failed to walk source path: " + sourcePath, e);
+        }
+    }
+
+    private void logTypeResolutionStats(TypeResolutionStats stats) {
+        LOGGER.info(() -> "Type reference resolution: "
+                + stats.totalRequests()
+                + " requests, "
+                + stats.resolvedReferences()
+                + " resolved ("
+                + stats.placeholdersCreated()
+                + " placeholder type(s), "
+                + stats.reusedKnownTypes()
+                + " existing type(s)), "
+                + stats.skippedTotal()
+                + " skipped");
+
+        if (stats.skippedTotal() > 0) {
+            LOGGER.info(() -> "Type reference skips by reason: non-FQN=" + stats.skippedNonFqn()
+                    + ", primitive=" + stats.skippedPrimitive()
+                    + ", wildcard=" + stats.skippedWildcard()
+                    + ", empty=" + stats.skippedNullOrEmpty());
         }
     }
 
