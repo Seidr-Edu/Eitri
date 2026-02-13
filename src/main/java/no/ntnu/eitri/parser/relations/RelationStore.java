@@ -1,7 +1,9 @@
 package no.ntnu.eitri.parser.relations;
 
 import no.ntnu.eitri.model.RelationKind;
+import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlRelation;
+import no.ntnu.eitri.model.UmlType;
 import no.ntnu.eitri.parser.ParseContext;
 import no.ntnu.eitri.parser.resolution.TypeReferenceResolver;
 import no.ntnu.eitri.parser.resolution.TypeRegistry;
@@ -51,6 +53,9 @@ public final class RelationStore {
             // The TO endpoint may be an external FQN — the writer decides
             // whether to render it based on package-hiding configuration.
             if (!types.hasType(relation.getFromTypeFqn())) {
+                continue;
+            }
+            if (isRedundantEnumSelfRelation(relation, types)) {
                 continue;
             }
 
@@ -124,6 +129,19 @@ public final class RelationStore {
         if (relation.getLabel() != null)
             score++;
         return score;
+    }
+
+    /**
+     * Enum self-relations are typically parser artifacts (enum constants and implicit
+     * enum APIs) and add little diagram value.
+     */
+    private boolean isRedundantEnumSelfRelation(UmlRelation relation, TypeRegistry types) {
+        if (!relation.getFromTypeFqn().equals(relation.getToTypeFqn())) {
+            return false;
+        }
+
+        UmlType fromType = types.getType(relation.getFromTypeFqn());
+        return fromType != null && fromType.getKind() == TypeKind.ENUM;
     }
 
     /**

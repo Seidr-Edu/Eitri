@@ -1,6 +1,7 @@
 package no.ntnu.eitri.parser;
 
 import no.ntnu.eitri.model.RelationKind;
+import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlRelation;
 import no.ntnu.eitri.model.UmlType;
 import no.ntnu.eitri.parser.relations.RelationStore;
@@ -150,5 +151,23 @@ class RelationStoreTest {
         assertEquals(1, relations.size());
         assertEquals(RelationKind.EXTENDS, relations.getFirst().getKind());
         assertEquals("org.external.Base", relations.getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void buildFinalRelationsPrunesEnumSelfRelations() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder()
+                .fqn("com.example.Status")
+                .simpleName("Status")
+                .kind(TypeKind.ENUM)
+                .build());
+
+        RelationStore store = new RelationStore();
+        store.addRelation(UmlRelation.association("com.example.Status", "com.example.Status", null));
+        store.addRelation(UmlRelation.dependency("com.example.Status", "com.example.Status", null));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(0, relations.size());
     }
 }
