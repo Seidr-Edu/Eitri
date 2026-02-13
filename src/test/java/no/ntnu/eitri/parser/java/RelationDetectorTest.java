@@ -1,6 +1,7 @@
 package no.ntnu.eitri.parser.java;
 
 import no.ntnu.eitri.model.RelationKind;
+import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlField;
 import no.ntnu.eitri.model.UmlMethod;
 import no.ntnu.eitri.model.UmlModel;
@@ -240,5 +241,32 @@ class RelationDetectorTest {
         UmlModel model = context.build();
 
         assertEquals(0, model.getRelations().size());
+    }
+
+    @Test
+    void classFieldOfEnumTypeCreatesAssociation() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Order")
+                .simpleName("Order")
+                .kind(TypeKind.CLASS)
+                .addField(UmlField.builder().name("state").type("com.example.OrderState").isFinal(true).build())
+                .build();
+        UmlType enumType = UmlType.builder()
+                .fqn("com.example.OrderState")
+                .simpleName("OrderState")
+                .kind(TypeKind.ENUM)
+                .build();
+        context.addType(owner);
+        context.addType(enumType);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(1, model.getRelations().size());
+        assertEquals(RelationKind.ASSOCIATION, model.getRelations().getFirst().getKind());
+        assertEquals(owner.getFqn(), model.getRelations().getFirst().getFromTypeFqn());
+        assertEquals(enumType.getFqn(), model.getRelations().getFirst().getToTypeFqn());
+        assertEquals("1", model.getRelations().getFirst().getToMultiplicity());
     }
 }

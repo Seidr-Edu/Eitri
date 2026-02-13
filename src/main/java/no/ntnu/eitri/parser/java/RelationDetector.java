@@ -1,6 +1,7 @@
 package no.ntnu.eitri.parser.java;
 
 import no.ntnu.eitri.model.RelationKind;
+import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlField;
 import no.ntnu.eitri.model.UmlMethod;
 import no.ntnu.eitri.model.UmlParameter;
@@ -138,7 +139,7 @@ public class RelationDetector {
         String resolvedType = context.normalizeToValidFqn(fieldType);
         if (resolvedType != null) {
             // Determine if composition or association based on field modifiers
-            RelationKind kind = determineFieldRelationKind(field);
+            RelationKind kind = determineFieldRelationKind(ownerFqn, field, resolvedType);
 
             UmlRelation.Builder relBuilder = UmlRelation.builder()
                     .fromTypeFqn(ownerFqn)
@@ -160,7 +161,17 @@ public class RelationDetector {
     /**
      * Determines the relation kind for a field.
      */
-    private RelationKind determineFieldRelationKind(UmlField field) {
+    private RelationKind determineFieldRelationKind(String ownerFqn, UmlField field, String resolvedType) {
+        UmlType ownerType = context.getType(ownerFqn);
+        UmlType targetType = context.getType(resolvedType);
+
+        if (ownerType != null
+                && ownerType.getKind() == TypeKind.CLASS
+                && targetType != null
+                && targetType.getKind() == TypeKind.ENUM) {
+            return RelationKind.ASSOCIATION;
+        }
+
         // Final fields suggest strong ownership (composition)
         if (field.isFinal()) {
             return RelationKind.COMPOSITION;
