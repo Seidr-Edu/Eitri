@@ -65,8 +65,9 @@ class NestedTypesConfigIntegrationTest {
 
     Path configFile = tempDir.resolve("config.yaml");
     Files.writeString(configFile, """
-        relations:
-          showNested: true
+        writers:
+          plantuml:
+            showNested: true
         """);
 
     Path out = tempDir.resolve("diagram.puml");
@@ -111,8 +112,9 @@ class NestedTypesConfigIntegrationTest {
 
     Path configFile = tempDir.resolve("config.yaml");
     Files.writeString(configFile, """
-        relations:
-          showNested: false
+        writers:
+          plantuml:
+            showNested: false
         """);
 
     Path out = tempDir.resolve("diagram.puml");

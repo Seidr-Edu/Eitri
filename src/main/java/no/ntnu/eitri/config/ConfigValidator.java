@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Validates configuration values and returns human-readable errors.
+ * Validates runtime configuration values and returns human-readable errors.
  */
 public final class ConfigValidator {
 
@@ -17,16 +17,9 @@ public final class ConfigValidator {
     private static final String FIELD_WRITER_EXTENSION = "writerExtension";
 
     private ConfigValidator() {
-        // Utility class
     }
 
-    /**
-     * Validates the configuration and returns a list of error messages.
-     *
-     * @param config the configuration to validate
-     * @return list of error messages (empty if valid)
-     */
-    public static ValidationResult validate(EitriConfig config) {
+    public static ValidationResult validate(RunConfig config) {
         ValidationResult result = new ValidationResult();
 
         validateSourcePaths(config, result);
@@ -37,8 +30,8 @@ public final class ConfigValidator {
         return result;
     }
 
-    private static void validateSourcePaths(EitriConfig config, ValidationResult result) {
-        if (config.getSourcePaths().isEmpty()) {
+    private static void validateSourcePaths(RunConfig config, ValidationResult result) {
+        if (config.sourcePaths().isEmpty()) {
             result.add(ValidationError.error(
                     "SOURCE_PATHS_REQUIRED",
                     "At least one source path (--src) is required.",
@@ -47,25 +40,25 @@ public final class ConfigValidator {
             return;
         }
 
-        for (Path src : config.getSourcePaths()) {
+        for (Path src : config.sourcePaths()) {
             if (!Files.exists(src)) {
                 result.add(ValidationError.error(
                         "SOURCE_PATH_NOT_FOUND",
                         "Source path does not exist: " + src,
                         FIELD_SOURCE_PATHS
                 ));
-            } else if (!Files.isDirectory(src)) {
+            } else if (!Files.isDirectory(src) && !Files.isRegularFile(src)) {
                 result.add(ValidationError.error(
-                        "SOURCE_PATH_NOT_DIRECTORY",
-                        "Source path is not a directory: " + src,
+                        "SOURCE_PATH_INVALID",
+                        "Source path is not a file or directory: " + src,
                         FIELD_SOURCE_PATHS
                 ));
             }
         }
     }
 
-    private static void validateOutputPath(EitriConfig config, ValidationResult result) {
-        if (config.getOutputPath() == null) {
+    private static void validateOutputPath(RunConfig config, ValidationResult result) {
+        if (config.outputPath() == null) {
             result.add(ValidationError.error(
                     "OUTPUT_PATH_REQUIRED",
                     "Output path (--out) is required.",
@@ -74,7 +67,7 @@ public final class ConfigValidator {
             return;
         }
 
-        Path parent = config.getOutputPath().getParent();
+        Path parent = config.outputPath().getParent();
         if (parent != null && Files.exists(parent) && !Files.isWritable(parent)) {
             result.add(ValidationError.error(
                     "OUTPUT_DIR_NOT_WRITABLE",
@@ -84,28 +77,32 @@ public final class ConfigValidator {
         }
     }
 
-    private static void validateParserExtension(EitriConfig config, ValidationResult result) {
-        if (config.getParserExtension() == null) return;
+    private static void validateParserExtension(RunConfig config, ValidationResult result) {
+        if (config.parserExtension() == null) {
+            return;
+        }
 
         ParserRegistry registry = ParserRegistry.defaultRegistry();
-        if (!registry.supports(config.getParserExtension())) {
+        if (!registry.supports(config.parserExtension())) {
             result.add(ValidationError.error(
                     "PARSER_EXTENSION_UNSUPPORTED",
-                    "Unsupported parser extension: " + config.getParserExtension()
+                    "Unsupported parser extension: " + config.parserExtension()
                             + ". Supported: " + registry.getSupportedExtensions(),
                     FIELD_PARSER_EXTENSION
             ));
         }
     }
 
-    private static void validateWriterExtension(EitriConfig config, ValidationResult result) {
-        if (config.getWriterExtension() == null) return;
-        
+    private static void validateWriterExtension(RunConfig config, ValidationResult result) {
+        if (config.writerExtension() == null) {
+            return;
+        }
+
         WriterRegistry registry = WriterRegistry.defaultRegistry();
-        if (!registry.supports(config.getWriterExtension())) {
+        if (!registry.supports(config.writerExtension())) {
             result.add(ValidationError.error(
                     "WRITER_EXTENSION_UNSUPPORTED",
-                    "Unsupported writer extension: " + config.getWriterExtension()
+                    "Unsupported writer extension: " + config.writerExtension()
                             + ". Supported: " + registry.getSupportedExtensions(),
                     FIELD_WRITER_EXTENSION
             ));

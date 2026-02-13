@@ -4,50 +4,35 @@ import no.ntnu.eitri.cli.CliOptions;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
 
 /**
  * Central service for resolving and validating configuration.
  */
 public final class ConfigService {
 
-    /**
-     * Resolves configuration using defaults, optional config files, and CLI overrides.
-     *
-     * @param cliOptions CLI options
-     * @return configuration resolution result
-     * @throws ConfigException if resolution or validation fails
-     */
     public ConfigResolution resolve(CliOptions cliOptions) throws ConfigException {
+        Objects.requireNonNull(cliOptions, "cliOptions");
+
+        RunConfig runConfig = RunConfig.fromCli(cliOptions);
         Path configFileUsed = resolveConfigFileUsed(cliOptions.configPath());
+        PlantUmlConfig plantUmlConfig = configFileUsed == null
+                ? PlantUmlConfig.defaults()
+                : ConfigLoader.loadPlantUmlConfig(configFileUsed);
 
-        List<ConfigSource> sources = new ArrayList<>();
-        Path workingDirConfig = Path.of(System.getProperty("user.dir"), ConfigLoader.DEFAULT_CONFIG_FILENAME);
-        if (cliOptions.configPath() != null) {
-            if (!Files.exists(cliOptions.configPath())) {
-                throw new ConfigException("Config file not found: " + cliOptions.configPath());
-            }
-            sources.add(new YamlConfigSource(cliOptions.configPath()));
-        } else if (Files.exists(workingDirConfig)) {
-            sources.add(new YamlConfigSource(workingDirConfig));
-        }
-
-        sources.add(new CliConfigSource(cliOptions));
-
-        ConfigMerger merger = new ConfigMerger();
-        EitriConfig config = merger.merge(sources);
-
-        ValidationResult validation = ConfigValidator.validate(config);
+        ValidationResult validation = ConfigValidator.validate(runConfig);
         if (!validation.isValid()) {
             throw new ConfigException(validation.formatMessages());
         }
 
-        return new ConfigResolution(config, configFileUsed);
+        return new ConfigResolution(runConfig, plantUmlConfig, configFileUsed);
     }
 
-    private Path resolveConfigFileUsed(Path explicitConfigPath) {
+    private Path resolveConfigFileUsed(Path explicitConfigPath) throws ConfigException {
         if (explicitConfigPath != null) {
+            if (!Files.exists(explicitConfigPath)) {
+                throw new ConfigException("Config file not found: " + explicitConfigPath);
+            }
             return explicitConfigPath;
         }
 

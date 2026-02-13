@@ -7,7 +7,7 @@ import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
-import no.ntnu.eitri.config.EitriConfig;
+import no.ntnu.eitri.config.RunConfig;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseContext;
 import no.ntnu.eitri.parser.ParseException;
@@ -26,9 +26,6 @@ import java.util.logging.Logger;
 
 /**
  * Java source parser implementation using JavaParser library.
- * 
- * <p>This parser uses the JavaParser symbol solver for type resolution,
- * allowing accurate detection of inheritance and association relationships.
  */
 public class JavaSourceParser implements SourceParser {
 
@@ -48,49 +45,41 @@ public class JavaSourceParser implements SourceParser {
     }
 
     @Override
-    public UmlModel parse(List<Path> sourcePaths, EitriConfig config) throws ParseException {
+    public UmlModel parse(List<Path> sourcePaths, RunConfig runConfig) throws ParseException {
         if (sourcePaths == null || sourcePaths.isEmpty()) {
             throw new ParseException("No source paths provided");
         }
 
         configureParser(sourcePaths);
 
-        // Create parse context
-        ParseContext context = new ParseContext(config);
-
-        // Collect all Java files
+        ParseContext context = new ParseContext(runConfig.verbose());
         List<Path> javaFiles = collectJavaFiles(sourcePaths);
 
-        if (config.isVerbose()) {
+        if (runConfig.verbose()) {
             LOGGER.log(Level.INFO, "Found {0} Java files to parse", javaFiles.size());
         }
 
-        // Parse each file
         TypeVisitor typeVisitor = new TypeVisitor(context);
-        int parsed = 0;
-        int failed = 0;
 
         ParseStats stats = parseFiles(javaFiles, typeVisitor, context);
-        parsed = stats.parsed();
-        failed = stats.failed();
 
-        if (config.isVerbose()) {
-            LOGGER.log(Level.INFO, "Parsed {0} files successfully{1}", new Object[]{parsed, (failed > 0 ? ", " + failed + " failed" : "")});
-            LOGGER.log(Level.INFO, "Found {0} types, {1} relations", new Object[]{context.getTypeCount(), context.getRelationCount()});
+        if (runConfig.verbose()) {
+            LOGGER.log(Level.INFO, "Parsed {0} files successfully{1}",
+                    new Object[] { stats.parsed(), (stats.failed() > 0 ? ", " + stats.failed() + " failed" : "") });
+            LOGGER.log(Level.INFO, "Found {0} types, {1} relations",
+                    new Object[] { context.getTypeCount(), context.getRelationCount() });
         }
 
-        // Detect relations
         RelationDetector relationDetector = new RelationDetector(context);
         relationDetector.detectRelations();
 
-        if (config.isVerbose()) {
+        if (runConfig.verbose()) {
             LOGGER.log(Level.INFO, "Detected {0} total relations (including detected)", context.getRelationCount());
             if (!context.getWarnings().isEmpty()) {
                 LOGGER.log(Level.INFO, "Collected {0} warnings", context.getWarnings().size());
             }
         }
 
-        // Build and return the model
         return context.build();
     }
 
@@ -109,7 +98,7 @@ public class JavaSourceParser implements SourceParser {
 
     private void configureParser(List<Path> sourcePaths) {
         CombinedTypeSolver typeSolver = new CombinedTypeSolver();
-        typeSolver.add(new ReflectionTypeSolver(false));  // JDK types only, no jrt module
+        typeSolver.add(new ReflectionTypeSolver(false)); // JDK types only, no jrt module
 
         for (Path sourcePath : sourcePaths) {
             if (Files.isDirectory(sourcePath)) {
@@ -190,5 +179,6 @@ public class JavaSourceParser implements SourceParser {
         }
     }
 
-    private record ParseStats(int parsed, int failed) {}
+    private record ParseStats(int parsed, int failed) {
+    }
 }

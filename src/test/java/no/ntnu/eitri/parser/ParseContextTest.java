@@ -1,6 +1,5 @@
 package no.ntnu.eitri.parser;
 
-import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
@@ -9,13 +8,16 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ParseContextTest {
 
     @Test
     void resolveTypeReferenceCreatesPlaceholderAndNormalizes() {
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
 
         String resolved = context.resolveTypeReference("  com.example.Order<java.lang.String>[]  ", "Owner.field");
 
@@ -26,7 +28,7 @@ class ParseContextTest {
 
     @Test
     void resolveTypeReferenceSkipsPrimitiveAndWildcard() {
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
 
         assertNull(context.resolveTypeReference("int", "Owner.field"));
         assertNull(context.resolveTypeReference("?", "Owner.field"));
@@ -36,7 +38,7 @@ class ParseContextTest {
 
     @Test
     void addTypeRejectsDuplicates() {
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
         UmlType type = UmlType.builder().fqn("com.example.A").simpleName("A").build();
         context.addType(type);
 
@@ -46,7 +48,7 @@ class ParseContextTest {
 
     @Test
     void buildResolvesPendingInheritanceAndPreservesDistinctRelationKinds() {
-        ParseContext context = new ParseContext(EitriConfig.builder().diagramName("demo").build());
+        ParseContext context = new ParseContext(false);
         context.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
         context.addType(UmlType.builder().fqn("com.example.B").simpleName("B").build());
         context.addType(UmlType.builder().fqn("com.example.Base").simpleName("Base").build());
@@ -59,7 +61,7 @@ class ParseContextTest {
 
         UmlModel model = context.build();
 
-        assertEquals("demo", model.getName());
+        assertEquals("diagram", model.getName());
         assertTrue(model.hasType("com.example.Base"));
 
         List<UmlRelation> relations = model.getRelations();
@@ -80,7 +82,7 @@ class ParseContextTest {
 
     @Test
     void buildSkipsRelationsToMissingTypes() {
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
         context.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
         context.addRelation(UmlRelation.association("com.example.A", "com.example.Missing", null));
 
@@ -91,7 +93,7 @@ class ParseContextTest {
 
     @Test
     void warningsAreCopiedAndSourcePackagesAreTracked() {
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
         context.addWarning("warn");
         context.addSourcePackage("com.example");
         context.addSourcePackage(" ");

@@ -1,52 +1,33 @@
-output:
-  file: diagram.puml         # Output file path
-  name: eitri-diagram       # Diagram name inside @startuml
-  writerExtension: .puml    # Writer extension id (registry lookup)
-
-input:
-  parserExtension: .java    # Parser extension id (registry lookup)
-
-layout:
-  direction: tb             # Layout direction: tb or lr
-  groupInheritance: 2       # PlantUML groupInheritance value (1+)
-  classAttributeIconSize: 8 # PlantUML classAttributeIconSize value (0+)
-
-# Visibility filtering
-visibility:
-  hidePrivate: false        # Hide private members
-  hideProtected: false      # Hide protected members
-  hidePackage: false        # Hide package-private members
-  hideCommonPackages: false  # Hide types from Java platform packages (java.*, javax.*, sun.*, jdk.*)
-  hideExternalPackages: false # Hide types from packages outside the project root
-  hideSiblingPackages: false  # Hide types from sibling packages not being parsed
-
-# Member filtering
-members:
-  hideFields: false         # Hide all fields
-  hideEmptyFields: true     # Hide fields compartment on types with no fields
-  hideMethods: false        # Hide all methods
-  hideEmptyMethods: false   # Hide methods compartment on types with no methods
-  hideEmptyMembers: true    # Hide fields/methods compartments on types with no members
-
-# Relation filtering
-relations:
-  showInheritance: true     # Show extends relations
-  showImplements: true      # Show implements relations
-  showComposition: true     # Show composition relations
-  showAggregation: true     # Show aggregation relations
-  showAssociation: true     # Show association relations
-  showDependency: false     # Show dependency relations (often noisy)
-  showNested: true          # Show nested types and their relations (e.g., inner classes, enums, records)
-
-
-# Display
-display:
-  hideCircle: false         # Hide circle for lollipop interfaces
-  hideUnlinked: false       # Hide types with no relations
-  showStereotypes: true     # Show stereotypes (e.g., <<abstract>>)
-  showGenerics: true        # Show generic notation in PlantUML
-  showNotes: true           # Show notes annotations (does nothing now)
-  showMultiplicities: true  # Show relation multiplicities
-  showLabels: true          # Show relation labels
-  showReadOnly: true        # Show read-only modifier for fields
-  showVoidReturnTypes: true # Show : void on methods
+writers:
+  plantuml:
+    diagramName: eitri-diagram      # Diagram name inside @startuml
+    direction: tb                   # Layout direction: tb or lr
+    groupInheritance: 2             # PlantUML groupInheritance value (1+)
+    classAttributeIconSize: 8       # PlantUML classAttributeIconSize value (0+)
+    hidePrivate: false              # Hide private members
+    hideProtected: false            # Hide protected members
+    hidePackage: false              # Hide package-private members
+    hideFields: false               # Hide all fields
+    hideEmptyFields: true           # Hide fields compartment on types with no fields
+    hideMethods: false              # Hide all methods
+    hideEmptyMethods: false         # Hide methods compartment on types with no methods
+    hideEmptyMembers: true          # Hide fields/methods compartments on types with no members
+    hideCircle: false               # Hide circle for lollipop interfaces
+    hideUnlinked: false             # Hide types with no relations
+    showStereotypes: true           # Show stereotypes (e.g., <<abstract>>)
+    showGenerics: true              # Show generic notation in PlantUML
+    showNotes: true                 # Show notes annotations (does nothing now)
+    showMultiplicities: true        # Show relation multiplicities
+    showLabels: true                # Show relation labels
+    showReadOnly: true              # Show read-only modifier for fields
+    showVoidReturnTypes: true       # Show : void on methods
+    showInheritance: true           # Show extends relations
+    showImplements: true            # Show implements relations
+    showComposition: true           # Show composition relations
+    showAggregation: true           # Show aggregation relations
+    showAssociation: true           # Show association relations
+    showDependency: false           # Show dependency relations (often noisy)
+    showNested: true                # Show nested types and their relations
+    hideCommonPackages: false       # Hide Java platform packages (java.*, javax.*, sun.*, jdk.*)
+    hideExternalPackages: false     # Hide packages outside project root
+    hideSiblingPackages: false      # Hide sibling packages not being parsed

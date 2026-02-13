@@ -6,7 +6,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigValidatorTest {
 
@@ -15,7 +16,7 @@ class ConfigValidatorTest {
 
     @Test
     void reportsMissingRequiredFields() {
-        EitriConfig config = EitriConfig.builder().build();
+        RunConfig config = new RunConfig(List.of(), null, null, null, false, false);
 
         ValidationResult result = ConfigValidator.validate(config);
 
@@ -31,12 +32,7 @@ class ConfigValidatorTest {
         Path out = tempDir.resolve("diagram.puml");
         java.nio.file.Files.createDirectories(src);
 
-        EitriConfig config = EitriConfig.builder()
-                .addSourcePath(src)
-                .outputPath(out)
-                .parserExtension(".foo")
-                .writerExtension(".bar")
-                .build();
+        RunConfig config = new RunConfig(List.of(src), out, ".foo", ".bar", false, false);
 
         ValidationResult result = ConfigValidator.validate(config);
 

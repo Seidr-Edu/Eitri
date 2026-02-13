@@ -5,4 +5,4 @@ import java.nio.file.Path;
 /**
  * Result of configuration resolution.
  */
-public record ConfigResolution(EitriConfig config, Path configFileUsed) {}
+public record ConfigResolution(RunConfig runConfig, PlantUmlConfig plantUmlConfig, Path configFileUsed) {}

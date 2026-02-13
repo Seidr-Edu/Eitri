@@ -1,178 +1,96 @@
 package no.ntnu.eitri.config;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Tests for EitriConfig.
- */
 class EitriConfigTest {
 
-    @Nested
-    @DisplayName("Default values")
-    class DefaultValues {
+    @Test
+    void plantUmlDefaultsAreStable() {
+        PlantUmlConfig config = PlantUmlConfig.defaults();
 
-        @Test
-        @DisplayName("Direction defaults to TOP_TO_BOTTOM")
-        void defaultDirection() {
-            EitriConfig config = EitriConfig.builder().build();
-            assertEquals(LayoutDirection.TOP_TO_BOTTOM, config.getDirection());
-        }
-
-        @Test
-        @DisplayName("Diagram name defaults to 'diagram'")
-        void defaultDiagramName() {
-            EitriConfig config = EitriConfig.builder().build();
-            assertEquals("diagram", config.getDiagramName());
-        }
-
-        @Test
-        @DisplayName("hideEmptyMembers defaults to true")
-        void defaultHideEmptyMembers() {
-            EitriConfig config = EitriConfig.builder().build();
-            assertTrue(config.isHideEmptyMembers());
-        }
-
-        @Test
-        @DisplayName("Visibility filters default to false")
-        void defaultVisibilityFilters() {
-            EitriConfig config = EitriConfig.builder().build();
-            assertFalse(config.isHidePrivate());
-            assertFalse(config.isHideProtected());
-            assertFalse(config.isHidePackage());
-        }
-
-        @Test
-        @DisplayName("All relation types shown by default")
-        void defaultRelationsShown() {
-            EitriConfig config = EitriConfig.builder().build();
-            assertTrue(config.isShowInheritance());
-            assertTrue(config.isShowImplements());
-            assertTrue(config.isShowComposition());
-            assertTrue(config.isShowAggregation());
-            assertTrue(config.isShowAssociation());
-            assertTrue(config.isShowDependency());
-        }
-
-        @Test
-        @DisplayName("Stereotypes and generics shown by default")
-        void defaultDisplayOptions() {
-            EitriConfig config = EitriConfig.builder().build();
-            assertTrue(config.isShowStereotypes());
-            assertTrue(config.isShowGenerics());
-            assertTrue(config.isShowMultiplicities());
-            assertTrue(config.isShowLabels());
-        }
-
-        @Test
-        @DisplayName("Notes hidden by default")
-        void defaultNotesHidden() {
-            EitriConfig config = EitriConfig.builder().build();
-            assertFalse(config.isShowNotes());
-        }
+        assertEquals("diagram", config.diagramName());
+        assertEquals(LayoutDirection.TOP_TO_BOTTOM, config.direction());
+        assertTrue(config.showLabels());
+        assertTrue(config.showNested());
+        assertTrue(config.hideEmptyMembers());
     }
 
-    @Nested
-    @DisplayName("Builder pattern")
-    class BuilderPattern {
+    @Test
+    void plantUmlConstructorNormalizesBounds() {
+        PlantUmlConfig config = new PlantUmlConfig(
+                null,
+                null,
+                -5,
+                -10,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                true,
+                false,
+                false,
+                true,
+                true,
+                false,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                false,
+                false,
+                false
+        );
 
-        @Test
-        @DisplayName("Builder sets source paths")
-        void builderSourcePaths() {
-            EitriConfig config = EitriConfig.builder()
-                    .addSourcePath(Path.of("src/main/java"))
-                    .addSourcePath(Path.of("src/test/java"))
-                    .build();
-
-            assertEquals(2, config.getSourcePaths().size());
-        }
-
-        @Test
-        @DisplayName("Builder sets output path")
-        void builderOutputPath() {
-            EitriConfig config = EitriConfig.builder()
-                    .outputPath(Path.of("diagram.puml"))
-                    .build();
-
-            assertEquals(Path.of("diagram.puml"), config.getOutputPath());
-        }
-
-        @Test
-        @DisplayName("Builder sets layout options")
-        void builderLayoutOptions() {
-            EitriConfig config = EitriConfig.builder()
-                    .direction(LayoutDirection.LEFT_TO_RIGHT)
-                    .groupInheritance(3)
-                    .classAttributeIconSize(10)
-                    .build();
-
-            assertEquals(LayoutDirection.LEFT_TO_RIGHT, config.getDirection());
-            assertEquals(3, config.getGroupInheritance());
-            assertEquals(10, config.getClassAttributeIconSize());
-        }
-
-        @Test
-        @DisplayName("Builder sets visibility options")
-        void builderVisibilityOptions() {
-            EitriConfig config = EitriConfig.builder()
-                    .hidePrivate(true)
-                    .hideProtected(true)
-                    .build();
-
-            assertTrue(config.isHidePrivate());
-            assertTrue(config.isHideProtected());
-            assertFalse(config.isHidePackage());
-        }
-
-        @Test
-        @DisplayName("Builder sets relation options")
-        void builderRelationOptions() {
-            EitriConfig config = EitriConfig.builder()
-                    .showDependency(false)
-                    .showAssociation(false)
-                    .build();
-
-            assertFalse(config.isShowDependency());
-            assertFalse(config.isShowAssociation());
-            assertTrue(config.isShowInheritance());
-        }
+        assertEquals("diagram", config.diagramName());
+        assertEquals(LayoutDirection.TOP_TO_BOTTOM, config.direction());
+        assertEquals(1, config.groupInheritance());
+        assertEquals(0, config.classAttributeIconSize());
     }
 
-    @Nested
-    @DisplayName("Setters validation")
-    class BuilderValidation {
+    @Test
+    void runConfigNormalizesExtensionsAndList() {
+        RunConfig config = new RunConfig(
+                null,
+                Path.of("out.puml"),
+                "java",
+                "puml",
+                true,
+                false
+        );
 
-        @Test
-        @DisplayName("groupInheritance clamps negative values to 1")
-        void groupInheritanceNegative() {
-            EitriConfig config = EitriConfig.builder()
-                    .groupInheritance(-5)
-                    .build();
-            assertEquals(1, config.getGroupInheritance());
-        }
+        assertNotNull(config.sourcePaths());
+        assertTrue(config.sourcePaths().isEmpty());
+        assertEquals(".java", config.parserExtension());
+        assertEquals(".puml", config.writerExtension());
+        assertTrue(config.verbose());
+        assertFalse(config.dryRun());
+    }
 
-        @Test
-        @DisplayName("diagramName defaults to 'diagram' for null")
-        void diagramNameNull() {
-            EitriConfig config = EitriConfig.builder()
-                    .diagramName(null)
-                    .build();
-            assertEquals("diagram", config.getDiagramName());
-        }
+    @Test
+    void runConfigCopiesSourcePaths() {
+        List<Path> src = List.of(Path.of("src/main/java"));
+        RunConfig config = new RunConfig(src, Path.of("out.puml"), null, null, false, true);
 
-        @Test
-        @DisplayName("sourcePaths handles null")
-        void sourcePathsNull() {
-            EitriConfig config = EitriConfig.builder()
-                    .sourcePaths(null)
-                    .build();
-            assertNotNull(config.getSourcePaths());
-            assertTrue(config.getSourcePaths().isEmpty());
-        }
+        assertEquals(1, config.sourcePaths().size());
+        assertEquals(Path.of("src/main/java"), config.sourcePaths().getFirst());
+        assertTrue(config.dryRun());
     }
 }

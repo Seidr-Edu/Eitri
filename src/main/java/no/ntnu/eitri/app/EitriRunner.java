@@ -6,8 +6,9 @@ import no.ntnu.eitri.cli.CliOptions;
 import no.ntnu.eitri.config.ConfigException;
 import no.ntnu.eitri.config.ConfigResolution;
 import no.ntnu.eitri.config.ConfigService;
-import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.config.OutputPathInitializer;
+import no.ntnu.eitri.config.PlantUmlConfig;
+import no.ntnu.eitri.config.RunConfig;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.parser.ParseException;
 import no.ntnu.eitri.parser.SourceParser;
@@ -42,19 +43,32 @@ public class EitriRunner {
     public RunResult run(CliOptions cliOptions) {
         try {
             ConfigResolution resolution = resolveConfig(cliOptions);
-            EitriConfig config = resolution.config();
+            RunConfig runConfig = resolution.runConfig();
+            PlantUmlConfig plantUmlConfig = resolution.plantUmlConfig();
 
-            logResolvedConfig(resolution, config);
+            logResolvedConfig(resolution);
 
-            UmlModel model = parseSources(config);
+            UmlModel model = parseSources(runConfig);
 
-            if (config.isDryRun()) {
-                runDryRun(model, config);
-                return new RunResult(0, null, model.getTypes().size(), model.getRelations().size(), config.getOutputPath(), true);
+            if (runConfig.dryRun()) {
+                runDryRun(model, runConfig, plantUmlConfig);
+                return new RunResult(
+                        0,
+                        null,
+                        model.getTypes().size(),
+                        model.getRelations().size(),
+                        runConfig.outputPath(),
+                        true);
             }
 
-            writeOutput(model, config);
-            return new RunResult(0, null, model.getTypes().size(), model.getRelations().size(), config.getOutputPath(), false);
+            writeOutput(model, runConfig, plantUmlConfig);
+            return new RunResult(
+                    0,
+                    null,
+                    model.getTypes().size(),
+                    model.getRelations().size(),
+                    runConfig.outputPath(),
+                    false);
 
         } catch (ConfigException e) {
             LOGGER.log(Level.SEVERE, "Configuration error: {0}", e.getMessage());
@@ -85,26 +99,29 @@ public class EitriRunner {
         return configService.resolve(cliOptions);
     }
 
-    private void logResolvedConfig(ConfigResolution resolution, EitriConfig config) {
-        if (!config.isVerbose()) return;
+    private void logResolvedConfig(ConfigResolution resolution) {
+        if (!resolution.runConfig().verbose()) {
+            return;
+        }
 
         if (resolution.configFileUsed() != null) {
             LOGGER.log(Level.INFO, "Using configuration file: {0}", resolution.configFileUsed());
         } else {
             LOGGER.info("Using default configuration (no config file found)");
         }
-        LOGGER.log(Level.INFO, "Configuration: {0}", config);
+        LOGGER.log(Level.INFO, "Run config: {0}", resolution.runConfig());
+        LOGGER.log(Level.INFO, "PlantUML config: {0}", resolution.plantUmlConfig());
     }
 
-    private UmlModel parseSources(EitriConfig config) throws ParseException {
-        SourceParser parser = resolveParser(config);
-        if (config.isVerbose()) {
+    private UmlModel parseSources(RunConfig runConfig) throws ParseException {
+        SourceParser parser = resolveParser(runConfig);
+        if (runConfig.verbose()) {
             LOGGER.log(Level.INFO, "Parsing with {0}...", parser.getName());
         }
 
-        UmlModel model = parser.parse(config.getSourcePaths(), config);
+        UmlModel model = parser.parse(runConfig.sourcePaths(), runConfig);
 
-        if (config.isVerbose()) {
+        if (runConfig.verbose()) {
             LOGGER.log(Level.INFO, "Parsed {0} types, {1} relations",
                     new Object[]{model.getTypes().size(), model.getRelations().size()});
         }
@@ -112,50 +129,64 @@ public class EitriRunner {
         return model;
     }
 
-    private void runDryRun(UmlModel model, EitriConfig config) {
+    private void runDryRun(UmlModel model, RunConfig runConfig, PlantUmlConfig plantUmlConfig) {
         LOGGER.log(Level.INFO, "Dry run: Parsed {0} types from {1} source path(s)",
-                new Object[]{model.getTypes().size(), config.getSourcePaths().size()});
-        LOGGER.log(Level.INFO, "         Would write to: {0}", config.getOutputPath());
+                new Object[]{model.getTypes().size(), runConfig.sourcePaths().size()});
+        LOGGER.log(Level.INFO, "         Would write to: {0}", runConfig.outputPath());
 
-        if (config.isVerbose()) {
-            DiagramWriter writer = resolveWriter(config);
-            String rendered = writer.render(model, config);
+        if (runConfig.verbose()) {
+            DiagramWriter writer = resolveWriter(runConfig);
+            String rendered = writer.render(model, plantUmlConfig);
             LOGGER.info("\n--- Generated ---");
             LOGGER.info(rendered);
             LOGGER.info("--- End ---\n");
         }
     }
 
-    private void writeOutput(UmlModel model, EitriConfig config) throws ConfigException, WriteException {
-        OutputPathInitializer.initialize(config.getOutputPath());
-        DiagramWriter writer = resolveWriter(config);
-        writer.write(model, config, config.getOutputPath());
+    private void writeOutput(UmlModel model, RunConfig runConfig, PlantUmlConfig plantUmlConfig)
+            throws ConfigException, WriteException {
+        OutputPathInitializer.initialize(runConfig.outputPath());
+        DiagramWriter writer = resolveWriter(runConfig);
+        writer.write(model, plantUmlConfig, runConfig.outputPath());
 
         LOGGER.log(Level.INFO, "Generated {0} with {1} types and {2} relations.",
-                new Object[]{config.getOutputPath(), model.getTypes().size(), model.getRelations().size()});
+                new Object[]{runConfig.outputPath(), model.getTypes().size(), model.getRelations().size()});
     }
 
-    private SourceParser resolveParser(EitriConfig config) {
-        String extension = config.getParserExtension();
-        if (extension == null) extension = detectSourceExtension(config);
-        if (extension == null) extension = parserRegistry.getDefaultExtension();
+    private SourceParser resolveParser(RunConfig runConfig) {
+        String extension = runConfig.parserExtension();
+        if (extension == null) {
+            extension = detectSourceExtension(runConfig);
+        }
+        if (extension == null) {
+            extension = parserRegistry.getDefaultExtension();
+        }
         String resolvedExtension = extension;
         return parserRegistry.getByExtension(resolvedExtension)
                 .orElseThrow(() -> new ParseException("No parser registered for extension: " + resolvedExtension));
     }
 
-    private DiagramWriter resolveWriter(EitriConfig config) {
-        String extension = config.getWriterExtension();
-        if (extension == null) extension = PathExtension.fromPath(config.getOutputPath());
-        if (extension == null) extension = writerRegistry.getDefaultExtension();
+    private DiagramWriter resolveWriter(RunConfig runConfig) {
+        String extension = runConfig.writerExtension();
+        if (extension == null) {
+            extension = PathExtension.fromPath(runConfig.outputPath());
+        }
+        if (extension == null) {
+            extension = writerRegistry.getDefaultExtension();
+        }
         String resolvedExtension = extension;
         return writerRegistry.getByExtension(resolvedExtension)
-                .orElseThrow(() -> new WriteException("No writer registered for extension: " + resolvedExtension, config.getOutputPath()));
+                .orElseThrow(
+                        () -> new WriteException(
+                                "No writer registered for extension: " + resolvedExtension,
+                                runConfig.outputPath()));
     }
 
-    private String detectSourceExtension(EitriConfig config) {
-        for (Path sourcePath : config.getSourcePaths()) {
-            if (sourcePath == null) continue;
+    private String detectSourceExtension(RunConfig runConfig) {
+        for (Path sourcePath : runConfig.sourcePaths()) {
+            if (sourcePath == null) {
+                continue;
+            }
 
             if (Files.isRegularFile(sourcePath)) {
                 String extension = PathExtension.fromPath(sourcePath);

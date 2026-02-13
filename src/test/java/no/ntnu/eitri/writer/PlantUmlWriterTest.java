@@ -1,7 +1,9 @@
 package no.ntnu.eitri.writer;
 
-import no.ntnu.eitri.config.EitriConfig;
+import no.ntnu.eitri.config.ConfigException;
 import no.ntnu.eitri.config.LayoutDirection;
+import no.ntnu.eitri.config.PlantUmlConfig;
+import no.ntnu.eitri.config.RecordBinder;
 import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlField;
@@ -13,7 +15,12 @@ import no.ntnu.eitri.model.Visibility;
 import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PlantUmlWriterTest {
 
@@ -37,9 +44,7 @@ class PlantUmlWriterTest {
                 .addType(type)
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .showVoidReturnTypes(false)
-                .build();
+        PlantUmlConfig config = config("showVoidReturnTypes", false);
 
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
@@ -69,9 +74,7 @@ class PlantUmlWriterTest {
                 .addType(type)
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .showVoidReturnTypes(true)
-                .build();
+        PlantUmlConfig config = config("showVoidReturnTypes", true);
 
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
@@ -103,9 +106,7 @@ class PlantUmlWriterTest {
                 .addRelation(nested)
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .showNested(true)
-                .build();
+        PlantUmlConfig config = config("showNested", true);
 
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
@@ -139,9 +140,7 @@ class PlantUmlWriterTest {
                 .addRelation(nested)
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .showNested(false)
-                .build();
+        PlantUmlConfig config = config("showNested", false);
 
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
@@ -185,10 +184,7 @@ class PlantUmlWriterTest {
                 .addRelation(assoc)
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .showNested(false)
-                .hideUnlinked(false)
-                .build();
+        PlantUmlConfig config = config("showNested", false, "hideUnlinked", false);
 
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
@@ -203,10 +199,7 @@ class PlantUmlWriterTest {
         UmlModel model = UmlModel.builder()
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .hideEmptyFields(true)
-                .hideEmptyMethods(true)
-                .build();
+        PlantUmlConfig config = config("hideEmptyFields", true, "hideEmptyMethods", true);
 
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
@@ -214,7 +207,6 @@ class PlantUmlWriterTest {
         assertTrue(output.contains("hide empty fields"));
         assertTrue(output.contains("hide empty methods"));
     }
-
 
     @Test
     void rendersLeftToRightDirection() {
@@ -229,9 +221,7 @@ class PlantUmlWriterTest {
                 .addType(type)
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .direction(LayoutDirection.LEFT_TO_RIGHT)
-                .build();
+        PlantUmlConfig config = config("direction", LayoutDirection.LEFT_TO_RIGHT);
 
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
@@ -252,9 +242,7 @@ class PlantUmlWriterTest {
                 .addType(type)
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .direction(LayoutDirection.TOP_TO_BOTTOM)
-                .build();
+        PlantUmlConfig config = config("direction", LayoutDirection.TOP_TO_BOTTOM);
 
         PlantUmlWriter writer = new PlantUmlWriter();
         String output = writer.render(model, config);
@@ -275,11 +263,7 @@ class PlantUmlWriterTest {
                 .addType(type)
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .build();
-
-        PlantUmlWriter writer = new PlantUmlWriter();
-        String output = writer.render(model, config);
+        String output = new PlantUmlWriter().render(model, PlantUmlConfig.defaults());
 
         assertTrue(output.contains("top to bottom direction"));
     }
@@ -295,9 +279,7 @@ class PlantUmlWriterTest {
                 .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .hideCommonPackages(true)
-                .build();
+        PlantUmlConfig config = config("hideCommonPackages", true);
 
         String output = new PlantUmlWriter().render(model, config);
 
@@ -317,9 +299,7 @@ class PlantUmlWriterTest {
                 .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .hideExternalPackages(true)
-                .build();
+        PlantUmlConfig config = config("hideExternalPackages", true);
 
         String output = new PlantUmlWriter().render(model, config);
 
@@ -339,9 +319,7 @@ class PlantUmlWriterTest {
                 .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .hideSiblingPackages(true)
-                .build();
+        PlantUmlConfig config = config("hideSiblingPackages", true);
 
         String output = new PlantUmlWriter().render(model, config);
 
@@ -375,7 +353,7 @@ class PlantUmlWriterTest {
                 .addRelation(second)
                 .build();
 
-        String output = new PlantUmlWriter().render(model, EitriConfig.builder().build());
+        String output = new PlantUmlWriter().render(model, PlantUmlConfig.defaults());
         long count = output.lines().filter(line -> line.equals("com.example.Source -- \"1\" com.example.Target")).count();
         assertEquals(1, count);
     }
@@ -409,7 +387,7 @@ class PlantUmlWriterTest {
                 .addRelation(relation)
                 .build();
 
-        EitriConfig config = EitriConfig.builder().showLabels(true).build();
+        PlantUmlConfig config = config("showLabels", true);
         String output = new PlantUmlWriter().render(model, config);
         assertTrue(output.contains("com.example.Owner -- com.example.Dependency : repository"));
     }
@@ -438,12 +416,11 @@ class PlantUmlWriterTest {
                 .addRelation(UmlRelation.builder().fromTypeFqn(owner.getFqn()).toTypeFqn(packageDep.getFqn()).kind(RelationKind.ASSOCIATION).fromMember("packageRepo").build())
                 .build();
 
-        EitriConfig config = EitriConfig.builder()
-                .showLabels(true)
-                .hidePrivate(true)
-                .hideProtected(true)
-                .hidePackage(true)
-                .build();
+        PlantUmlConfig config = config(
+                "showLabels", true,
+                "hidePrivate", true,
+                "hideProtected", true,
+                "hidePackage", true);
 
         String output = new PlantUmlWriter().render(model, config);
         assertTrue(output.contains("com.example.Owner -- com.example.PrivateDep"));
@@ -452,5 +429,20 @@ class PlantUmlWriterTest {
         assertFalse(output.contains(": privateRepo"));
         assertFalse(output.contains(": protectedRepo"));
         assertFalse(output.contains(": packageRepo"));
+    }
+
+    private static PlantUmlConfig config(Object... keyValues) {
+        if (keyValues.length % 2 != 0) {
+            throw new IllegalArgumentException("Key/value pairs expected");
+        }
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (int i = 0; i < keyValues.length; i += 2) {
+            map.put((String) keyValues[i], keyValues[i + 1]);
+        }
+        try {
+            return RecordBinder.bindFlatRecord(map, PlantUmlConfig.class, PlantUmlConfig.defaults(), "test");
+        } catch (ConfigException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
