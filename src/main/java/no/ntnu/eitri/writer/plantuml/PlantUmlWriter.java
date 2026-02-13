@@ -102,7 +102,7 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
         StringBuilder sb = new StringBuilder();
         PlantUmlConfig renderConfig = config;
         RenderContext context = buildRenderContext(model, renderConfig);
-        renderHeader(model, renderConfig, sb);
+        renderHeader(renderConfig, sb);
         renderTypes(model, renderConfig, context, sb);
         renderRelations(model, renderConfig, context, sb);
         renderFooter(sb);
@@ -110,7 +110,7 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
         writer.write(sb.toString());
     }
 
-    private void renderHeader(UmlModel model, PlantUmlConfig config, StringBuilder sb) {
+    private void renderHeader(PlantUmlConfig config, StringBuilder sb) {
         sb.append("@startuml");
         if (config.diagramName() != null && !config.diagramName().isBlank()) {
             sb.append(" ").append(config.diagramName());
@@ -182,7 +182,7 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
             sb.append("skinparam groupInheritance ").append(config.groupInheritance()).append("\n");
         }
         if (config.classAttributeIconSize() != 8 && config.classAttributeIconSize() > -1) { // 8 is PlantUML
-                                                                                                  // default
+                                                                                            // default
             sb.append("skinparam classAttributeIconSize ").append(config.classAttributeIconSize()).append("\n");
         }
         if (config.showGenerics()) {
@@ -365,7 +365,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
                 config.showMultiplicities());
     }
 
-    private UmlRelation withEffectiveRelationLabel(UmlRelation relation, PlantUmlConfig config, Map<String, UmlType> typesByFqn) {
+    private UmlRelation withEffectiveRelationLabel(UmlRelation relation, PlantUmlConfig config,
+            Map<String, UmlType> typesByFqn) {
         String label = resolveFallbackRelationLabel(relation, config, typesByFqn);
         if (Objects.equals(label, relation.getLabel())) {
             return relation;
@@ -382,7 +383,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
                 .build();
     }
 
-    private String resolveFallbackRelationLabel(UmlRelation relation, PlantUmlConfig config, Map<String, UmlType> typesByFqn) {
+    private String resolveFallbackRelationLabel(UmlRelation relation, PlantUmlConfig config,
+            Map<String, UmlType> typesByFqn) {
         if (!config.showLabels()) {
             return relation.getLabel();
         }
@@ -405,11 +407,13 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
 
     private boolean isVisibleMember(UmlType ownerType, String memberName, PlantUmlConfig config) {
         if (ownerType.getFields().stream()
-                .anyMatch(field -> field.getName().equals(memberName) && shouldRenderMember(field.getVisibility(), config))) {
+                .anyMatch(field -> field.getName().equals(memberName)
+                        && shouldRenderMember(field.getVisibility(), config))) {
             return true;
         }
         return ownerType.getMethods().stream()
-                .anyMatch(method -> method.getName().equals(memberName) && shouldRenderMember(method.getVisibility(), config));
+                .anyMatch(method -> method.getName().equals(memberName)
+                        && shouldRenderMember(method.getVisibility(), config));
     }
 
     private String toPlantUmlDirection(LayoutDirection direction) {

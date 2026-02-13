@@ -1,6 +1,7 @@
 package no.ntnu.eitri.config;
 
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +15,8 @@ import java.util.Map;
 public final class ConfigLoader {
 
     public static final String DEFAULT_CONFIG_FILENAME = ".eitri.config.yaml";
+    private static final String PLANTUML_WRITER_KEY = "plantuml";
+    private static final String ROOT_CONFIG_KEY = "writers";
 
     private ConfigLoader() {
     }
@@ -26,25 +29,25 @@ public final class ConfigLoader {
         Map<String, Object> root = parseYaml(configPath);
         validateTopLevelKeys(root);
 
-        Object writersNode = root.get("writers");
+        Object writersNode = root.get(ROOT_CONFIG_KEY);
         if (writersNode == null) {
             return PlantUmlConfig.defaults();
         }
 
-        Map<String, Object> writers = requireMap(writersNode, "writers");
+        Map<String, Object> writers = requireMap(writersNode, ROOT_CONFIG_KEY);
         validateWriterIds(writers);
 
-        Object plantUmlNode = writers.get("plantuml");
+        Object plantUmlNode = writers.get(PLANTUML_WRITER_KEY);
         if (plantUmlNode == null) {
             return PlantUmlConfig.defaults();
         }
 
-        Map<String, Object> plantUml = requireMap(plantUmlNode, "writers.plantuml");
+        Map<String, Object> plantUml = requireMap(plantUmlNode, ROOT_CONFIG_KEY + "." + PLANTUML_WRITER_KEY);
         return RecordBinder.bindFlatRecord(
                 plantUml,
                 PlantUmlConfig.class,
                 PlantUmlConfig.defaults(),
-                "writers.plantuml");
+                ROOT_CONFIG_KEY + "." + PLANTUML_WRITER_KEY);
     }
 
     private static Map<String, Object> parseYaml(Path configPath) throws ConfigException {
@@ -58,6 +61,8 @@ public final class ConfigLoader {
                 throw new ConfigException("Config root must be a mapping/object");
             }
             return castStringObjectMap(map, "root");
+        } catch (YAMLException e) {
+            throw new ConfigException("Failed to parse config file: " + configPath, e);
         } catch (IOException e) {
             throw new ConfigException("Failed to read config file: " + configPath, e);
         }
@@ -65,7 +70,7 @@ public final class ConfigLoader {
 
     private static void validateTopLevelKeys(Map<String, Object> root) throws ConfigException {
         for (String key : root.keySet()) {
-            if (!"writers".equals(key)) {
+            if (!ROOT_CONFIG_KEY.equals(key)) {
                 throw new ConfigException("Unknown config key: root." + key);
             }
         }
@@ -73,8 +78,8 @@ public final class ConfigLoader {
 
     private static void validateWriterIds(Map<String, Object> writers) throws ConfigException {
         for (String writerId : writers.keySet()) {
-            if (!"plantuml".equals(writerId)) {
-                throw new ConfigException("Unknown config key: writers." + writerId);
+            if (!PLANTUML_WRITER_KEY.equals(writerId)) {
+                throw new ConfigException("Unknown config key: " + ROOT_CONFIG_KEY + "." + writerId);
             }
         }
     }

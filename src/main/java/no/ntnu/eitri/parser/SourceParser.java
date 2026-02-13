@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * <pre>{@code
  * SourceParser parser = new JavaSourceParser();
- * UmlModel model = parser.parse(List.of(Path.of("src/main/java")), config);
+ * UmlModel model = parser.parse(List.of(Path.of("src/main/java")), runConfig);
  * }</pre>
  */
 public interface SourceParser {
@@ -27,7 +27,7 @@ public interface SourceParser {
      * Parses source files from the given paths and produces a UML model.
      * 
      * @param sourcePaths list of source directories or files to parse
-     * @param config      the configuration to use during parsing
+     * @param runConfig   the configuration to use during parsing
      * @return the populated UML model
      * @throws ParseException if parsing fails
      */
