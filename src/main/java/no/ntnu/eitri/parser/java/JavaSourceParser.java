@@ -22,7 +22,9 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -106,7 +108,9 @@ public class JavaSourceParser implements SourceParser {
 
         for (Path sourcePath : sourcePaths) {
             if (Files.isDirectory(sourcePath)) {
-                typeSolver.add(new JavaParserTypeSolver(sourcePath));
+                for (Path root : detectTypeSolverRoots(sourcePath)) {
+                    typeSolver.add(new JavaParserTypeSolver(root));
+                }
             }
         }
 
@@ -115,6 +119,25 @@ public class JavaSourceParser implements SourceParser {
                 .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_25);
 
         StaticJavaParser.setConfiguration(parserConfig);
+    }
+
+    /**
+     * Detects parser roots for symbol resolution.
+     *
+     * <p>
+     * If the provided path is a module root (e.g. contains {@code src/main/java}),
+     * include that source root so package-relative resolution works.
+     */
+    static Set<Path> detectTypeSolverRoots(Path sourcePath) {
+        Set<Path> roots = new LinkedHashSet<>();
+        roots.add(sourcePath);
+
+        Path mainJava = sourcePath.resolve("src/main/java");
+        if (Files.isDirectory(mainJava)) {
+            roots.add(mainJava);
+        }
+
+        return roots;
     }
 
     private ParseStats parseFiles(List<Path> javaFiles, TypeVisitor typeVisitor, ParseContext context) {

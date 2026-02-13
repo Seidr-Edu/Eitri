@@ -9,6 +9,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -86,5 +87,36 @@ class JavaSourceParserBehaviorTest {
         assertFalse(JavaSourceParser.isTestDirectory(Path.of("/project/test")));
         assertFalse(JavaSourceParser.isTestDirectory(Path.of("/project/src/test/java")));
         assertFalse(JavaSourceParser.isTestDirectory(Path.of("test")));
+    }
+
+    @Test
+    void detectTypeSolverRootsIncludesSrcMainJavaForModuleRoot() throws Exception {
+        Path moduleRoot = tempDir.resolve("module");
+        Files.createDirectories(moduleRoot.resolve("src/main/java"));
+
+        Set<Path> roots = JavaSourceParser.detectTypeSolverRoots(moduleRoot);
+
+        assertTrue(roots.contains(moduleRoot));
+        assertTrue(roots.contains(moduleRoot.resolve("src/main/java")));
+    }
+
+    @Test
+    void moduleRootPathResolvesInModuleTypesFromSrcMainJava() throws Exception {
+        Path moduleRoot = tempDir.resolve("jadx-cli");
+        Path mainJava = moduleRoot.resolve("src/main/java");
+        Path pkg = mainJava.resolve("com/example");
+        Files.createDirectories(pkg);
+
+        Files.writeString(pkg.resolve("B.java"), "package com.example; public class B {}\n");
+        Files.writeString(pkg.resolve("A.java"), "package com.example; public class A { private B b; }\n");
+
+        JavaSourceParser parser = new JavaSourceParser();
+        RunConfig runConfig = new RunConfig(List.of(moduleRoot), tempDir.resolve("out.puml"), null, null, false, false);
+        UmlModel model = parser.parse(List.of(moduleRoot), runConfig);
+
+        assertTrue(model.hasType("com.example.A"));
+        assertTrue(model.hasType("com.example.B"));
+        assertTrue(model.getRelations().stream().anyMatch(r -> r.getFromTypeFqn().equals("com.example.A")
+                && r.getToTypeFqn().equals("com.example.B")));
     }
 }
