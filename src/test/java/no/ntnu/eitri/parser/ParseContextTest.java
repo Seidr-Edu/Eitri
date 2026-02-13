@@ -98,14 +98,28 @@ class ParseContextTest {
     }
 
     @Test
-    void buildSkipsRelationsToMissingTypes() {
+    void buildSkipsRelationsWhereFromTypeIsMissing() {
         ParseContext context = new ParseContext(false);
         context.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
-        context.addRelation(UmlRelation.association("com.example.A", "com.example.Missing", null));
+        // FROM is missing — relation should be dropped
+        context.addRelation(UmlRelation.association("com.example.Missing", "com.example.A", null));
 
         UmlModel model = context.build();
 
         assertTrue(model.getRelations().isEmpty());
+    }
+
+    @Test
+    void buildKeepsRelationsWhereToTypeIsExternalFqn() {
+        ParseContext context = new ParseContext(false);
+        context.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
+        // TO is external but FROM is registered — relation should survive
+        context.addRelation(UmlRelation.association("com.example.A", "com.example.Missing", null));
+
+        UmlModel model = context.build();
+
+        assertEquals(1, model.getRelations().size());
+        assertEquals("com.example.Missing", model.getRelations().getFirst().getToTypeFqn());
     }
 
     @Test

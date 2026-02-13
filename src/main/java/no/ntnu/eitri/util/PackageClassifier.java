@@ -217,4 +217,34 @@ public final class PackageClassifier {
     int lastDot = packageName.lastIndexOf('.');
     return lastDot > 0 ? packageName.substring(0, lastDot) : null;
   }
+
+  /**
+   * Extracts the package name from a fully-qualified type name.
+   *
+   * <p>
+   * Uses the same heuristic as {@code UmlType.computePackageName()}: walks the
+   * dot-separated segments left-to-right and treats the first segment starting
+   * with an uppercase letter as the beginning of the type hierarchy. Everything
+   * before it is the package.
+   *
+   * @param fqn the fully-qualified type name (e.g., {@code com.example.Foo})
+   * @return the package name, or an empty string if no package can be determined
+   */
+  public static String extractPackageFromFqn(String fqn) {
+    if (fqn == null || fqn.isBlank()) {
+      return "";
+    }
+    String[] parts = fqn.split("\\.");
+    StringBuilder pkg = new StringBuilder();
+    for (String part : parts) {
+      if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
+        break;
+      }
+      if (!pkg.isEmpty()) {
+        pkg.append(".");
+      }
+      pkg.append(part);
+    }
+    return pkg.toString();
+  }
 }

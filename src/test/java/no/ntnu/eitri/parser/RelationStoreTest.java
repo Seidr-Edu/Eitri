@@ -104,4 +104,51 @@ class RelationStoreTest {
 
         assertEquals(2, relations.size());
     }
+
+    @Test
+    void buildFinalRelationsAllowsExternalToEndpoint() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
+        // com.external.Lib is NOT registered
+
+        RelationStore store = new RelationStore();
+        store.addRelation(UmlRelation.dependency("com.example.A", "com.external.Lib", null));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(1, relations.size());
+        assertEquals("com.external.Lib", relations.getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void buildFinalRelationsDropsRelationWhenFromEndpointNotRegistered() {
+        TypeRegistry types = new TypeRegistry();
+        // Neither endpoint is registered
+
+        RelationStore store = new RelationStore();
+        store.addRelation(UmlRelation.dependency("com.unknown.A", "com.unknown.B", null));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(0, relations.size());
+    }
+
+    @Test
+    void buildFinalRelationsResolvesPendingInheritanceToExternalType() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
+
+        TypeReferenceResolver resolver = new TypeReferenceResolver(types);
+        RelationStore store = new RelationStore();
+
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.A", "org.external.Base", RelationKind.EXTENDS
+        ));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
+
+        assertEquals(1, relations.size());
+        assertEquals(RelationKind.EXTENDS, relations.getFirst().getKind());
+        assertEquals("org.external.Base", relations.getFirst().getToTypeFqn());
+    }
 }

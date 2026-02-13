@@ -82,4 +82,34 @@ class TypeReferenceResolverTest {
         assertEquals(1, stats.reusedKnownTypes());
         assertEquals(1, stats.skippedUnknownFqn());
     }
+
+    @Test
+    void normalizeToValidFqnReturnsNormalizedFqnWithoutRegistryCheck() {
+        TypeReferenceResolver resolver = new TypeReferenceResolver(new TypeRegistry());
+
+        assertEquals("com.example.Unknown", resolver.normalizeToValidFqn("com.example.Unknown"));
+        assertEquals("java.util.List", resolver.normalizeToValidFqn("java.util.List<com.example.Foo>"));
+        assertEquals("com.example.Order", resolver.normalizeToValidFqn(" com.example.Order[] "));
+    }
+
+    @Test
+    void normalizeToValidFqnRejectsInvalidInputs() {
+        TypeReferenceResolver resolver = new TypeReferenceResolver(new TypeRegistry());
+
+        assertNull(resolver.normalizeToValidFqn(null));
+        assertNull(resolver.normalizeToValidFqn(""));
+        assertNull(resolver.normalizeToValidFqn("int"));
+        assertNull(resolver.normalizeToValidFqn("?"));
+        assertNull(resolver.normalizeToValidFqn("C"));
+        assertNull(resolver.normalizeToValidFqn("String"));
+        assertNull(resolver.normalizeToValidFqn("JCommander.Builder"));
+    }
+
+    @Test
+    void normalizeToValidFqnRejectsCommaAndSpaceSeparatedTypes() {
+        TypeReferenceResolver resolver = new TypeReferenceResolver(new TypeRegistry());
+
+        assertNull(resolver.normalizeToValidFqn("java.lang.String, java.lang.String"));
+        assertNull(resolver.normalizeToValidFqn("java.lang.String java.lang.Integer"));
+    }
 }

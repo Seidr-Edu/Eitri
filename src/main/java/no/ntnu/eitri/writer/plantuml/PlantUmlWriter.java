@@ -132,7 +132,7 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
     private void renderRelations(UmlModel model, PlantUmlConfig config, RenderContext context, StringBuilder sb) {
         Set<String> renderedRelationLines = new LinkedHashSet<>();
         for (UmlRelation relation : model.getRelations()) {
-            if (shouldRenderRelation(relation, config, context.nestedTypeFqns(), context.renderedTypeFqns())) {
+            if (shouldRenderRelation(relation, config, context)) {
                 renderedRelationLines.add(renderRelation(relation, config, context));
             }
         }
@@ -159,7 +159,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
                 .collect(Collectors.toSet());
         Set<String> nestedTypeFqns = collectNestedTypeFqns(model);
 
-        return new RenderContext(typeNames, renderedTypeFqns, nestedTypeFqns, linkedTypes, typesByFqn);
+        return new RenderContext(typeNames, renderedTypeFqns, nestedTypeFqns, linkedTypes, typesByFqn,
+                sourcePackages);
     }
 
     /**
@@ -282,20 +283,37 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
 
     /**
      * Determines if a relation should be rendered based on configuration.
-     * Relations to or from hidden types (package-filtered, nested, etc.) are
-     * excluded.
+     * Relations from hidden or non-rendered types are excluded.
+     * Relations targeting external FQNs (not in the model) are conditionally
+     * included based on package-hiding configuration.
      */
     private boolean shouldRenderRelation(UmlRelation relation, PlantUmlConfig config,
-            Set<String> nestedTypeFqns, Set<String> renderedTypeFqns) {
-        // Skip relations involving types that were filtered out
-        if (!renderedTypeFqns.contains(relation.getFromTypeFqn())
-                || !renderedTypeFqns.contains(relation.getToTypeFqn())) {
+            RenderContext context) {
+        String fromFqn = relation.getFromTypeFqn();
+        String toFqn = relation.getToTypeFqn();
+        Set<String> renderedTypeFqns = context.renderedTypeFqns();
+        Set<String> nestedTypeFqns = context.nestedTypeFqns();
+
+        // The FROM side must always be a rendered (parsed) type
+        if (!renderedTypeFqns.contains(fromFqn)) {
             return false;
         }
 
+        // Check TO side: it may be a rendered type or an external FQN
+        if (!renderedTypeFqns.contains(toFqn)) {
+            // If it's in the model but not rendered, it was explicitly filtered out
+            if (context.typesByFqn().containsKey(toFqn)) {
+                return false;
+            }
+            // It's an external FQN — check package-based filtering
+            if (!isExternalFqnAllowed(toFqn, config, context.sourcePackages())) {
+                return false;
+            }
+        }
+
         if (!config.showNested()
-                && (nestedTypeFqns.contains(relation.getFromTypeFqn())
-                        || nestedTypeFqns.contains(relation.getToTypeFqn()))) {
+                && (nestedTypeFqns.contains(fromFqn)
+                        || nestedTypeFqns.contains(toFqn))) {
             return false;
         }
 
@@ -310,6 +328,27 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
             case DEPENDENCY -> config.showDependency();
             case NESTED -> config.showNested();
         };
+    }
+
+    /**
+     * Determines if a relation to an external FQN (not in the model) should be
+     * rendered based on package-hiding configuration.
+     */
+    private boolean isExternalFqnAllowed(String fqn, PlantUmlConfig config, Set<String> sourcePackages) {
+        String pkg = PackageClassifier.extractPackageFromFqn(fqn);
+
+        if (PackageClassifier.isCommonPackage(pkg)) {
+            return !config.hideCommonPackages();
+        }
+        if (PackageClassifier.isExternalPackage(pkg, sourcePackages)) {
+            return !config.hideExternalPackages();
+        }
+        if (PackageClassifier.isSiblingPackage(pkg, sourcePackages)) {
+            return !config.hideSiblingPackages();
+        }
+
+        // Package matches source but type was not parsed — allow
+        return true;
     }
 
     /**
@@ -428,6 +467,7 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
             Set<String> renderedTypeFqns,
             Set<String> nestedTypeFqns,
             Set<String> linkedTypes,
-            Map<String, UmlType> typesByFqn) {
+            Map<String, UmlType> typesByFqn,
+            Set<String> sourcePackages) {
     }
 }

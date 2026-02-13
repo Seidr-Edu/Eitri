@@ -34,7 +34,7 @@ public final class RelationStore {
         List<UmlRelation> mergedRelations = new ArrayList<>(relations);
 
         for (ParseContext.PendingInheritance pi : pendingInheritance) {
-            String targetFqn = typeResolver.resolveTypeReference(pi.toFqn());
+            String targetFqn = typeResolver.normalizeToValidFqn(pi.toFqn());
             if (targetFqn != null) {
                 mergedRelations.add(UmlRelation.builder()
                         .fromTypeFqn(pi.fromFqn())
@@ -46,7 +46,10 @@ public final class RelationStore {
 
         Map<String, UmlRelation> deduped = new HashMap<>();
         for (UmlRelation relation : mergedRelations) {
-            if (!types.hasType(relation.getFromTypeFqn()) || !types.hasType(relation.getToTypeFqn())) {
+            // Require the FROM endpoint to be a parsed type.
+            // The TO endpoint may be an external FQN — the writer decides
+            // whether to render it based on package-hiding configuration.
+            if (!types.hasType(relation.getFromTypeFqn())) {
                 continue;
             }
 

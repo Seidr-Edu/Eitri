@@ -122,6 +122,18 @@ public class ParseContext {
     }
 
     /**
+     * Normalizes a type reference to a valid FQN without requiring it to be in
+     * the type registry. Used by relation detection to allow relations targeting
+     * types outside the parsed source.
+     *
+     * @param fqn the type reference to normalize
+     * @return the normalized FQN if valid, or null for primitives, wildcards, etc.
+     */
+    public String normalizeToValidFqn(String fqn) {
+        return typeResolver.normalizeToValidFqn(fqn);
+    }
+
+    /**
      * Returns aggregate type-reference resolution statistics.
      *
      * @return current resolution statistics snapshot

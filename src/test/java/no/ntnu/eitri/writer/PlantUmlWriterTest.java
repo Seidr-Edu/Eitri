@@ -335,6 +335,120 @@ class PlantUmlWriterTest {
     }
 
     @Test
+    void rendersRelationToExternalFqnNotInModel() {
+        UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addRelation(UmlRelation.dependency(source.getFqn(), "org.external.Library", null))
+                .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
+                .build();
+
+        PlantUmlConfig config = config("showDependency", true);
+
+        String output = new PlantUmlWriter().render(model, config);
+
+        assertTrue(output.contains("no.ntnu.eitri.parser.Source ..> org.external.Library"));
+    }
+
+    @Test
+    void hidesRelationToExternalFqnWhenHideExternalPackages() {
+        UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addRelation(UmlRelation.dependency(source.getFqn(), "org.external.Library", null))
+                .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
+                .build();
+
+        PlantUmlConfig config = config("showDependency", true, "hideExternalPackages", true);
+
+        String output = new PlantUmlWriter().render(model, config);
+
+        assertFalse(output.contains("org.external.Library"));
+    }
+
+    @Test
+    void rendersRelationToCommonFqnNotInModel() {
+        UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addRelation(UmlRelation.association(source.getFqn(), "java.util.List", null))
+                .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
+                .build();
+
+        PlantUmlConfig config = config("showAssociation", true);
+
+        String output = new PlantUmlWriter().render(model, config);
+
+        assertTrue(output.contains("no.ntnu.eitri.parser.Source -- java.util.List"));
+    }
+
+    @Test
+    void hidesRelationToCommonFqnWhenHideCommonPackages() {
+        UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addRelation(UmlRelation.association(source.getFqn(), "java.util.List", null))
+                .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
+                .build();
+
+        PlantUmlConfig config = config("showAssociation", true, "hideCommonPackages", true);
+
+        String output = new PlantUmlWriter().render(model, config);
+
+        assertFalse(output.contains("java.util.List"));
+    }
+
+    @Test
+    void rendersRelationToSiblingFqnNotInModel() {
+        UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addRelation(UmlRelation.association(source.getFqn(), "no.ntnu.eitri.model.UmlType", null))
+                .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
+                .build();
+
+        PlantUmlConfig config = config("showAssociation", true);
+
+        String output = new PlantUmlWriter().render(model, config);
+
+        assertTrue(output.contains("no.ntnu.eitri.parser.Source -- no.ntnu.eitri.model.UmlType"));
+    }
+
+    @Test
+    void hidesRelationToSiblingFqnWhenHideSiblingPackages() {
+        UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addRelation(UmlRelation.association(source.getFqn(), "no.ntnu.eitri.model.UmlType", null))
+                .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
+                .build();
+
+        PlantUmlConfig config = config("showAssociation", true, "hideSiblingPackages", true);
+
+        String output = new PlantUmlWriter().render(model, config);
+
+        assertFalse(output.contains("no.ntnu.eitri.model.UmlType"));
+    }
+
+    @Test
+    void relationToFilteredOutModelTypeIsNotRendered() {
+        UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
+        UmlType common = UmlType.builder().fqn("java.util.List").simpleName("List").visibility(Visibility.PUBLIC).build();
+        UmlModel model = UmlModel.builder()
+                .addType(source)
+                .addType(common)
+                .addRelation(UmlRelation.association(source.getFqn(), common.getFqn(), null))
+                .sourcePackages(java.util.Set.of("no.ntnu.eitri.parser"))
+                .build();
+
+        PlantUmlConfig config = config("hideCommonPackages", true);
+
+        String output = new PlantUmlWriter().render(model, config);
+
+        assertFalse(output.contains("java.util.List"));
+    }
+
+    @Test
     void dedupesVisuallyIdenticalRelationsInRenderedOutput() {
         UmlType source = UmlType.builder().fqn("com.example.Source").simpleName("Source").visibility(Visibility.PUBLIC).build();
         UmlType target = UmlType.builder().fqn("com.example.Target").simpleName("Target").visibility(Visibility.PUBLIC).build();

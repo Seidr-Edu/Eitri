@@ -49,6 +49,39 @@ public final class TypeReferenceResolver {
         return null;
     }
 
+    /**
+     * Normalizes a type reference to a valid fully-qualified name without
+     * requiring it to be registered in the type registry.
+     *
+     * <p>
+     * This allows relation detection to produce relations targeting types
+     * outside the parsed source (external libraries, JDK types, sibling
+     * packages). The writer then decides which of these to render based on
+     * the {@code hideCommonPackages}, {@code hideExternalPackages}, and
+     * {@code hideSiblingPackages} configuration flags.
+     *
+     * @param fqn the type reference to normalize
+     * @return the normalized FQN if valid, or {@code null} for primitives,
+     *         wildcards, non-FQN simple names, etc.
+     */
+    public String normalizeToValidFqn(String fqn) {
+        if (fqn == null || fqn.isEmpty()) {
+            return null;
+        }
+
+        NormalizationResult normalization = normalizeTypeName(fqn);
+        if (normalization.skipReason() != null) {
+            return null;
+        }
+        String normalized = normalization.normalized();
+
+        if (!isFullyQualifiedTypeName(normalized)) {
+            return null;
+        }
+
+        return normalized;
+    }
+
     public TypeResolutionStats getStatsSnapshot() {
         return new TypeResolutionStats(
                 totalRequests,
@@ -105,6 +138,9 @@ public final class TypeReferenceResolver {
      * where the first dot-separated segment starts with an uppercase letter.
      */
     private boolean isFullyQualifiedTypeName(String type) {
+        if (type.indexOf(',') >= 0 || type.indexOf(' ') >= 0) {
+            return false;
+        }
         int firstDot = type.indexOf('.');
         if (firstDot < 0) {
             return false;

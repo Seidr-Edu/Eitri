@@ -97,19 +97,22 @@ public class RelationDetector {
 
         // Check if it's a collection type
         if (isCollectionType(fieldType)) {
-            // Extract the generic type argument
-            String elementType = extractGenericArgument(fieldType);
-            // Only use elementType if it's already a known type in context
-            // (don't create placeholders for generic arguments extracted from strings)
-            if (elementType != null && context.hasType(elementType)) {
-                UmlRelation relation = UmlRelation.builder()
-                        .fromTypeFqn(ownerFqn)
-                        .toTypeFqn(elementType)
-                        .kind(RelationKind.AGGREGATION)
-                        .toMultiplicity("*")
-                        .fromMember(field.getName())
-                        .build();
-                context.addRelation(relation);
+            // Extract the generic type arguments (may be comma-separated for Map<K,V>)
+            String genericContent = extractGenericArgument(fieldType);
+            if (genericContent != null) {
+                for (String elementType : genericContent.split(",")) {
+                    String resolvedElement = context.normalizeToValidFqn(elementType.trim());
+                    if (resolvedElement != null) {
+                        UmlRelation relation = UmlRelation.builder()
+                                .fromTypeFqn(ownerFqn)
+                                .toTypeFqn(resolvedElement)
+                                .kind(RelationKind.AGGREGATION)
+                                .toMultiplicity("*")
+                                .fromMember(field.getName())
+                                .build();
+                        context.addRelation(relation);
+                    }
+                }
             }
             return;
         }
@@ -117,7 +120,7 @@ public class RelationDetector {
         // Check for array types
         if (fieldType.endsWith("[]")) {
             String elementType = fieldType.substring(0, fieldType.length() - 2);
-            String resolvedType = context.resolveTypeReference(elementType);
+            String resolvedType = context.normalizeToValidFqn(elementType);
             if (resolvedType != null) {
                 UmlRelation relation = UmlRelation.builder()
                         .fromTypeFqn(ownerFqn)
@@ -132,7 +135,7 @@ public class RelationDetector {
         }
 
         // Simple field reference
-        String resolvedType = context.resolveTypeReference(fieldType);
+        String resolvedType = context.normalizeToValidFqn(fieldType);
         if (resolvedType != null) {
             // Determine if composition or association based on field modifiers
             RelationKind kind = determineFieldRelationKind(field);
@@ -190,7 +193,7 @@ public class RelationDetector {
 
         // Add dependency relations
         for (String dep : dependencies) {
-            String resolvedType = context.resolveTypeReference(dep);
+            String resolvedType = context.normalizeToValidFqn(dep);
             if (resolvedType != null && !resolvedType.equals(ownerFqn)) {
                 UmlRelation relation = UmlRelation.builder()
                         .fromTypeFqn(ownerFqn)
