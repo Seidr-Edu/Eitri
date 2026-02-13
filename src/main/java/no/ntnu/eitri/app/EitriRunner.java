@@ -122,7 +122,7 @@ public class EitriRunner {
 
         if (runConfig.verbose()) {
             LOGGER.log(Level.INFO, "Parsed {0} types, {1} relations",
-                    new Object[]{model.getTypes().size(), model.getRelations().size()});
+                    new Object[] { model.getTypes().size(), model.getRelations().size() });
         }
 
         return model;
@@ -130,7 +130,7 @@ public class EitriRunner {
 
     private void runDryRun(UmlModel model, RunConfig runConfig, ConfigResolution resolution) throws ConfigException {
         LOGGER.log(Level.INFO, "Dry run: Parsed {0} types from {1} source path(s)",
-                new Object[]{model.getTypes().size(), runConfig.sourcePaths().size()});
+                new Object[] { model.getTypes().size(), runConfig.sourcePaths().size() });
         LOGGER.log(Level.INFO, "         Would write to: {0}", runConfig.outputPath());
 
         if (runConfig.verbose()) {
@@ -148,8 +148,8 @@ public class EitriRunner {
         DiagramWriter<?> writer = resolveWriter(runConfig);
         writeWithResolvedConfig(writer, model, runConfig.outputPath(), resolution);
 
-        LOGGER.log(Level.INFO, "Generated {0} with {1} types and {2} relations.",
-                new Object[]{runConfig.outputPath(), model.getTypes().size(), model.getRelations().size()});
+        LOGGER.log(Level.INFO, "Generated {0}",
+                new Object[] { runConfig.outputPath() });
     }
 
     private SourceParser resolveParser(RunConfig runConfig) {
