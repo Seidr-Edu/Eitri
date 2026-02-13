@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -131,8 +130,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
 
     private void renderRelations(UmlModel model, PlantUmlConfig config, RenderContext context, StringBuilder sb) {
         Set<String> renderedRelationLines = new LinkedHashSet<>();
-        for (UmlRelation relation : model.getRelations()) {
-            if (shouldRenderRelation(relation, config, context.nestedTypeFqns(), context.renderedTypeFqns())) {
+        for (UmlRelation relation : model.getRelationsSorted()) {
+            if (shouldRenderRelation(relation, config, context)) {
                 renderedRelationLines.add(renderRelation(relation, config, context));
             }
         }
@@ -159,14 +158,15 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
                 .collect(Collectors.toSet());
         Set<String> nestedTypeFqns = collectNestedTypeFqns(model);
 
-        return new RenderContext(typeNames, renderedTypeFqns, nestedTypeFqns, linkedTypes, typesByFqn);
+        return new RenderContext(typeNames, renderedTypeFqns, nestedTypeFqns, linkedTypes, typesByFqn,
+                sourcePackages);
     }
 
     /**
      * Renders global PlantUML settings based on configuration.
      */
     private void renderGlobalSettings(PlantUmlConfig config, StringBuilder sb) {
-        if (config.hideCircle()) {
+        if (!config.showCircle()) {
             sb.append("hide circle\n");
         }
         if (config.hideEmptyFields()) {
@@ -276,26 +276,43 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
             return false;
         }
 
-        // Check hideUnlinked
-        return !config.hideUnlinked() || linkedTypes.contains(type.getFqn());
+        // Check showUnlinked
+        return config.showUnlinked() || linkedTypes.contains(type.getFqn());
     }
 
     /**
      * Determines if a relation should be rendered based on configuration.
-     * Relations to or from hidden types (package-filtered, nested, etc.) are
-     * excluded.
+     * Relations from hidden or non-rendered types are excluded.
+     * Relations targeting external FQNs (not in the model) are conditionally
+     * included based on package-hiding configuration.
      */
     private boolean shouldRenderRelation(UmlRelation relation, PlantUmlConfig config,
-            Set<String> nestedTypeFqns, Set<String> renderedTypeFqns) {
-        // Skip relations involving types that were filtered out
-        if (!renderedTypeFqns.contains(relation.getFromTypeFqn())
-                || !renderedTypeFqns.contains(relation.getToTypeFqn())) {
+            RenderContext context) {
+        String fromFqn = relation.getFromTypeFqn();
+        String toFqn = relation.getToTypeFqn();
+        Set<String> renderedTypeFqns = context.renderedTypeFqns();
+        Set<String> nestedTypeFqns = context.nestedTypeFqns();
+
+        // The FROM side must always be a rendered (parsed) type
+        if (!renderedTypeFqns.contains(fromFqn)) {
             return false;
         }
 
+        // Check TO side: it may be a rendered type or an external FQN
+        if (!renderedTypeFqns.contains(toFqn)) {
+            // If it's in the model but not rendered, it was explicitly filtered out
+            if (context.typesByFqn().containsKey(toFqn)) {
+                return false;
+            }
+            // It's an external FQN — check package-based filtering
+            if (!isExternalFqnAllowed(toFqn, config, context.sourcePackages())) {
+                return false;
+            }
+        }
+
         if (!config.showNested()
-                && (nestedTypeFqns.contains(relation.getFromTypeFqn())
-                        || nestedTypeFqns.contains(relation.getToTypeFqn()))) {
+                && (nestedTypeFqns.contains(fromFqn)
+                        || nestedTypeFqns.contains(toFqn))) {
             return false;
         }
 
@@ -310,6 +327,27 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
             case DEPENDENCY -> config.showDependency();
             case NESTED -> config.showNested();
         };
+    }
+
+    /**
+     * Determines if a relation to an external FQN (not in the model) should be
+     * rendered based on package-hiding configuration.
+     */
+    private boolean isExternalFqnAllowed(String fqn, PlantUmlConfig config, Set<String> sourcePackages) {
+        String pkg = PackageClassifier.extractPackageFromFqn(fqn);
+
+        if (PackageClassifier.isCommonPackage(pkg)) {
+            return !config.hideCommonPackages();
+        }
+        if (PackageClassifier.isExternalPackage(pkg, sourcePackages)) {
+            return !config.hideExternalPackages();
+        }
+        if (PackageClassifier.isSiblingPackage(pkg, sourcePackages)) {
+            return !config.hideSiblingPackages();
+        }
+
+        // Package matches source but type was not parsed — allow
+        return true;
     }
 
     /**
@@ -360,60 +398,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
     private String renderRelation(UmlRelation relation, PlantUmlConfig config, RenderContext context) {
         String fromName = context.typeNames().getOrDefault(relation.getFromTypeFqn(), relation.getFromTypeFqn());
         String toName = context.typeNames().getOrDefault(relation.getToTypeFqn(), relation.getToTypeFqn());
-        UmlRelation effectiveRelation = withEffectiveRelationLabel(relation, config, context.typesByFqn());
-        return renderer.renderRelation(effectiveRelation, fromName, toName, config.showLabels(),
+        return renderer.renderRelation(relation, fromName, toName, config.showLabels(),
                 config.showMultiplicities());
-    }
-
-    private UmlRelation withEffectiveRelationLabel(UmlRelation relation, PlantUmlConfig config,
-            Map<String, UmlType> typesByFqn) {
-        String label = resolveFallbackRelationLabel(relation, config, typesByFqn);
-        if (Objects.equals(label, relation.getLabel())) {
-            return relation;
-        }
-        return UmlRelation.builder()
-                .fromTypeFqn(relation.getFromTypeFqn())
-                .toTypeFqn(relation.getToTypeFqn())
-                .kind(relation.getKind())
-                .label(label)
-                .fromMultiplicity(relation.getFromMultiplicity())
-                .toMultiplicity(relation.getToMultiplicity())
-                .fromMember(relation.getFromMember())
-                .toMember(relation.getToMember())
-                .build();
-    }
-
-    private String resolveFallbackRelationLabel(UmlRelation relation, PlantUmlConfig config,
-            Map<String, UmlType> typesByFqn) {
-        if (!config.showLabels()) {
-            return relation.getLabel();
-        }
-        if (relation.getLabel() != null && !relation.getLabel().isBlank()) {
-            return relation.getLabel();
-        }
-        if (relation.isMemberRelation()) {
-            return null;
-        }
-        String fromMember = relation.getFromMember();
-        if (fromMember == null || fromMember.isBlank()) {
-            return null;
-        }
-        UmlType fromType = typesByFqn.get(relation.getFromTypeFqn());
-        if (fromType == null || !isVisibleMember(fromType, fromMember, config)) {
-            return null;
-        }
-        return fromMember;
-    }
-
-    private boolean isVisibleMember(UmlType ownerType, String memberName, PlantUmlConfig config) {
-        if (ownerType.getFields().stream()
-                .anyMatch(field -> field.getName().equals(memberName)
-                        && shouldRenderMember(field.getVisibility(), config))) {
-            return true;
-        }
-        return ownerType.getMethods().stream()
-                .anyMatch(method -> method.getName().equals(memberName)
-                        && shouldRenderMember(method.getVisibility(), config));
     }
 
     private String toPlantUmlDirection(LayoutDirection direction) {
@@ -428,6 +414,7 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
             Set<String> renderedTypeFqns,
             Set<String> nestedTypeFqns,
             Set<String> linkedTypes,
-            Map<String, UmlType> typesByFqn) {
+            Map<String, UmlType> typesByFqn,
+            Set<String> sourcePackages) {
     }
 }

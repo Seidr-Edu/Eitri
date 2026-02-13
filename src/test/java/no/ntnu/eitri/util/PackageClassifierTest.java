@@ -322,4 +322,56 @@ class PackageClassifierTest {
               Set.of("no.ntnu.eitri.parser", "no.ntnu.eitri.parser.java")));
     }
   }
+
+  // =====================================================================
+  // extractPackageFromFqn
+  // =====================================================================
+
+  @Nested
+  @DisplayName("extractPackageFromFqn")
+  class ExtractPackageTests {
+
+    @Test
+    @DisplayName("extracts package from standard FQN")
+    void standardFqn() {
+      assertEquals("com.example", PackageClassifier.extractPackageFromFqn("com.example.MyClass"));
+    }
+
+    @Test
+    @DisplayName("extracts package from nested type FQN")
+    void nestedClassFqn() {
+      assertEquals("com.example", PackageClassifier.extractPackageFromFqn("com.example.Outer.Inner"));
+    }
+
+    @Test
+    @DisplayName("extracts package from deep FQN")
+    void deepFqn() {
+      assertEquals("no.ntnu.eitri.parser.java",
+          PackageClassifier.extractPackageFromFqn("no.ntnu.eitri.parser.java.TypeVisitor"));
+    }
+
+    @Test
+    @DisplayName("returns empty for simple class name")
+    void simpleClassName() {
+      assertEquals("", PackageClassifier.extractPackageFromFqn("MyClass"));
+    }
+
+    @Test
+    @DisplayName("returns empty for null")
+    void nullInput() {
+      assertEquals("", PackageClassifier.extractPackageFromFqn(null));
+    }
+
+    @Test
+    @DisplayName("returns empty for blank")
+    void blankInput() {
+      assertEquals("", PackageClassifier.extractPackageFromFqn(""));
+    }
+
+    @Test
+    @DisplayName("extracts common package")
+    void commonPackageFqn() {
+      assertEquals("java.util", PackageClassifier.extractPackageFromFqn("java.util.List"));
+    }
+  }
 }

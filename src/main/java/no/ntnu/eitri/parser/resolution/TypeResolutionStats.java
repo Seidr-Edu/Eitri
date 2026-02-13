@@ -6,14 +6,14 @@ package no.ntnu.eitri.parser.resolution;
 public record TypeResolutionStats(
         int totalRequests,
         int resolvedReferences,
-        int placeholdersCreated,
         int reusedKnownTypes,
         int skippedNullOrEmpty,
         int skippedWildcard,
         int skippedPrimitive,
-        int skippedNonFqn
+        int skippedNonFqn,
+        int skippedUnknownFqn
 ) {
     public int skippedTotal() {
-        return skippedNullOrEmpty + skippedWildcard + skippedPrimitive + skippedNonFqn;
+        return skippedNullOrEmpty + skippedWildcard + skippedPrimitive + skippedNonFqn + skippedUnknownFqn;
     }
 }

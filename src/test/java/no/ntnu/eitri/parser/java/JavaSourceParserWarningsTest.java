@@ -103,8 +103,6 @@ class JavaSourceParserWarningsTest {
 
             assertNotNull(model);
             assertTrue(handler.messages.stream().anyMatch(msg -> msg.contains("Type reference resolution:")));
-            assertTrue(handler.messages.stream().anyMatch(msg -> msg.contains("Type reference skips by reason:")));
-            assertTrue(handler.messages.stream().anyMatch(msg -> msg.contains("non-FQN=")));
         } finally {
             logger.removeHandler(handler);
             logger.setLevel(previous);

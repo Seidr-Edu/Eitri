@@ -17,32 +17,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ParseContextTest {
 
     @Test
-    void resolveTypeReferenceCreatesPlaceholderAndNormalizes() {
+    void resolveTypeReferenceResolvesRegisteredTypeAndNormalizes() {
         ParseContext context = new ParseContext(false);
+        context.addType(UmlType.builder().fqn("com.example.Order").simpleName("Order").build());
 
-        String resolved = context.resolveTypeReference("  com.example.Order<java.lang.String>[]  ", "Owner.field");
+        String resolved = context.resolveTypeReference("  com.example.Order<java.lang.String>[]  ");
 
         assertEquals("com.example.Order", resolved);
-        assertTrue(context.hasType("com.example.Order"));
-        assertEquals("Order", context.getType("com.example.Order").getSimpleName());
+    }
+
+    @Test
+    void resolveTypeReferenceSkipsUnregisteredFqn() {
+        ParseContext context = new ParseContext(false);
+
+        assertNull(context.resolveTypeReference("com.example.Unknown"));
+        assertTrue(context.getTypes().isEmpty());
     }
 
     @Test
     void resolveTypeReferenceSkipsPrimitiveAndWildcard() {
         ParseContext context = new ParseContext(false);
 
-        assertNull(context.resolveTypeReference("int", "Owner.field"));
-        assertNull(context.resolveTypeReference("?", "Owner.field"));
-        assertNull(context.resolveTypeReference("? extends Number", "Owner.field"));
-        assertNull(context.resolveTypeReference("? super Number", "Owner.field"));
+        assertNull(context.resolveTypeReference("int"));
+        assertNull(context.resolveTypeReference("?"));
+        assertNull(context.resolveTypeReference("? extends Number"));
+        assertNull(context.resolveTypeReference("? super Number"));
     }
 
     @Test
     void resolveTypeReferenceSkipsUnqualifiedTypesWithoutCreatingPlaceholders() {
         ParseContext context = new ParseContext(false);
 
-        assertNull(context.resolveTypeReference("T", "Owner.field"));
-        assertNull(context.resolveTypeReference("UnknownType", "Owner.field"));
+        assertNull(context.resolveTypeReference("T"));
+        assertNull(context.resolveTypeReference("UnknownType"));
         assertTrue(context.getTypes().isEmpty());
     }
 
@@ -57,7 +64,7 @@ class ParseContextTest {
     }
 
     @Test
-    void buildResolvesPendingInheritanceAndPreservesDistinctRelationKinds() {
+    void buildResolvesPendingInheritanceAndKeepsOnlyStrongestRelationPerEndpoint() {
         ParseContext context = new ParseContext(false);
         context.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
         context.addType(UmlType.builder().fqn("com.example.B").simpleName("B").build());
@@ -75,8 +82,8 @@ class ParseContextTest {
         assertTrue(model.hasType("com.example.Base"));
 
         List<UmlRelation> relations = model.getRelations();
-        assertEquals(3, relations.size());
-        assertTrue(relations.stream().anyMatch(r ->
+        assertEquals(2, relations.size());
+        assertTrue(relations.stream().noneMatch(r ->
                 r.getFromTypeFqn().equals("com.example.A")
                         && r.getToTypeFqn().equals("com.example.B")
                         && r.getKind() == RelationKind.DEPENDENCY));
@@ -91,14 +98,28 @@ class ParseContextTest {
     }
 
     @Test
-    void buildSkipsRelationsToMissingTypes() {
+    void buildSkipsRelationsWhereFromTypeIsMissing() {
         ParseContext context = new ParseContext(false);
         context.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
-        context.addRelation(UmlRelation.association("com.example.A", "com.example.Missing", null));
+        // FROM is missing — relation should be dropped
+        context.addRelation(UmlRelation.association("com.example.Missing", "com.example.A", null));
 
         UmlModel model = context.build();
 
         assertTrue(model.getRelations().isEmpty());
+    }
+
+    @Test
+    void buildKeepsRelationsWhereToTypeIsExternalFqn() {
+        ParseContext context = new ParseContext(false);
+        context.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
+        // TO is external but FROM is registered — relation should survive
+        context.addRelation(UmlRelation.association("com.example.A", "com.example.Missing", null));
+
+        UmlModel model = context.build();
+
+        assertEquals(1, model.getRelations().size());
+        assertEquals("com.example.Missing", model.getRelations().getFirst().getToTypeFqn());
     }
 
     @Test
@@ -121,23 +142,23 @@ class ParseContextTest {
         ParseContext context = new ParseContext(false);
         context.addType(UmlType.builder().fqn("com.example.Known").simpleName("Known").build());
 
-        assertNull(context.resolveTypeReference("T", "Owner.field"));
-        assertNull(context.resolveTypeReference("int", "Owner.field"));
-        assertNull(context.resolveTypeReference("?", "Owner.field"));
-        assertNull(context.resolveTypeReference("  ", "Owner.field"));
-        assertEquals("com.example.NewType", context.resolveTypeReference("com.example.NewType", "Owner.field"));
-        assertEquals("com.example.Known", context.resolveTypeReference("com.example.Known", "Owner.field"));
+        assertNull(context.resolveTypeReference("T"));
+        assertNull(context.resolveTypeReference("int"));
+        assertNull(context.resolveTypeReference("?"));
+        assertNull(context.resolveTypeReference("  "));
+        assertNull(context.resolveTypeReference("com.example.NewType"));
+        assertEquals("com.example.Known", context.resolveTypeReference("com.example.Known"));
 
         TypeResolutionStats stats = context.getTypeResolutionStats();
         assertEquals(6, stats.totalRequests());
-        assertEquals(2, stats.resolvedReferences());
-        assertEquals(1, stats.placeholdersCreated());
+        assertEquals(1, stats.resolvedReferences());
         assertEquals(1, stats.reusedKnownTypes());
         assertEquals(1, stats.skippedNonFqn());
         assertEquals(1, stats.skippedPrimitive());
         assertEquals(1, stats.skippedWildcard());
         assertEquals(1, stats.skippedNullOrEmpty());
-        assertEquals(4, stats.skippedTotal());
+        assertEquals(1, stats.skippedUnknownFqn());
+        assertEquals(5, stats.skippedTotal());
     }
 
     @Test
@@ -145,8 +166,8 @@ class ParseContextTest {
         ParseContext context = new ParseContext(false);
         context.addWarning("warn-1");
         context.addWarning("warn-2");
-        context.resolveTypeReference("T", "Owner.field");
-        context.resolveTypeReference("com.example.Valid", "Owner.field");
+        context.resolveTypeReference("T");
+        context.resolveTypeReference("com.example.Valid");
 
         ParseReport report = context.getReport();
 
@@ -154,6 +175,7 @@ class ParseContextTest {
         assertEquals(List.of("warn-1", "warn-2"), report.warnings());
         assertEquals(2, report.typeResolutionStats().totalRequests());
         assertEquals(1, report.typeResolutionStats().skippedNonFqn());
-        assertEquals(1, report.typeResolutionStats().resolvedReferences());
+        assertEquals(0, report.typeResolutionStats().resolvedReferences());
+        assertEquals(1, report.typeResolutionStats().skippedUnknownFqn());
     }
 }

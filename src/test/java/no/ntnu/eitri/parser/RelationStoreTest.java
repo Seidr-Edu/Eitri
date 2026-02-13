@@ -1,6 +1,7 @@
 package no.ntnu.eitri.parser;
 
 import no.ntnu.eitri.model.RelationKind;
+import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlRelation;
 import no.ntnu.eitri.model.UmlType;
 import no.ntnu.eitri.parser.relations.RelationStore;
@@ -35,7 +36,7 @@ class RelationStoreTest {
     }
 
     @Test
-    void buildFinalRelationsKeepsDifferentRelationKindsForSameTypePair() {
+    void buildFinalRelationsKeepsOnlyStrongestRelationKindForSameTypePair() {
         TypeRegistry types = new TypeRegistry();
         types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
         types.addType(UmlType.builder().fqn("com.example.B").simpleName("B").build());
@@ -46,13 +47,13 @@ class RelationStoreTest {
 
         List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
 
-        assertEquals(2, relations.size());
-        assertTrue(relations.stream().anyMatch(r -> r.getKind() == RelationKind.DEPENDENCY));
+        assertEquals(1, relations.size());
+        assertTrue(relations.stream().noneMatch(r -> r.getKind() == RelationKind.DEPENDENCY));
         assertTrue(relations.stream().anyMatch(r -> r.getKind() == RelationKind.ASSOCIATION));
     }
 
     @Test
-    void buildFinalRelationsKeepsDistinctMemberToMemberRelationsForSameTypePair() {
+    void buildFinalRelationsCollapsesMemberToMemberRelationsByEndpoint() {
         TypeRegistry types = new TypeRegistry();
         types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
         types.addType(UmlType.builder().fqn("com.example.B").simpleName("B").build());
@@ -75,13 +76,12 @@ class RelationStoreTest {
 
         List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
 
-        assertEquals(2, relations.size());
-        assertTrue(relations.stream().anyMatch(r -> "primary".equals(r.getFromMember())));
-        assertTrue(relations.stream().anyMatch(r -> "secondary".equals(r.getFromMember())));
+        assertEquals(1, relations.size());
+        assertEquals("primary", relations.getFirst().getFromMember());
     }
 
     @Test
-    void buildFinalRelationsKeepsDistinctFromMemberOnlyRelations() {
+    void buildFinalRelationsCollapsesFromMemberOnlyRelationsByEndpoint() {
         TypeRegistry types = new TypeRegistry();
         types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
         types.addType(UmlType.builder().fqn("com.example.B").simpleName("B").build());
@@ -102,6 +102,72 @@ class RelationStoreTest {
 
         List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
 
-        assertEquals(2, relations.size());
+        assertEquals(1, relations.size());
+        assertEquals("f1", relations.getFirst().getFromMember());
+    }
+
+    @Test
+    void buildFinalRelationsAllowsExternalToEndpoint() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
+        // com.external.Lib is NOT registered
+
+        RelationStore store = new RelationStore();
+        store.addRelation(UmlRelation.dependency("com.example.A", "com.external.Lib", null));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(1, relations.size());
+        assertEquals("com.external.Lib", relations.getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void buildFinalRelationsDropsRelationWhenFromEndpointNotRegistered() {
+        TypeRegistry types = new TypeRegistry();
+        // Neither endpoint is registered
+
+        RelationStore store = new RelationStore();
+        store.addRelation(UmlRelation.dependency("com.unknown.A", "com.unknown.B", null));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(0, relations.size());
+    }
+
+    @Test
+    void buildFinalRelationsResolvesPendingInheritanceToExternalType() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
+
+        TypeReferenceResolver resolver = new TypeReferenceResolver(types);
+        RelationStore store = new RelationStore();
+
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.A", "org.external.Base", RelationKind.EXTENDS
+        ));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
+
+        assertEquals(1, relations.size());
+        assertEquals(RelationKind.EXTENDS, relations.getFirst().getKind());
+        assertEquals("org.external.Base", relations.getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void buildFinalRelationsPrunesEnumSelfRelations() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder()
+                .fqn("com.example.Status")
+                .simpleName("Status")
+                .kind(TypeKind.ENUM)
+                .build());
+
+        RelationStore store = new RelationStore();
+        store.addRelation(UmlRelation.association("com.example.Status", "com.example.Status", null));
+        store.addRelation(UmlRelation.dependency("com.example.Status", "com.example.Status", null));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(0, relations.size());
     }
 }

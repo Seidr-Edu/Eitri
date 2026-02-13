@@ -1,6 +1,7 @@
 package no.ntnu.eitri.parser.java;
 
 import no.ntnu.eitri.model.RelationKind;
+import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlField;
 import no.ntnu.eitri.model.UmlMethod;
 import no.ntnu.eitri.model.UmlParameter;
@@ -95,69 +96,83 @@ public class RelationDetector {
     private void detectFieldRelation(String ownerFqn, UmlField field) {
         String fieldType = field.getType();
 
-        // Check if it's a collection type
         if (isCollectionType(fieldType)) {
-            // Extract the generic type argument
-            String elementType = extractGenericArgument(fieldType);
-            // Only use elementType if it's already a known type in context
-            // (don't create placeholders for generic arguments extracted from strings)
-            if (elementType != null && context.hasType(elementType)) {
-                UmlRelation relation = UmlRelation.builder()
-                        .fromTypeFqn(ownerFqn)
-                        .toTypeFqn(elementType)
-                        .kind(RelationKind.AGGREGATION)
-                        .toMultiplicity("*")
-                        .fromMember(field.getName())
-                        .build();
-                context.addRelation(relation);
-            }
+            addCollectionFieldRelations(ownerFqn, field, fieldType);
             return;
         }
 
-        // Check for array types
         if (fieldType.endsWith("[]")) {
-            String elementType = fieldType.substring(0, fieldType.length() - 2);
-            String resolvedType = context.resolveTypeReference(elementType, ownerFqn + "." + field.getName());
-            if (resolvedType != null) {
-                UmlRelation relation = UmlRelation.builder()
-                        .fromTypeFqn(ownerFqn)
-                        .toTypeFqn(resolvedType)
-                        .kind(RelationKind.AGGREGATION)
-                        .toMultiplicity("*")
-                        .fromMember(field.getName())
-                        .build();
-                context.addRelation(relation);
-            }
+            String elementType = fieldType.substring(0, fieldType.length() - 2).trim();
+            addFieldRelationIfValid(ownerFqn, field, elementType, RelationKind.AGGREGATION, "*");
             return;
         }
 
-        // Simple field reference
-        String resolvedType = context.resolveTypeReference(fieldType, ownerFqn + "." + field.getName());
-        if (resolvedType != null) {
-            // Determine if composition or association based on field modifiers
-            RelationKind kind = determineFieldRelationKind(field);
+        addSimpleFieldRelation(ownerFqn, field, fieldType);
+    }
 
-            UmlRelation.Builder relBuilder = UmlRelation.builder()
-                    .fromTypeFqn(ownerFqn)
-                    .toTypeFqn(resolvedType)
-                    .kind(kind)
-                    .fromMember(field.getName());
-
-            // Add multiplicity based on nullability hints
-            if (!field.isFinal()) {
-                relBuilder.toMultiplicity("0..1");
-            } else {
-                relBuilder.toMultiplicity("1");
-            }
-
-            context.addRelation(relBuilder.build());
+    private void addCollectionFieldRelations(String ownerFqn, UmlField field, String fieldType) {
+        String genericContent = extractGenericArgument(fieldType);
+        if (genericContent == null) {
+            return;
         }
+        for (String elementType : genericContent.split(",")) {
+            addFieldRelationIfValid(ownerFqn, field, elementType.trim(), RelationKind.AGGREGATION, "*");
+        }
+    }
+
+    private void addSimpleFieldRelation(String ownerFqn, UmlField field, String fieldType) {
+        String resolvedType = context.normalizeToValidFqn(fieldType);
+        if (resolvedType == null || shouldSkipStaticSelfFieldRelation(ownerFqn, field, resolvedType)) {
+            return;
+        }
+
+        RelationKind kind = determineFieldRelationKind(ownerFqn, field, resolvedType);
+        String toMultiplicity = field.isFinal() ? "1" : "0..1";
+        addFieldRelation(ownerFqn, field, resolvedType, kind, toMultiplicity);
+    }
+
+    private void addFieldRelationIfValid(String ownerFqn, UmlField field, String candidateType,
+            RelationKind kind, String toMultiplicity) {
+        String resolvedType = context.normalizeToValidFqn(candidateType);
+        if (resolvedType == null || shouldSkipStaticSelfFieldRelation(ownerFqn, field, resolvedType)) {
+            return;
+        }
+        addFieldRelation(ownerFqn, field, resolvedType, kind, toMultiplicity);
+    }
+
+    private void addFieldRelation(String ownerFqn, UmlField field, String targetFqn,
+            RelationKind kind, String toMultiplicity) {
+        UmlRelation.Builder relationBuilder = UmlRelation.builder()
+                .fromTypeFqn(ownerFqn)
+                .toTypeFqn(targetFqn)
+                .kind(kind)
+                .fromMember(field.getName());
+
+        if (toMultiplicity != null) {
+            relationBuilder.toMultiplicity(toMultiplicity);
+        }
+
+        context.addRelation(relationBuilder.build());
+    }
+
+    private boolean shouldSkipStaticSelfFieldRelation(String ownerFqn, UmlField field, String targetFqn) {
+        return field.isStatic() && ownerFqn.equals(targetFqn);
     }
 
     /**
      * Determines the relation kind for a field.
      */
-    private RelationKind determineFieldRelationKind(UmlField field) {
+    private RelationKind determineFieldRelationKind(String ownerFqn, UmlField field, String resolvedType) {
+        UmlType ownerType = context.getType(ownerFqn);
+        UmlType targetType = context.getType(resolvedType);
+
+        if (ownerType != null
+                && ownerType.getKind() == TypeKind.CLASS
+                && targetType != null
+                && targetType.getKind() == TypeKind.ENUM) {
+            return RelationKind.ASSOCIATION;
+        }
+
         // Final fields suggest strong ownership (composition)
         if (field.isFinal()) {
             return RelationKind.COMPOSITION;
@@ -190,7 +205,7 @@ public class RelationDetector {
 
         // Add dependency relations
         for (String dep : dependencies) {
-            String resolvedType = context.resolveTypeReference(dep, ownerFqn + "." + method.getName() + "()");
+            String resolvedType = context.normalizeToValidFqn(dep);
             if (resolvedType != null && !resolvedType.equals(ownerFqn)) {
                 UmlRelation relation = UmlRelation.builder()
                         .fromTypeFqn(ownerFqn)
