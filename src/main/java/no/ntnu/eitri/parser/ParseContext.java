@@ -106,8 +106,9 @@ public class ParseContext {
      * Resolves a type reference.
      *
      * <p>
-     * If the type is not already registered, a placeholder type is created
-     * so all referenced types are modeled and can be filtered during writing.
+     * Only fully-qualified type names are modeled.
+     * If the type is fully qualified and not already registered,
+     * a placeholder type is created so references can be represented.
      *
      * @param fqn            the fully-qualified name to resolve
      * @param referencedFrom context for warning messages
@@ -115,6 +116,15 @@ public class ParseContext {
      */
     public String resolveTypeReference(String fqn, String referencedFrom) {
         return typeResolver.resolveTypeReference(fqn);
+    }
+
+    /**
+     * Returns aggregate type-reference resolution statistics.
+     *
+     * @return current resolution statistics snapshot
+     */
+    public TypeResolutionStats getTypeResolutionStats() {
+        return typeResolver.getStatsSnapshot();
     }
 
     /**

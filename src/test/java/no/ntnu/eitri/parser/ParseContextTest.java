@@ -114,4 +114,28 @@ class ParseContextTest {
         assertEquals(java.util.Set.of("com.example"), context.getSourcePackages());
         assertThrows(UnsupportedOperationException.class, () -> context.getSourcePackages().add("x.y"));
     }
+
+    @Test
+    void typeResolutionStatsTrackSkippedAndResolvedReferences() {
+        ParseContext context = new ParseContext(false);
+        context.addType(UmlType.builder().fqn("com.example.Known").simpleName("Known").build());
+
+        assertNull(context.resolveTypeReference("T", "Owner.field"));
+        assertNull(context.resolveTypeReference("int", "Owner.field"));
+        assertNull(context.resolveTypeReference("?", "Owner.field"));
+        assertNull(context.resolveTypeReference("  ", "Owner.field"));
+        assertEquals("com.example.NewType", context.resolveTypeReference("com.example.NewType", "Owner.field"));
+        assertEquals("com.example.Known", context.resolveTypeReference("com.example.Known", "Owner.field"));
+
+        TypeResolutionStats stats = context.getTypeResolutionStats();
+        assertEquals(6, stats.totalRequests());
+        assertEquals(2, stats.resolvedReferences());
+        assertEquals(1, stats.placeholdersCreated());
+        assertEquals(1, stats.reusedKnownTypes());
+        assertEquals(1, stats.skippedNonFqn());
+        assertEquals(1, stats.skippedPrimitive());
+        assertEquals(1, stats.skippedWildcard());
+        assertEquals(1, stats.skippedNullOrEmpty());
+        assertEquals(4, stats.skippedTotal());
+    }
 }

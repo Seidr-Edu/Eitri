@@ -65,6 +65,53 @@ class JavaSourceParserWarningsTest {
         }
     }
 
+    @Test
+    void logsTypeResolutionSkipSummaryInVerboseMode() throws Exception {
+        Path src = tempDir.resolve("src");
+        Files.createDirectories(src);
+        Files.writeString(src.resolve("Holder.java"), """
+                package com.example;
+
+                import java.util.function.Supplier;
+
+                public class Holder<C> {
+                    private Supplier<C> supplier;
+
+                    public <T> void set(T value) {
+                    }
+                }
+                """);
+
+        Logger logger = Logger.getLogger(JavaSourceParser.class.getName());
+        CapturingHandler handler = new CapturingHandler();
+        Level previous = logger.getLevel();
+        logger.setLevel(Level.INFO);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+
+        try {
+            RunConfig runConfig = new RunConfig(
+                    List.of(src),
+                    tempDir.resolve("out.puml"),
+                    null,
+                    null,
+                    true,
+                    false);
+
+            JavaSourceParser parser = new JavaSourceParser();
+            UmlModel model = parser.parse(List.of(src), runConfig);
+
+            assertNotNull(model);
+            assertTrue(handler.messages.stream().anyMatch(msg -> msg.contains("Type reference resolution:")));
+            assertTrue(handler.messages.stream().anyMatch(msg -> msg.contains("Type reference skips by reason:")));
+            assertTrue(handler.messages.stream().anyMatch(msg -> msg.contains("non-FQN=")));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previous);
+            logger.setUseParentHandlers(true);
+        }
+    }
+
     private static final class CapturingHandler extends Handler {
         private final List<String> messages = new ArrayList<>();
 
