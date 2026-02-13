@@ -3,6 +3,9 @@ package no.ntnu.eitri.parser;
 import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.UmlRelation;
 import no.ntnu.eitri.model.UmlType;
+import no.ntnu.eitri.parser.relations.RelationStore;
+import no.ntnu.eitri.parser.resolution.TypeReferenceResolver;
+import no.ntnu.eitri.parser.resolution.TypeRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

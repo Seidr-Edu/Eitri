@@ -9,6 +9,7 @@
  * <ul>
  *   <li>{@link no.ntnu.eitri.parser.SourceParser} - Main interface for parsing source files</li>
  *   <li>{@link no.ntnu.eitri.parser.ParseContext} - Mutable accumulator for parsed data</li>
+ *   <li>{@link no.ntnu.eitri.parser.ParseReport} - Consolidated warnings and parse metrics</li>
  *   <li>{@link no.ntnu.eitri.parser.ParseException} - Exception for parsing errors</li>
  * </ul>
  */

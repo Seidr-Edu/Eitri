@@ -1,6 +1,9 @@
-package no.ntnu.eitri.parser;
+package no.ntnu.eitri.parser.relations;
 
 import no.ntnu.eitri.model.UmlRelation;
+import no.ntnu.eitri.parser.ParseContext;
+import no.ntnu.eitri.parser.resolution.TypeReferenceResolver;
+import no.ntnu.eitri.parser.resolution.TypeRegistry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,24 +13,24 @@ import java.util.Map;
 /**
  * Collects and finalizes relations produced during parsing.
  */
-final class RelationStore {
+public final class RelationStore {
 
     private final List<UmlRelation> relations = new ArrayList<>();
     private final List<ParseContext.PendingInheritance> pendingInheritance = new ArrayList<>();
 
-    void addRelation(UmlRelation relation) {
+    public void addRelation(UmlRelation relation) {
         relations.add(relation);
     }
 
-    void addPendingInheritance(ParseContext.PendingInheritance pending) {
+    public void addPendingInheritance(ParseContext.PendingInheritance pending) {
         pendingInheritance.add(pending);
     }
 
-    int relationCount() {
+    public int relationCount() {
         return relations.size();
     }
 
-    List<UmlRelation> buildFinalRelations(TypeRegistry types, TypeReferenceResolver typeResolver) {
+    public List<UmlRelation> buildFinalRelations(TypeRegistry types, TypeReferenceResolver typeResolver) {
         List<UmlRelation> mergedRelations = new ArrayList<>(relations);
 
         for (ParseContext.PendingInheritance pi : pendingInheritance) {

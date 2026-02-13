@@ -1,5 +1,7 @@
 package no.ntnu.eitri.parser;
 
+import no.ntnu.eitri.parser.resolution.TypeReferenceResolver;
+import no.ntnu.eitri.parser.resolution.TypeRegistry;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
