@@ -35,7 +35,7 @@ class RelationStoreTest {
     }
 
     @Test
-    void buildFinalRelationsKeepsDifferentRelationKindsForSameTypePair() {
+    void buildFinalRelationsKeepsOnlyStrongestRelationKindForSameTypePair() {
         TypeRegistry types = new TypeRegistry();
         types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
         types.addType(UmlType.builder().fqn("com.example.B").simpleName("B").build());
@@ -46,13 +46,13 @@ class RelationStoreTest {
 
         List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
 
-        assertEquals(2, relations.size());
-        assertTrue(relations.stream().anyMatch(r -> r.getKind() == RelationKind.DEPENDENCY));
+        assertEquals(1, relations.size());
+        assertTrue(relations.stream().noneMatch(r -> r.getKind() == RelationKind.DEPENDENCY));
         assertTrue(relations.stream().anyMatch(r -> r.getKind() == RelationKind.ASSOCIATION));
     }
 
     @Test
-    void buildFinalRelationsKeepsDistinctMemberToMemberRelationsForSameTypePair() {
+    void buildFinalRelationsCollapsesMemberToMemberRelationsByEndpoint() {
         TypeRegistry types = new TypeRegistry();
         types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
         types.addType(UmlType.builder().fqn("com.example.B").simpleName("B").build());
@@ -75,13 +75,12 @@ class RelationStoreTest {
 
         List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
 
-        assertEquals(2, relations.size());
-        assertTrue(relations.stream().anyMatch(r -> "primary".equals(r.getFromMember())));
-        assertTrue(relations.stream().anyMatch(r -> "secondary".equals(r.getFromMember())));
+        assertEquals(1, relations.size());
+        assertEquals("primary", relations.getFirst().getFromMember());
     }
 
     @Test
-    void buildFinalRelationsKeepsDistinctFromMemberOnlyRelations() {
+    void buildFinalRelationsCollapsesFromMemberOnlyRelationsByEndpoint() {
         TypeRegistry types = new TypeRegistry();
         types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
         types.addType(UmlType.builder().fqn("com.example.B").simpleName("B").build());
@@ -102,7 +101,8 @@ class RelationStoreTest {
 
         List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
 
-        assertEquals(2, relations.size());
+        assertEquals(1, relations.size());
+        assertEquals("f1", relations.getFirst().getFromMember());
     }
 
     @Test

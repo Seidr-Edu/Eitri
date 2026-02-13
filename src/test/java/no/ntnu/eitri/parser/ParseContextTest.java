@@ -64,7 +64,7 @@ class ParseContextTest {
     }
 
     @Test
-    void buildResolvesPendingInheritanceAndPreservesDistinctRelationKinds() {
+    void buildResolvesPendingInheritanceAndKeepsOnlyStrongestRelationPerEndpoint() {
         ParseContext context = new ParseContext(false);
         context.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
         context.addType(UmlType.builder().fqn("com.example.B").simpleName("B").build());
@@ -82,8 +82,8 @@ class ParseContextTest {
         assertTrue(model.hasType("com.example.Base"));
 
         List<UmlRelation> relations = model.getRelations();
-        assertEquals(3, relations.size());
-        assertTrue(relations.stream().anyMatch(r ->
+        assertEquals(2, relations.size());
+        assertTrue(relations.stream().noneMatch(r ->
                 r.getFromTypeFqn().equals("com.example.A")
                         && r.getToTypeFqn().equals("com.example.B")
                         && r.getKind() == RelationKind.DEPENDENCY));
