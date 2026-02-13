@@ -119,4 +119,42 @@ class JavaSourceParserBehaviorTest {
         assertTrue(model.getRelations().stream().anyMatch(r -> r.getFromTypeFqn().equals("com.example.A")
                 && r.getToTypeFqn().equals("com.example.B")));
     }
+
+    @Test
+    void parseIncludedModuleIdsReadsGradleSettingsIncludes() throws Exception {
+        Path settings = tempDir.resolve("settings.gradle.kts");
+        Files.writeString(settings, """
+                rootProject.name = \"demo\"
+                include(\"a\")
+                include(\"b:c\", \"d:e:f\")
+                """);
+
+        Set<String> modules = JavaSourceParser.parseIncludedModuleIds(settings);
+
+        assertTrue(modules.contains("a"));
+        assertTrue(modules.contains("b:c"));
+        assertTrue(modules.contains("d:e:f"));
+    }
+
+    @Test
+    void detectTypeSolverRootsIncludesSiblingModulesFromGradleSettings() throws Exception {
+        Path repoRoot = tempDir.resolve("repo");
+        Files.createDirectories(repoRoot);
+        Files.writeString(repoRoot.resolve("settings.gradle.kts"), """
+                rootProject.name = \"demo\"
+                include(\"mod-a\")
+                include(\"mod-b\")
+                """);
+
+        Path modA = repoRoot.resolve("mod-a");
+        Path modB = repoRoot.resolve("mod-b");
+        Files.createDirectories(modA.resolve("src/main/java"));
+        Files.createDirectories(modB.resolve("src/main/java"));
+
+        Set<Path> roots = JavaSourceParser.detectTypeSolverRoots(modA);
+
+        assertTrue(roots.contains(modA));
+        assertTrue(roots.contains(modA.resolve("src/main/java")));
+        assertTrue(roots.contains(modB.resolve("src/main/java")));
+    }
 }

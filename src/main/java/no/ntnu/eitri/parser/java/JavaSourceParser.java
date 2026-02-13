@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +36,9 @@ import java.util.logging.Logger;
 public class JavaSourceParser implements SourceParser {
 
     private static final String JAVA_EXTENSION = ".java";
+    private static final String SETTINGS_GRADLE = "settings.gradle";
+    private static final String SETTINGS_GRADLE_KTS = "settings.gradle.kts";
+    private static final Pattern INCLUDE_QUOTED_MODULE = Pattern.compile("\"([^\"]+)\"");
     private static final Logger LOGGER = Logger.getLogger(JavaSourceParser.class.getName());
     private static final String NAME = "JavaParser";
     private static final List<String> EXTENSIONS = List.of(JAVA_EXTENSION);
@@ -137,7 +142,94 @@ public class JavaSourceParser implements SourceParser {
             roots.add(mainJava);
         }
 
+        roots.addAll(detectGradleSiblingSourceRoots(sourcePath));
+
         return roots;
+    }
+
+    static Set<Path> detectGradleSiblingSourceRoots(Path sourcePath) {
+        Set<Path> roots = new LinkedHashSet<>();
+
+        Path moduleRoot = detectModuleRoot(sourcePath);
+        Path repoRoot = findGradleRepoRoot(moduleRoot);
+        if (repoRoot == null) {
+            return roots;
+        }
+
+        Path settingsFile = resolveSettingsFile(repoRoot);
+        if (settingsFile == null) {
+            return roots;
+        }
+
+        for (String moduleId : parseIncludedModuleIds(settingsFile)) {
+            Path moduleDir = repoRoot.resolve(moduleId.replace(':', '/'));
+            Path moduleMainJava = moduleDir.resolve("src/main/java");
+            if (Files.isDirectory(moduleMainJava)) {
+                roots.add(moduleMainJava);
+            }
+        }
+
+        return roots;
+    }
+
+    private static Path detectModuleRoot(Path sourcePath) {
+        if (sourcePath == null) {
+            return null;
+        }
+        Path normalized = sourcePath.normalize();
+        int count = normalized.getNameCount();
+        if (count >= 3
+                && "src".equals(normalized.getName(count - 3).toString())
+                && "main".equals(normalized.getName(count - 2).toString())
+                && "java".equals(normalized.getName(count - 1).toString())) {
+            return normalized.getParent().getParent().getParent();
+        }
+        return normalized;
+    }
+
+    private static Path findGradleRepoRoot(Path start) {
+        Path current = start;
+        while (current != null) {
+            if (resolveSettingsFile(current) != null) {
+                return current;
+            }
+            current = current.getParent();
+        }
+        return null;
+    }
+
+    private static Path resolveSettingsFile(Path dir) {
+        if (dir == null) {
+            return null;
+        }
+        Path kts = dir.resolve(SETTINGS_GRADLE_KTS);
+        if (Files.isRegularFile(kts)) {
+            return kts;
+        }
+        Path groovy = dir.resolve(SETTINGS_GRADLE);
+        if (Files.isRegularFile(groovy)) {
+            return groovy;
+        }
+        return null;
+    }
+
+    static Set<String> parseIncludedModuleIds(Path settingsFile) {
+        Set<String> moduleIds = new LinkedHashSet<>();
+        try {
+            for (String line : Files.readAllLines(settingsFile)) {
+                String trimmed = line.trim();
+                if (!trimmed.startsWith("include(")) {
+                    continue;
+                }
+                Matcher matcher = INCLUDE_QUOTED_MODULE.matcher(trimmed);
+                while (matcher.find()) {
+                    moduleIds.add(matcher.group(1));
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.log(Level.FINE, "Failed to read settings file: {0}", settingsFile);
+        }
+        return moduleIds;
     }
 
     private ParseStats parseFiles(List<Path> javaFiles, TypeVisitor typeVisitor, ParseContext context) {
