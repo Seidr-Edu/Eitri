@@ -1,6 +1,6 @@
 package no.ntnu.eitri.writer.plantuml;
 
-import no.ntnu.eitri.config.EitriConfig;
+import no.ntnu.eitri.config.PlantUmlConfig;
 import no.ntnu.eitri.config.LayoutDirection;
 import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.UmlField;
@@ -54,7 +54,7 @@ public class PlantUmlWriter implements DiagramWriter {
     }
 
     @Override
-    public void write(UmlModel model, EitriConfig config, Path outputPath) throws WriteException {
+    public void write(UmlModel model, PlantUmlConfig config, Path outputPath) throws WriteException {
         try {
             // Ensure parent directory exists
             Path parent = outputPath.getParent();
@@ -71,13 +71,13 @@ public class PlantUmlWriter implements DiagramWriter {
     }
 
     @Override
-    public void write(UmlModel model, EitriConfig config, Writer writer) throws IOException {
+    public void write(UmlModel model, PlantUmlConfig config, Writer writer) throws IOException {
         String content = render(model, config);
         writer.write(content);
     }
 
     @Override
-    public String render(UmlModel model, EitriConfig config) {
+    public String render(UmlModel model, PlantUmlConfig config) {
         StringWriter sw = new StringWriter();
 
         try {
@@ -93,37 +93,38 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Renders the model to the given writer.
      */
-    private void renderTo(UmlModel model, EitriConfig config, Writer writer) throws IOException {
+    private void renderTo(UmlModel model, PlantUmlConfig config, Writer writer) throws IOException {
         StringBuilder sb = new StringBuilder();
-        RenderContext context = buildRenderContext(model, config);
-        renderHeader(model, config, sb);
-        renderTypes(model, config, context, sb);
-        renderRelations(model, config, context, sb);
+        PlantUmlConfig renderConfig = config;
+        RenderContext context = buildRenderContext(model, renderConfig);
+        renderHeader(model, renderConfig, sb);
+        renderTypes(model, renderConfig, context, sb);
+        renderRelations(model, renderConfig, context, sb);
         renderFooter(sb);
 
         writer.write(sb.toString());
     }
 
-    private void renderHeader(UmlModel model, EitriConfig config, StringBuilder sb) {
+    private void renderHeader(UmlModel model, PlantUmlConfig config, StringBuilder sb) {
         sb.append("@startuml");
-        if (model.getName() != null && !model.getName().isBlank()) {
-            sb.append(" ").append(model.getName());
+        if (config.diagramName() != null && !config.diagramName().isBlank()) {
+            sb.append(" ").append(config.diagramName());
         }
         sb.append("\n\n");
 
-        if (config.getDirection() != null) {
-            sb.append(toPlantUmlDirection(config.getDirection())).append("\n\n");
+        if (config.direction() != null) {
+            sb.append(toPlantUmlDirection(config.direction())).append("\n\n");
         }
 
         renderGlobalSettings(config, sb);
     }
 
-    private void renderTypes(UmlModel model, EitriConfig config, RenderContext context, StringBuilder sb) {
+    private void renderTypes(UmlModel model, PlantUmlConfig config, RenderContext context, StringBuilder sb) {
         renderTypesGroupedByPackage(model, config, context, sb);
         sb.append("\n");
     }
 
-    private void renderRelations(UmlModel model, EitriConfig config, RenderContext context, StringBuilder sb) {
+    private void renderRelations(UmlModel model, PlantUmlConfig config, RenderContext context, StringBuilder sb) {
         Set<String> renderedRelationLines = new LinkedHashSet<>();
         for (UmlRelation relation : model.getRelations()) {
             if (shouldRenderRelation(relation, config, context.nestedTypeFqns(), context.renderedTypeFqns())) {
@@ -137,7 +138,7 @@ public class PlantUmlWriter implements DiagramWriter {
         sb.append("\n@enduml\n");
     }
 
-    private RenderContext buildRenderContext(UmlModel model, EitriConfig config) {
+    private RenderContext buildRenderContext(UmlModel model, PlantUmlConfig config) {
         Map<String, String> typeNames = new HashMap<>();
         Map<String, UmlType> typesByFqn = new HashMap<>();
         for (UmlType type : model.getTypes()) {
@@ -159,27 +160,27 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Renders global PlantUML settings based on configuration.
      */
-    private void renderGlobalSettings(EitriConfig config, StringBuilder sb) {
-        if (config.isHideCircle()) {
+    private void renderGlobalSettings(PlantUmlConfig config, StringBuilder sb) {
+        if (config.hideCircle()) {
             sb.append("hide circle\n");
         }
-        if (config.isHideEmptyFields()) {
+        if (config.hideEmptyFields()) {
             sb.append("hide empty fields\n");
         }
-        if (config.isHideEmptyMethods()) {
+        if (config.hideEmptyMethods()) {
             sb.append("hide empty methods\n");
         }
-        if (config.isHideEmptyMembers()) {
+        if (config.hideEmptyMembers()) {
             sb.append("hide empty members\n");
         }
-        if (config.getGroupInheritance() > 1) {
-            sb.append("skinparam groupInheritance ").append(config.getGroupInheritance()).append("\n");
+        if (config.groupInheritance() > 1) {
+            sb.append("skinparam groupInheritance ").append(config.groupInheritance()).append("\n");
         }
-        if (config.getClassAttributeIconSize() != 8 && config.getClassAttributeIconSize() > -1) { // 8 is PlantUML
+        if (config.classAttributeIconSize() != 8 && config.classAttributeIconSize() > -1) { // 8 is PlantUML
                                                                                                   // default
-            sb.append("skinparam classAttributeIconSize ").append(config.getClassAttributeIconSize()).append("\n");
+            sb.append("skinparam classAttributeIconSize ").append(config.classAttributeIconSize()).append("\n");
         }
-        if (config.isShowGenerics()) {
+        if (config.showGenerics()) {
             sb.append("skinparam genericDisplay old\n");
         }
         sb.append("\n");
@@ -188,7 +189,7 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Renders types grouped by their package using PlantUML package syntax.
      */
-    private void renderTypesGroupedByPackage(UmlModel model, EitriConfig config,
+    private void renderTypesGroupedByPackage(UmlModel model, PlantUmlConfig config,
             RenderContext context, StringBuilder sb) {
         Set<String> sourcePackages = model.getSourcePackages();
 
@@ -252,26 +253,26 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Determines if a type should be rendered based on configuration.
      */
-    private boolean shouldRenderType(UmlType type, EitriConfig config, Set<String> linkedTypes,
+    private boolean shouldRenderType(UmlType type, PlantUmlConfig config, Set<String> linkedTypes,
             Set<String> sourcePackages) {
-        if (!config.isShowNested() && type.isNested()) {
+        if (!config.showNested() && type.isNested()) {
             return false;
         }
 
         // Package-based filtering
         String pkg = type.getPackageName();
-        if (config.isHideCommonPackages() && PackageClassifier.isCommonPackage(pkg)) {
+        if (config.hideCommonPackages() && PackageClassifier.isCommonPackage(pkg)) {
             return false;
         }
-        if (config.isHideExternalPackages() && PackageClassifier.isExternalPackage(pkg, sourcePackages)) {
+        if (config.hideExternalPackages() && PackageClassifier.isExternalPackage(pkg, sourcePackages)) {
             return false;
         }
-        if (config.isHideSiblingPackages() && PackageClassifier.isSiblingPackage(pkg, sourcePackages)) {
+        if (config.hideSiblingPackages() && PackageClassifier.isSiblingPackage(pkg, sourcePackages)) {
             return false;
         }
 
         // Check hideUnlinked
-        return !config.isHideUnlinked() || linkedTypes.contains(type.getFqn());
+        return !config.hideUnlinked() || linkedTypes.contains(type.getFqn());
     }
 
     /**
@@ -279,7 +280,7 @@ public class PlantUmlWriter implements DiagramWriter {
      * Relations to or from hidden types (package-filtered, nested, etc.) are
      * excluded.
      */
-    private boolean shouldRenderRelation(UmlRelation relation, EitriConfig config,
+    private boolean shouldRenderRelation(UmlRelation relation, PlantUmlConfig config,
             Set<String> nestedTypeFqns, Set<String> renderedTypeFqns) {
         // Skip relations involving types that were filtered out
         if (!renderedTypeFqns.contains(relation.getFromTypeFqn())
@@ -287,7 +288,7 @@ public class PlantUmlWriter implements DiagramWriter {
             return false;
         }
 
-        if (!config.isShowNested()
+        if (!config.showNested()
                 && (nestedTypeFqns.contains(relation.getFromTypeFqn())
                         || nestedTypeFqns.contains(relation.getToTypeFqn()))) {
             return false;
@@ -296,24 +297,24 @@ public class PlantUmlWriter implements DiagramWriter {
         RelationKind kind = relation.getKind();
 
         return switch (kind) {
-            case EXTENDS -> config.isShowInheritance();
-            case IMPLEMENTS -> config.isShowImplements();
-            case COMPOSITION -> config.isShowComposition();
-            case AGGREGATION -> config.isShowAggregation();
-            case ASSOCIATION -> config.isShowAssociation();
-            case DEPENDENCY -> config.isShowDependency();
-            case NESTED -> config.isShowNested();
+            case EXTENDS -> config.showInheritance();
+            case IMPLEMENTS -> config.showImplements();
+            case COMPOSITION -> config.showComposition();
+            case AGGREGATION -> config.showAggregation();
+            case ASSOCIATION -> config.showAssociation();
+            case DEPENDENCY -> config.showDependency();
+            case NESTED -> config.showNested();
         };
     }
 
     /**
      * Determines if a member should be rendered based on visibility config.
      */
-    private boolean shouldRenderMember(Visibility visibility, EitriConfig config) {
+    private boolean shouldRenderMember(Visibility visibility, PlantUmlConfig config) {
         return switch (visibility) {
-            case PRIVATE -> !config.isHidePrivate();
-            case PROTECTED -> !config.isHideProtected();
-            case PACKAGE -> !config.isHidePackage();
+            case PRIVATE -> !config.hidePrivate();
+            case PROTECTED -> !config.hideProtected();
+            case PACKAGE -> !config.hidePackage();
             case PUBLIC -> true;
         };
     }
@@ -321,25 +322,25 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Renders a type declaration.
      */
-    private void renderType(UmlType type, EitriConfig config, StringBuilder sb) {
+    private void renderType(UmlType type, PlantUmlConfig config, StringBuilder sb) {
         // Type declaration line
         sb.append(renderer.renderTypeDeclaration(type));
         sb.append(" {\n");
 
         // Fields
-        if (!config.isHideFields()) {
+        if (!config.hideFields()) {
             for (UmlField field : type.getFields()) {
                 if (shouldRenderMember(field.getVisibility(), config)) {
-                    sb.append("    ").append(renderer.renderField(field, config.isShowReadOnly())).append("\n");
+                    sb.append("    ").append(renderer.renderField(field, config.showReadOnly())).append("\n");
                 }
             }
         }
 
         // Methods
-        if (!config.isHideMethods()) {
+        if (!config.hideMethods()) {
             for (UmlMethod method : type.getMethods()) {
                 if (shouldRenderMember(method.getVisibility(), config)) {
-                    sb.append("    ").append(renderer.renderMethod(method, config.isShowVoidReturnTypes()))
+                    sb.append("    ").append(renderer.renderMethod(method, config.showVoidReturnTypes()))
                             .append("\n");
                 }
             }
@@ -351,15 +352,15 @@ public class PlantUmlWriter implements DiagramWriter {
     /**
      * Renders a relation.
      */
-    private String renderRelation(UmlRelation relation, EitriConfig config, RenderContext context) {
+    private String renderRelation(UmlRelation relation, PlantUmlConfig config, RenderContext context) {
         String fromName = context.typeNames().getOrDefault(relation.getFromTypeFqn(), relation.getFromTypeFqn());
         String toName = context.typeNames().getOrDefault(relation.getToTypeFqn(), relation.getToTypeFqn());
         UmlRelation effectiveRelation = withEffectiveRelationLabel(relation, config, context.typesByFqn());
-        return renderer.renderRelation(effectiveRelation, fromName, toName, config.isShowLabels(),
-                config.isShowMultiplicities());
+        return renderer.renderRelation(effectiveRelation, fromName, toName, config.showLabels(),
+                config.showMultiplicities());
     }
 
-    private UmlRelation withEffectiveRelationLabel(UmlRelation relation, EitriConfig config, Map<String, UmlType> typesByFqn) {
+    private UmlRelation withEffectiveRelationLabel(UmlRelation relation, PlantUmlConfig config, Map<String, UmlType> typesByFqn) {
         String label = resolveFallbackRelationLabel(relation, config, typesByFqn);
         if (Objects.equals(label, relation.getLabel())) {
             return relation;
@@ -376,8 +377,8 @@ public class PlantUmlWriter implements DiagramWriter {
                 .build();
     }
 
-    private String resolveFallbackRelationLabel(UmlRelation relation, EitriConfig config, Map<String, UmlType> typesByFqn) {
-        if (!config.isShowLabels()) {
+    private String resolveFallbackRelationLabel(UmlRelation relation, PlantUmlConfig config, Map<String, UmlType> typesByFqn) {
+        if (!config.showLabels()) {
             return relation.getLabel();
         }
         if (relation.getLabel() != null && !relation.getLabel().isBlank()) {
@@ -397,7 +398,7 @@ public class PlantUmlWriter implements DiagramWriter {
         return fromMember;
     }
 
-    private boolean isVisibleMember(UmlType ownerType, String memberName, EitriConfig config) {
+    private boolean isVisibleMember(UmlType ownerType, String memberName, PlantUmlConfig config) {
         if (ownerType.getFields().stream()
                 .anyMatch(field -> field.getName().equals(memberName) && shouldRenderMember(field.getVisibility(), config))) {
             return true;

@@ -6,7 +6,6 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
-import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlMethod;
 import no.ntnu.eitri.model.UmlType;
@@ -42,7 +41,7 @@ class TypeVisitorFeatureTest {
                 }
                 """;
 
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
         CompilationUnit cu = parser.parse(source).getResult().orElseThrow();
         cu.accept(new TypeVisitor(context), null);
 
@@ -64,7 +63,7 @@ class TypeVisitorFeatureTest {
                 }
                 """;
 
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
         CompilationUnit cu = parser.parse(source).getResult().orElseThrow();
         cu.accept(new TypeVisitor(context), null);
 
@@ -82,7 +81,7 @@ class TypeVisitorFeatureTest {
                 }
                 """;
 
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
         CompilationUnit cu = parser.parse(source).getResult().orElseThrow();
         cu.accept(new TypeVisitor(context), null);
 

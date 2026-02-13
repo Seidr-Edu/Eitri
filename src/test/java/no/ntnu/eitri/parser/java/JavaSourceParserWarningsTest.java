@@ -1,6 +1,6 @@
 package no.ntnu.eitri.parser.java;
 
-import no.ntnu.eitri.config.EitriConfig;
+import no.ntnu.eitri.config.RunConfig;
 import no.ntnu.eitri.model.UmlModel;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,9 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaSourceParserWarningsTest {
 
@@ -42,13 +44,16 @@ class JavaSourceParserWarningsTest {
         logger.setUseParentHandlers(false);
 
         try {
-            EitriConfig config = EitriConfig.builder()
-                    .addSourcePath(tempDir)
-                    .verbose(true)
-                    .build();
+            RunConfig runConfig = new RunConfig(
+                    List.of(tempDir),
+                    tempDir.resolve("out.puml"),
+                    null,
+                    null,
+                    true,
+                    false);
 
             JavaSourceParser parser = new JavaSourceParser();
-            UmlModel model = parser.parse(List.of(tempDir), config);
+            UmlModel model = parser.parse(List.of(tempDir), runConfig);
 
             assertNotNull(model);
             assertFalse(handler.messages.isEmpty());
@@ -72,12 +77,10 @@ class JavaSourceParserWarningsTest {
 
         @Override
         public void flush() {
-            // no-op
         }
 
         @Override
         public void close() throws SecurityException {
-            // no-op
         }
     }
 }

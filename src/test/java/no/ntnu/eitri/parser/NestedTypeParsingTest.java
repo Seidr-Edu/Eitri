@@ -6,7 +6,6 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
-import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
@@ -41,8 +40,7 @@ class NestedTypeParsingTest {
     }
 
     private UmlModel parseSource(String source) {
-        EitriConfig config = EitriConfig.builder().build();
-        ParseContext context = new ParseContext(config);
+        ParseContext context = new ParseContext(false);
 
         CompilationUnit cu = parser.parse(source).getResult()
                 .orElseThrow(() -> new RuntimeException("Parse failed"));

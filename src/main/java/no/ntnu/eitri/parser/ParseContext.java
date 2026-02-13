@@ -1,6 +1,5 @@
 package no.ntnu.eitri.parser;
 
-import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
@@ -29,8 +28,6 @@ public class ParseContext {
 
     private static final Logger LOGGER = Logger.getLogger(ParseContext.class.getName());
 
-    private final EitriConfig config;
-    private final String diagramName;
     private final TypeRegistry types;
     private final TypeReferenceResolver typeResolver;
     private final RelationStore relations;
@@ -39,26 +36,20 @@ public class ParseContext {
     /**
      * Represents a pending inheritance relation (extends/implements) to be resolved
      * after all types are registered.
-     *
-     * @param fromFqn the FQN of the type doing the extending/implementing
-     * @param toFqn   the FQN of the target type (may be unresolved simple name)
-     * @param kind    EXTENDS or IMPLEMENTS
      */
     public record PendingInheritance(String fromFqn, String toFqn, RelationKind kind) {
     }
 
     /**
-     * Creates a new parse context with the given configuration.
-     * 
-     * @param config the configuration to use
+     * Creates a new parse context.
+     *
+     * @param verbose whether diagnostics should log warnings during parse
      */
-    public ParseContext(EitriConfig config) {
-        this.config = config;
-        this.diagramName = config.getDiagramName();
+    public ParseContext(boolean verbose) {
         this.types = new TypeRegistry();
         this.typeResolver = new TypeReferenceResolver(types);
         this.relations = new RelationStore();
-        this.diagnostics = new ParseDiagnostics(LOGGER, config.isVerbose());
+        this.diagnostics = new ParseDiagnostics(LOGGER, verbose);
     }
 
     /**
@@ -172,34 +163,12 @@ public class ParseContext {
     }
 
     /**
-     * Returns the configuration.
-     * 
-     * @return the config
-     */
-    public EitriConfig getConfig() {
-        return config;
-    }
-
-    /**
      * Builds the final UML model from collected data.
-     * 
-     * <p>
-     * This method:
-     * <ul>
-     * <li>Resolves pending inheritance relations</li>
-     * <li>Deduplicates relations (keeping the strongest)</li>
-     * <li>Removes relations to non-existent types</li>
-     * <li>Assembles the final model</li>
-     * </ul>
-     * 
-     * @return the finalized UML model
      */
     public UmlModel build() {
         UmlModel.Builder modelBuilder = UmlModel.builder()
-                .name(diagramName)
                 .sourcePackages(types.getSourcePackages());
 
-        // Add all types
         types.getTypes().forEach(modelBuilder::addType);
         relations.buildFinalRelations(types, typeResolver).forEach(modelBuilder::addRelation);
 

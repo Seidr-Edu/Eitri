@@ -1,6 +1,5 @@
 package no.ntnu.eitri.parser.java;
 
-import no.ntnu.eitri.config.EitriConfig;
 import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.UmlField;
 import no.ntnu.eitri.model.UmlMethod;
@@ -18,7 +17,7 @@ class RelationDetectorTest {
 
     @Test
     void finalFieldCreatesCompositionWithMultiplicityOne() {
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
         UmlType owner = UmlType.builder()
                 .fqn("com.example.Owner")
                 .simpleName("Owner")
@@ -37,7 +36,7 @@ class RelationDetectorTest {
 
     @Test
     void nonFinalFieldCreatesAssociationWithOptionalMultiplicity() {
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
         UmlType owner = UmlType.builder()
                 .fqn("com.example.Owner")
                 .simpleName("Owner")
@@ -56,7 +55,7 @@ class RelationDetectorTest {
 
     @Test
     void collectionAndArrayFieldsCreateAggregation() {
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
         UmlType owner = UmlType.builder()
                 .fqn("com.example.Owner")
                 .simpleName("Owner")
@@ -77,7 +76,7 @@ class RelationDetectorTest {
 
     @Test
     void methodDependenciesIncludeParamsAndThrowsAndExcludeSelf() {
-        ParseContext context = new ParseContext(EitriConfig.builder().build());
+        ParseContext context = new ParseContext(false);
         UmlType owner = UmlType.builder()
                 .fqn("com.example.Owner")
                 .simpleName("Owner")
