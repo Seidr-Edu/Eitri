@@ -47,7 +47,7 @@ public record PlantUmlConfig(
         return new PlantUmlConfig(
                 "diagram",
                 LayoutDirection.TOP_TO_BOTTOM,
-                1,
+                2,
                 0,
                 false,
                 false,
@@ -72,10 +72,9 @@ public record PlantUmlConfig(
                 true,
                 true,
                 true,
+                false,
                 true,
                 false,
-                false,
-                false
-        );
+                false);
     }
 }
