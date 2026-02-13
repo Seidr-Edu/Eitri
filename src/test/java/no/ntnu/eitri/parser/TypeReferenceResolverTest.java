@@ -26,7 +26,15 @@ class TypeReferenceResolverTest {
 
         assertNull(resolver.resolveTypeReference("int"));
         assertNull(resolver.resolveTypeReference("?"));
-        assertEquals("Number", resolver.resolveTypeReference("? extends Number"));
-        assertEquals("Number", resolver.resolveTypeReference("? super Number"));
+        assertNull(resolver.resolveTypeReference("? extends Number"));
+        assertNull(resolver.resolveTypeReference("? super Number"));
+    }
+
+    @Test
+    void resolveTypeReferenceSkipsUnqualifiedTypeNames() {
+        TypeReferenceResolver resolver = new TypeReferenceResolver(new TypeRegistry());
+
+        assertNull(resolver.resolveTypeReference("C"));
+        assertNull(resolver.resolveTypeReference("Number"));
     }
 }

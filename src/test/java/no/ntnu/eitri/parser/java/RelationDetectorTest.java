@@ -98,4 +98,31 @@ class RelationDetectorTest {
         assertTrue(model.hasType("com.example.Dependency"));
         assertTrue(model.hasType("com.example.Failure"));
     }
+
+    @Test
+    void methodDependenciesSkipGenericTypeParametersButKeepFqnTypes() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addMethod(UmlMethod.builder()
+                        .name("render")
+                        .returnType("no.ntnu.eitri.writer.DiagramWriter<C>")
+                        .addParameter("supplier", "java.util.function.Supplier<T>")
+                        .build())
+                .build();
+        context.addType(owner);
+
+        new RelationDetector(context).detectMethodDependencies(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(2, model.getRelations().size());
+        assertTrue(model.getRelations().stream().allMatch(r -> r.getKind() == RelationKind.DEPENDENCY));
+        assertTrue(model.getRelations().stream().anyMatch(r -> "no.ntnu.eitri.writer.DiagramWriter".equals(r.getToTypeFqn())));
+        assertTrue(model.getRelations().stream().anyMatch(r -> "java.util.function.Supplier".equals(r.getToTypeFqn())));
+        assertTrue(model.getRelations().stream().noneMatch(r -> "C".equals(r.getToTypeFqn()) || "T".equals(r.getToTypeFqn())));
+        assertTrue(model.hasType("no.ntnu.eitri.writer.DiagramWriter"));
+        assertTrue(model.hasType("java.util.function.Supplier"));
+        assertTrue(!model.hasType("C") && !model.hasType("T"));
+    }
 }

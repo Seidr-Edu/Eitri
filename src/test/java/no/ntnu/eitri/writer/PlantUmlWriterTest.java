@@ -4,6 +4,7 @@ import no.ntnu.eitri.config.ConfigException;
 import no.ntnu.eitri.config.LayoutDirection;
 import no.ntnu.eitri.config.PlantUmlConfig;
 import no.ntnu.eitri.config.RecordBinder;
+import no.ntnu.eitri.config.RunConfig;
 import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlField;
@@ -12,10 +13,15 @@ import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
 import no.ntnu.eitri.model.UmlType;
 import no.ntnu.eitri.model.Visibility;
+import no.ntnu.eitri.parser.java.JavaSourceParser;
 import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -429,6 +435,37 @@ class PlantUmlWriterTest {
         assertFalse(output.contains(": privateRepo"));
         assertFalse(output.contains(": protectedRepo"));
         assertFalse(output.contains(": packageRepo"));
+    }
+
+    @Test
+    void parserAndWriterDoNotRenderGenericTypeParameterPlaceholders(@TempDir Path tempDir) throws Exception {
+        Path src = tempDir.resolve("src");
+        Files.createDirectories(src);
+        Files.writeString(src.resolve("Holder.java"), """
+                package com.example;
+
+                import java.util.function.Supplier;
+                import no.ntnu.eitri.writer.DiagramWriter;
+
+                public class Holder<C> {
+                    private DiagramWriter<C> writer;
+                    private Supplier<C> supplier;
+
+                    public <T> void set(T value) {
+                    }
+                }
+                """);
+
+        JavaSourceParser parser = new JavaSourceParser();
+        RunConfig runConfig = new RunConfig(List.of(src), tempDir.resolve("out.puml"), null, null, false, false);
+        UmlModel model = parser.parse(List.of(src), runConfig);
+
+        String output = new PlantUmlWriter().render(model, PlantUmlConfig.defaults());
+
+        assertFalse(output.contains("+class C"));
+        assertFalse(output.contains("+class T"));
+        assertFalse(output.contains("..> C"));
+        assertFalse(output.contains("..> T"));
     }
 
     private static PlantUmlConfig config(Object... keyValues) {
