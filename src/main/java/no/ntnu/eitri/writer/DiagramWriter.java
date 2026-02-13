@@ -1,6 +1,6 @@
 package no.ntnu.eitri.writer;
 
-import no.ntnu.eitri.config.PlantUmlConfig;
+import no.ntnu.eitri.config.WriterConfig;
 import no.ntnu.eitri.model.UmlModel;
 
 import java.io.IOException;
@@ -10,7 +10,12 @@ import java.nio.file.Path;
 /**
  * Interface for writing UML models to diagram formats.
  */
-public interface DiagramWriter {
+public interface DiagramWriter<C extends WriterConfig> {
+
+    /**
+     * Returns the expected configuration type for this writer.
+     */
+    Class<C> configType();
 
     /**
      * Writes the UML model to a file.
@@ -20,7 +25,7 @@ public interface DiagramWriter {
      * @param outputPath the file path to write to
      * @throws WriteException if writing fails
      */
-    void write(UmlModel model, PlantUmlConfig config, Path outputPath) throws WriteException;
+    void write(UmlModel model, C config, Path outputPath) throws WriteException;
 
     /**
      * Writes the UML model to a Writer.
@@ -30,7 +35,7 @@ public interface DiagramWriter {
      * @param writer the writer to output to
      * @throws IOException if writing fails
      */
-    void write(UmlModel model, PlantUmlConfig config, Writer writer) throws IOException;
+    void write(UmlModel model, C config, Writer writer) throws IOException;
 
     /**
      * Returns the UML model as a string.
@@ -39,7 +44,7 @@ public interface DiagramWriter {
      * @param config the configuration for rendering
      * @return the rendered diagram as a string
      */
-    String render(UmlModel model, PlantUmlConfig config);
+    String render(UmlModel model, C config);
 
     /**
      * Returns the name of this writer implementation.
