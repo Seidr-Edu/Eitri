@@ -117,7 +117,7 @@ public class RelationDetector {
         // Check for array types
         if (fieldType.endsWith("[]")) {
             String elementType = fieldType.substring(0, fieldType.length() - 2);
-            String resolvedType = context.resolveTypeReference(elementType, ownerFqn + "." + field.getName());
+            String resolvedType = context.resolveTypeReference(elementType);
             if (resolvedType != null) {
                 UmlRelation relation = UmlRelation.builder()
                         .fromTypeFqn(ownerFqn)
@@ -132,7 +132,7 @@ public class RelationDetector {
         }
 
         // Simple field reference
-        String resolvedType = context.resolveTypeReference(fieldType, ownerFqn + "." + field.getName());
+        String resolvedType = context.resolveTypeReference(fieldType);
         if (resolvedType != null) {
             // Determine if composition or association based on field modifiers
             RelationKind kind = determineFieldRelationKind(field);
@@ -190,7 +190,7 @@ public class RelationDetector {
 
         // Add dependency relations
         for (String dep : dependencies) {
-            String resolvedType = context.resolveTypeReference(dep, ownerFqn + "." + method.getName() + "()");
+            String resolvedType = context.resolveTypeReference(dep);
             if (resolvedType != null && !resolvedType.equals(ownerFqn)) {
                 UmlRelation relation = UmlRelation.builder()
                         .fromTypeFqn(ownerFqn)

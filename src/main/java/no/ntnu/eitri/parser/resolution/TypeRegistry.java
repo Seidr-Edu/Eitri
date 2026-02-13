@@ -1,8 +1,6 @@
 package no.ntnu.eitri.parser.resolution;
 
-import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlType;
-import no.ntnu.eitri.model.Visibility;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,21 +34,6 @@ public final class TypeRegistry {
         return typesByFqn.containsKey(fqn);
     }
 
-    public void ensureTypeExists(String fqn) {
-        if (fqn == null || fqn.isBlank() || typesByFqn.containsKey(fqn)) {
-            return;
-        }
-
-        UmlType placeholder = UmlType.builder()
-                .fqn(fqn)
-                .simpleName(extractSimpleName(fqn))
-                .kind(TypeKind.CLASS)
-                .visibility(Visibility.PUBLIC)
-                .build();
-
-        typesByFqn.put(fqn, placeholder);
-    }
-
     public Collection<UmlType> getTypes() {
         return typesByFqn.values();
     }
@@ -63,10 +46,5 @@ public final class TypeRegistry {
 
     public Set<String> getSourcePackages() {
         return Collections.unmodifiableSet(sourcePackages);
-    }
-
-    private String extractSimpleName(String fqn) {
-        int lastDot = fqn.lastIndexOf('.');
-        return lastDot >= 0 ? fqn.substring(lastDot + 1) : fqn;
     }
 }

@@ -8,12 +8,12 @@ public final class TypeReferenceResolver {
     private final TypeRegistry registry;
     private int totalRequests;
     private int resolvedReferences;
-    private int placeholdersCreated;
     private int reusedKnownTypes;
     private int skippedNullOrEmpty;
     private int skippedWildcard;
     private int skippedPrimitive;
     private int skippedNonFqn;
+    private int skippedUnknownFqn;
 
     public TypeReferenceResolver(TypeRegistry registry) {
         this.registry = registry;
@@ -45,22 +45,20 @@ public final class TypeReferenceResolver {
             return normalized;
         }
 
-        registry.ensureTypeExists(normalized);
-        placeholdersCreated++;
-        resolvedReferences++;
-        return normalized;
+        skippedUnknownFqn++;
+        return null;
     }
 
     public TypeResolutionStats getStatsSnapshot() {
         return new TypeResolutionStats(
                 totalRequests,
                 resolvedReferences,
-                placeholdersCreated,
                 reusedKnownTypes,
                 skippedNullOrEmpty,
                 skippedWildcard,
                 skippedPrimitive,
-                skippedNonFqn);
+                skippedNonFqn,
+                skippedUnknownFqn);
     }
 
     private NormalizationResult normalizeTypeName(String typeName) {
@@ -100,8 +98,19 @@ public final class TypeReferenceResolver {
         };
     }
 
+    /**
+     * Validates that a type name is a proper fully-qualified Java type name.
+     * Requires at least one leading lowercase package segment before an uppercase type segment.
+     * Rejects inner-class-style names like {@code JCommander.Builder} or {@code LogHelper.LogLevelEnum}
+     * where the first dot-separated segment starts with an uppercase letter.
+     */
     private boolean isFullyQualifiedTypeName(String type) {
-        return type.indexOf('.') >= 0;
+        int firstDot = type.indexOf('.');
+        if (firstDot < 0) {
+            return false;
+        }
+        String firstSegment = type.substring(0, firstDot);
+        return !firstSegment.isEmpty() && Character.isLowerCase(firstSegment.charAt(0));
     }
 
     private void incrementSkipCounter(SkipReason reason) {

@@ -17,32 +17,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ParseContextTest {
 
     @Test
-    void resolveTypeReferenceCreatesPlaceholderAndNormalizes() {
+    void resolveTypeReferenceResolvesRegisteredTypeAndNormalizes() {
         ParseContext context = new ParseContext(false);
+        context.addType(UmlType.builder().fqn("com.example.Order").simpleName("Order").build());
 
-        String resolved = context.resolveTypeReference("  com.example.Order<java.lang.String>[]  ", "Owner.field");
+        String resolved = context.resolveTypeReference("  com.example.Order<java.lang.String>[]  ");
 
         assertEquals("com.example.Order", resolved);
-        assertTrue(context.hasType("com.example.Order"));
-        assertEquals("Order", context.getType("com.example.Order").getSimpleName());
+    }
+
+    @Test
+    void resolveTypeReferenceSkipsUnregisteredFqn() {
+        ParseContext context = new ParseContext(false);
+
+        assertNull(context.resolveTypeReference("com.example.Unknown"));
+        assertTrue(context.getTypes().isEmpty());
     }
 
     @Test
     void resolveTypeReferenceSkipsPrimitiveAndWildcard() {
         ParseContext context = new ParseContext(false);
 
-        assertNull(context.resolveTypeReference("int", "Owner.field"));
-        assertNull(context.resolveTypeReference("?", "Owner.field"));
-        assertNull(context.resolveTypeReference("? extends Number", "Owner.field"));
-        assertNull(context.resolveTypeReference("? super Number", "Owner.field"));
+        assertNull(context.resolveTypeReference("int"));
+        assertNull(context.resolveTypeReference("?"));
+        assertNull(context.resolveTypeReference("? extends Number"));
+        assertNull(context.resolveTypeReference("? super Number"));
     }
 
     @Test
     void resolveTypeReferenceSkipsUnqualifiedTypesWithoutCreatingPlaceholders() {
         ParseContext context = new ParseContext(false);
 
-        assertNull(context.resolveTypeReference("T", "Owner.field"));
-        assertNull(context.resolveTypeReference("UnknownType", "Owner.field"));
+        assertNull(context.resolveTypeReference("T"));
+        assertNull(context.resolveTypeReference("UnknownType"));
         assertTrue(context.getTypes().isEmpty());
     }
 
@@ -121,23 +128,23 @@ class ParseContextTest {
         ParseContext context = new ParseContext(false);
         context.addType(UmlType.builder().fqn("com.example.Known").simpleName("Known").build());
 
-        assertNull(context.resolveTypeReference("T", "Owner.field"));
-        assertNull(context.resolveTypeReference("int", "Owner.field"));
-        assertNull(context.resolveTypeReference("?", "Owner.field"));
-        assertNull(context.resolveTypeReference("  ", "Owner.field"));
-        assertEquals("com.example.NewType", context.resolveTypeReference("com.example.NewType", "Owner.field"));
-        assertEquals("com.example.Known", context.resolveTypeReference("com.example.Known", "Owner.field"));
+        assertNull(context.resolveTypeReference("T"));
+        assertNull(context.resolveTypeReference("int"));
+        assertNull(context.resolveTypeReference("?"));
+        assertNull(context.resolveTypeReference("  "));
+        assertNull(context.resolveTypeReference("com.example.NewType"));
+        assertEquals("com.example.Known", context.resolveTypeReference("com.example.Known"));
 
         TypeResolutionStats stats = context.getTypeResolutionStats();
         assertEquals(6, stats.totalRequests());
-        assertEquals(2, stats.resolvedReferences());
-        assertEquals(1, stats.placeholdersCreated());
+        assertEquals(1, stats.resolvedReferences());
         assertEquals(1, stats.reusedKnownTypes());
         assertEquals(1, stats.skippedNonFqn());
         assertEquals(1, stats.skippedPrimitive());
         assertEquals(1, stats.skippedWildcard());
         assertEquals(1, stats.skippedNullOrEmpty());
-        assertEquals(4, stats.skippedTotal());
+        assertEquals(1, stats.skippedUnknownFqn());
+        assertEquals(5, stats.skippedTotal());
     }
 
     @Test
@@ -145,8 +152,8 @@ class ParseContextTest {
         ParseContext context = new ParseContext(false);
         context.addWarning("warn-1");
         context.addWarning("warn-2");
-        context.resolveTypeReference("T", "Owner.field");
-        context.resolveTypeReference("com.example.Valid", "Owner.field");
+        context.resolveTypeReference("T");
+        context.resolveTypeReference("com.example.Valid");
 
         ParseReport report = context.getReport();
 
@@ -154,6 +161,7 @@ class ParseContextTest {
         assertEquals(List.of("warn-1", "warn-2"), report.warnings());
         assertEquals(2, report.typeResolutionStats().totalRequests());
         assertEquals(1, report.typeResolutionStats().skippedNonFqn());
-        assertEquals(1, report.typeResolutionStats().resolvedReferences());
+        assertEquals(0, report.typeResolutionStats().resolvedReferences());
+        assertEquals(1, report.typeResolutionStats().skippedUnknownFqn());
     }
 }

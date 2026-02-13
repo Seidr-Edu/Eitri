@@ -189,15 +189,14 @@ public class JavaSourceParser implements SourceParser {
                 + " requests, "
                 + stats.resolvedReferences()
                 + " resolved ("
-                + stats.placeholdersCreated()
-                + " placeholder type(s), "
                 + stats.reusedKnownTypes()
-                + " existing type(s)), "
+                + " known type(s)), "
                 + stats.skippedTotal()
                 + " skipped");
 
         if (stats.skippedTotal() > 0) {
             LOGGER.info(() -> "Type reference skips by reason: non-FQN=" + stats.skippedNonFqn()
+                    + ", unknown-FQN=" + stats.skippedUnknownFqn()
                     + ", primitive=" + stats.skippedPrimitive()
                     + ", wildcard=" + stats.skippedWildcard()
                     + ", empty=" + stats.skippedNullOrEmpty());

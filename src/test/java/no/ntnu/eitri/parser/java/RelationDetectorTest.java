@@ -88,6 +88,8 @@ class RelationDetectorTest {
                         .build())
                 .build();
         context.addType(owner);
+        context.addType(UmlType.builder().fqn("com.example.Dependency").simpleName("Dependency").build());
+        context.addType(UmlType.builder().fqn("com.example.Failure").simpleName("Failure").build());
 
         new RelationDetector(context).detectMethodDependencies(owner.getFqn(), owner);
         UmlModel model = context.build();
@@ -95,8 +97,6 @@ class RelationDetectorTest {
         assertEquals(2, model.getRelations().size());
         assertTrue(model.getRelations().stream().allMatch(r -> r.getKind() == RelationKind.DEPENDENCY));
         assertTrue(model.getRelations().stream().noneMatch(r -> r.getToTypeFqn().equals(owner.getFqn())));
-        assertTrue(model.hasType("com.example.Dependency"));
-        assertTrue(model.hasType("com.example.Failure"));
     }
 
     @Test
@@ -112,6 +112,8 @@ class RelationDetectorTest {
                         .build())
                 .build();
         context.addType(owner);
+        context.addType(UmlType.builder().fqn("no.ntnu.eitri.writer.DiagramWriter").simpleName("DiagramWriter").build());
+        context.addType(UmlType.builder().fqn("java.util.function.Supplier").simpleName("Supplier").build());
 
         new RelationDetector(context).detectMethodDependencies(owner.getFqn(), owner);
         UmlModel model = context.build();
@@ -121,8 +123,5 @@ class RelationDetectorTest {
         assertTrue(model.getRelations().stream().anyMatch(r -> "no.ntnu.eitri.writer.DiagramWriter".equals(r.getToTypeFqn())));
         assertTrue(model.getRelations().stream().anyMatch(r -> "java.util.function.Supplier".equals(r.getToTypeFqn())));
         assertTrue(model.getRelations().stream().noneMatch(r -> "C".equals(r.getToTypeFqn()) || "T".equals(r.getToTypeFqn())));
-        assertTrue(model.hasType("no.ntnu.eitri.writer.DiagramWriter"));
-        assertTrue(model.hasType("java.util.function.Supplier"));
-        assertTrue(!model.hasType("C") && !model.hasType("T"));
     }
 }
