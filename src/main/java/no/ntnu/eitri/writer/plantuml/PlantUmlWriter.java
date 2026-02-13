@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -399,60 +398,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
     private String renderRelation(UmlRelation relation, PlantUmlConfig config, RenderContext context) {
         String fromName = context.typeNames().getOrDefault(relation.getFromTypeFqn(), relation.getFromTypeFqn());
         String toName = context.typeNames().getOrDefault(relation.getToTypeFqn(), relation.getToTypeFqn());
-        UmlRelation effectiveRelation = withEffectiveRelationLabel(relation, config, context.typesByFqn());
-        return renderer.renderRelation(effectiveRelation, fromName, toName, config.showLabels(),
+        return renderer.renderRelation(relation, fromName, toName, config.showLabels(),
                 config.showMultiplicities());
-    }
-
-    private UmlRelation withEffectiveRelationLabel(UmlRelation relation, PlantUmlConfig config,
-            Map<String, UmlType> typesByFqn) {
-        String label = resolveFallbackRelationLabel(relation, config, typesByFqn);
-        if (Objects.equals(label, relation.getLabel())) {
-            return relation;
-        }
-        return UmlRelation.builder()
-                .fromTypeFqn(relation.getFromTypeFqn())
-                .toTypeFqn(relation.getToTypeFqn())
-                .kind(relation.getKind())
-                .label(label)
-                .fromMultiplicity(relation.getFromMultiplicity())
-                .toMultiplicity(relation.getToMultiplicity())
-                .fromMember(relation.getFromMember())
-                .toMember(relation.getToMember())
-                .build();
-    }
-
-    private String resolveFallbackRelationLabel(UmlRelation relation, PlantUmlConfig config,
-            Map<String, UmlType> typesByFqn) {
-        if (!config.showLabels()) {
-            return relation.getLabel();
-        }
-        if (relation.getLabel() != null && !relation.getLabel().isBlank()) {
-            return relation.getLabel();
-        }
-        if (relation.isMemberRelation()) {
-            return null;
-        }
-        String fromMember = relation.getFromMember();
-        if (fromMember == null || fromMember.isBlank()) {
-            return null;
-        }
-        UmlType fromType = typesByFqn.get(relation.getFromTypeFqn());
-        if (fromType == null || !isVisibleMember(fromType, fromMember, config)) {
-            return null;
-        }
-        return fromMember;
-    }
-
-    private boolean isVisibleMember(UmlType ownerType, String memberName, PlantUmlConfig config) {
-        if (ownerType.getFields().stream()
-                .anyMatch(field -> field.getName().equals(memberName)
-                        && shouldRenderMember(field.getVisibility(), config))) {
-            return true;
-        }
-        return ownerType.getMethods().stream()
-                .anyMatch(method -> method.getName().equals(memberName)
-                        && shouldRenderMember(method.getVisibility(), config));
     }
 
     private String toPlantUmlDirection(LayoutDirection direction) {
