@@ -112,7 +112,21 @@ public final class PackageClassifier {
       }
     }
 
-    // Check if it shares a parent package with any source package
+    // If package is under the project root but outside all source subtrees,
+    // classify it as sibling. This captures deeper sibling branches such as
+    // 'jadx.api.plugins' when parsing 'jadx.cli'.
+    String projectRoot = computeProjectRoot(sourcePackages);
+    if (projectRoot != null && !projectRoot.isEmpty()) {
+      if (packageName.equals(projectRoot)) {
+        return false;
+      }
+      if (packageName.startsWith(projectRoot + ".")) {
+        return true;
+      }
+    }
+
+    // Fallback for edge-cases where a stable project root cannot be computed:
+    // keep legacy immediate-parent sibling semantics.
     String targetParent = parentPackage(packageName);
     if (targetParent == null) {
       return false;
