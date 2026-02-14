@@ -74,6 +74,25 @@ class TypeVisitorFeatureTest {
     }
 
     @Test
+    void unresolvedImportedTypeFallsBackToImportFqnWithoutWarning() {
+        String source = """
+                package com.example;
+                import ch.qos.logback.classic.Level;
+                public class Holder {
+                    private Level value;
+                }
+                """;
+
+        ParseContext context = new ParseContext(false);
+        CompilationUnit cu = parser.parse(source).getResult().orElseThrow();
+        cu.accept(new TypeVisitor(context), null);
+
+        UmlType holder = context.build().getType("com.example.Holder").orElseThrow();
+        assertEquals("ch.qos.logback.classic.Level", holder.getFields().getFirst().getType());
+        assertTrue(context.getWarnings().isEmpty());
+    }
+
+    @Test
     void recordTypesAreMarkedWithRecordStereotype() {
         String source = """
                 package com.example;

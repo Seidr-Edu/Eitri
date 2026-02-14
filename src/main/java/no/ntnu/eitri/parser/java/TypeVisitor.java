@@ -1,6 +1,9 @@
 package no.ntnu.eitri.parser.java;
 
 import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.ImportDeclaration;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.AnnotationDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
@@ -431,6 +434,10 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
             ResolvedType resolved = type.resolve();
             return resolveTypeToFqnString(resolved, type.asString());
         } catch (Exception e) {
+            String importedFallback = resolveTypeFromImports(type);
+            if (importedFallback != null) {
+                return importedFallback;
+            }
             // Symbol resolution failed, fall back to source representation
             String simpleName = type.asString();
             context.addWarning("Failed to resolve type '" + simpleName + "' at " +
@@ -438,6 +445,61 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
                     ": " + e.getClass().getSimpleName() + " - " + e.getMessage());
             return simpleName;
         }
+    }
+
+    private String resolveTypeFromImports(Type type) {
+        if (type.isArrayType()) {
+            String component = resolveTypeFromImports(type.asArrayType().getComponentType());
+            if (component != null) {
+                return component + "[]";
+            }
+            return null;
+        }
+        if (!type.isClassOrInterfaceType()) {
+            return null;
+        }
+
+        ClassOrInterfaceType classType = type.asClassOrInterfaceType();
+        if (classType.getScope().isPresent()) {
+            return null;
+        }
+
+        CompilationUnit compilationUnit = type.findCompilationUnit().orElse(null);
+        if (compilationUnit == null) {
+            return null;
+        }
+
+        String simpleName = classType.getNameAsString();
+        for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
+            if (importDeclaration.isAsterisk() || importDeclaration.isStatic()) {
+                continue;
+            }
+
+            String importedFqn = importDeclaration.getNameAsString();
+            if (!importedFqn.endsWith("." + simpleName)) {
+                continue;
+            }
+
+            if (classType.getTypeArguments().isEmpty()) {
+                return importedFqn;
+            }
+
+            StringBuilder sb = new StringBuilder(importedFqn);
+            sb.append("<");
+            NodeList<Type> typeArgs = classType.getTypeArguments().orElseGet(NodeList::new);
+            for (int i = 0; i < typeArgs.size(); i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                Type typeArg = typeArgs.get(i);
+                String nested = resolveTypeFromImports(typeArg);
+                sb.append(nested != null ? nested : typeArg.asString());
+            }
+            sb.append(">");
+            return sb.toString();
+        }
+
+        return null;
     }
 
     /**
