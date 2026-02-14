@@ -107,22 +107,20 @@ class UmlModelTest {
     }
 
     @Test
-    @DisplayName("Relations are sorted with hierarchy first")
+    @DisplayName("Relations are sorted by from-type then to-type")
     void relationsSortedHierarchyFirst() {
         UmlRelation assoc = UmlRelation.association("com.example.A", "com.example.B", null);
         UmlRelation impl = UmlRelation.implementsRelation("com.example.C", "com.example.D");
         UmlRelation ext = UmlRelation.extendsRelation("com.example.E", "com.example.F");
 
         UmlModel model = UmlModel.builder()
-                .addRelation(assoc)
-                .addRelation(impl)
                 .addRelation(ext)
+                .addRelation(impl)
+                .addRelation(assoc)
                 .build();
 
         List<UmlRelation> sorted = model.getRelationsSorted();
-        assertEquals(RelationKind.EXTENDS, sorted.get(0).getKind());
-        assertEquals(RelationKind.IMPLEMENTS, sorted.get(1).getKind());
-        assertEquals(RelationKind.ASSOCIATION, sorted.get(2).getKind());
+        assertEquals(List.of(assoc, impl, ext), sorted);
     }
 
     @Test

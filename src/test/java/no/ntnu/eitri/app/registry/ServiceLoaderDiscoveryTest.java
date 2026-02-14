@@ -21,7 +21,7 @@ class ServiceLoaderDiscoveryTest {
         assertTrue(hasJava);
     }
 
-    @SuppressWarnings("null")
+    @SuppressWarnings({ "null", "rawtypes" })
     @Test
     void diagramWriterProvidersAreDiscovered() {
         ServiceLoader<DiagramWriter> loader = ServiceLoader.load(DiagramWriter.class);

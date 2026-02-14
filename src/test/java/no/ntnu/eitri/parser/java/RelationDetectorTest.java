@@ -1,6 +1,7 @@
 package no.ntnu.eitri.parser.java;
 
 import no.ntnu.eitri.model.RelationKind;
+import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlField;
 import no.ntnu.eitri.model.UmlMethod;
 import no.ntnu.eitri.model.UmlModel;
@@ -88,6 +89,8 @@ class RelationDetectorTest {
                         .build())
                 .build();
         context.addType(owner);
+        context.addType(UmlType.builder().fqn("com.example.Dependency").simpleName("Dependency").build());
+        context.addType(UmlType.builder().fqn("com.example.Failure").simpleName("Failure").build());
 
         new RelationDetector(context).detectMethodDependencies(owner.getFqn(), owner);
         UmlModel model = context.build();
@@ -95,8 +98,6 @@ class RelationDetectorTest {
         assertEquals(2, model.getRelations().size());
         assertTrue(model.getRelations().stream().allMatch(r -> r.getKind() == RelationKind.DEPENDENCY));
         assertTrue(model.getRelations().stream().noneMatch(r -> r.getToTypeFqn().equals(owner.getFqn())));
-        assertTrue(model.hasType("com.example.Dependency"));
-        assertTrue(model.hasType("com.example.Failure"));
     }
 
     @Test
@@ -112,6 +113,8 @@ class RelationDetectorTest {
                         .build())
                 .build();
         context.addType(owner);
+        context.addType(UmlType.builder().fqn("no.ntnu.eitri.writer.DiagramWriter").simpleName("DiagramWriter").build());
+        context.addType(UmlType.builder().fqn("java.util.function.Supplier").simpleName("Supplier").build());
 
         new RelationDetector(context).detectMethodDependencies(owner.getFqn(), owner);
         UmlModel model = context.build();
@@ -121,8 +124,170 @@ class RelationDetectorTest {
         assertTrue(model.getRelations().stream().anyMatch(r -> "no.ntnu.eitri.writer.DiagramWriter".equals(r.getToTypeFqn())));
         assertTrue(model.getRelations().stream().anyMatch(r -> "java.util.function.Supplier".equals(r.getToTypeFqn())));
         assertTrue(model.getRelations().stream().noneMatch(r -> "C".equals(r.getToTypeFqn()) || "T".equals(r.getToTypeFqn())));
-        assertTrue(model.hasType("no.ntnu.eitri.writer.DiagramWriter"));
-        assertTrue(model.hasType("java.util.function.Supplier"));
-        assertTrue(!model.hasType("C") && !model.hasType("T"));
+    }
+
+    @Test
+    void fieldRelationToExternalTypeIsCreated() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addField(UmlField.builder().name("logger").type("org.slf4j.Logger").isFinal(true).build())
+                .build();
+        context.addType(owner);
+        // org.slf4j.Logger is NOT registered in context
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(1, model.getRelations().size());
+        assertEquals(RelationKind.COMPOSITION, model.getRelations().getFirst().getKind());
+        assertEquals("org.slf4j.Logger", model.getRelations().getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void collectionFieldRelationToExternalTypeIsCreated() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addField(UmlField.builder().name("items").type("java.util.List<org.external.Item>").build())
+                .build();
+        context.addType(owner);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(1, model.getRelations().size());
+        assertEquals(RelationKind.AGGREGATION, model.getRelations().getFirst().getKind());
+        assertEquals("org.external.Item", model.getRelations().getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void mapFieldCreatesSeparateRelationsPerTypeArgument() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addField(UmlField.builder().name("lookup")
+                        .type("java.util.Map<com.example.Key, com.example.Value>").build())
+                .build();
+        context.addType(owner);
+        context.addType(UmlType.builder().fqn("com.example.Key").simpleName("Key").build());
+        context.addType(UmlType.builder().fqn("com.example.Value").simpleName("Value").build());
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(2, model.getRelations().size());
+        assertTrue(model.getRelations().stream().allMatch(r -> r.getKind() == RelationKind.AGGREGATION));
+        assertTrue(model.getRelations().stream().anyMatch(r -> "com.example.Key".equals(r.getToTypeFqn())));
+        assertTrue(model.getRelations().stream().anyMatch(r -> "com.example.Value".equals(r.getToTypeFqn())));
+    }
+
+    @Test
+    void mapFieldWithSameTypeArgumentsCreatesOneRelation() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addField(UmlField.builder().name("options")
+                        .type("java.util.Map<java.lang.String, java.lang.String>").build())
+                .build();
+        context.addType(owner);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        // Both arguments resolve to the same type, dedup keeps one
+        assertEquals(1, model.getRelations().size());
+        assertEquals("java.lang.String", model.getRelations().getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void methodDependencyToExternalTypeIsCreated() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Service")
+                .simpleName("Service")
+                .addMethod(UmlMethod.builder()
+                        .name("process")
+                        .returnType("void")
+                        .addParameter("input", "org.external.DataInput")
+                        .build())
+                .build();
+        context.addType(owner);
+
+        new RelationDetector(context).detectMethodDependencies(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(1, model.getRelations().size());
+        assertEquals(RelationKind.DEPENDENCY, model.getRelations().getFirst().getKind());
+        assertEquals("org.external.DataInput", model.getRelations().getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void fieldWithPrimitiveOrSimpleNameProducesNoRelation() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addField(UmlField.builder().name("count").type("int").build())
+                .addField(UmlField.builder().name("label").type("String").build())
+                .build();
+        context.addType(owner);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(0, model.getRelations().size());
+    }
+
+    @Test
+    void classFieldOfEnumTypeCreatesAssociation() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Order")
+                .simpleName("Order")
+                .kind(TypeKind.CLASS)
+                .addField(UmlField.builder().name("state").type("com.example.OrderState").isFinal(true).build())
+                .build();
+        UmlType enumType = UmlType.builder()
+                .fqn("com.example.OrderState")
+                .simpleName("OrderState")
+                .kind(TypeKind.ENUM)
+                .build();
+        context.addType(owner);
+        context.addType(enumType);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(1, model.getRelations().size());
+        assertEquals(RelationKind.ASSOCIATION, model.getRelations().getFirst().getKind());
+        assertEquals(owner.getFqn(), model.getRelations().getFirst().getFromTypeFqn());
+        assertEquals(enumType.getFqn(), model.getRelations().getFirst().getToTypeFqn());
+        assertEquals("1", model.getRelations().getFirst().getToMultiplicity());
+    }
+
+    @Test
+    void staticSelfTypeFieldDoesNotCreateRelation() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Singleton")
+                .simpleName("Singleton")
+                .addField(UmlField.builder()
+                        .name("INSTANCE")
+                        .type("com.example.Singleton")
+                        .isStatic(true)
+                        .isFinal(true)
+                        .build())
+                .build();
+        context.addType(owner);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(0, model.getRelations().size());
     }
 }

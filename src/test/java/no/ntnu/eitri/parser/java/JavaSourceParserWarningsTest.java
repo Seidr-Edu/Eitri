@@ -103,8 +103,6 @@ class JavaSourceParserWarningsTest {
 
             assertNotNull(model);
             assertTrue(handler.messages.stream().anyMatch(msg -> msg.contains("Type reference resolution:")));
-            assertTrue(handler.messages.stream().anyMatch(msg -> msg.contains("Type reference skips by reason:")));
-            assertTrue(handler.messages.stream().anyMatch(msg -> msg.contains("non-FQN=")));
         } finally {
             logger.removeHandler(handler);
             logger.setLevel(previous);
@@ -124,10 +122,12 @@ class JavaSourceParserWarningsTest {
 
         @Override
         public void flush() {
+            // No-op since we're just capturing messages in memory
         }
 
         @Override
         public void close() throws SecurityException {
+            // No-op since we're not holding any resources
         }
     }
 }

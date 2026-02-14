@@ -264,6 +264,35 @@ class PackageClassifierTest {
       Set<String> sources = Set.of("parser");
       assertFalse(PackageClassifier.isSiblingPackage("model", sources));
     }
+
+    @Test
+    @DisplayName("deep package under same project root is sibling")
+    void deepPackageUnderRootIsSibling() {
+      Set<String> sources = Set.of("example.cli");
+      assertTrue(PackageClassifier.isSiblingPackage("example.api.plugins", sources));
+      assertTrue(PackageClassifier.isSiblingPackage("example.core.export", sources));
+    }
+
+    @Test
+    @DisplayName("source subtree package is not sibling even when under project root")
+    void sourceSubtreeIsNotSiblingUnderRoot() {
+      Set<String> sources = Set.of("example.cli");
+      assertFalse(PackageClassifier.isSiblingPackage("example.cli.commands", sources));
+    }
+
+    @Test
+    @DisplayName("common package is never sibling")
+    void commonPackageNotSibling() {
+      Set<String> sources = Set.of("no.ntnu.eitri.parser");
+      assertFalse(PackageClassifier.isSiblingPackage("java.util", sources));
+    }
+
+    @Test
+    @DisplayName("fallback parent-based sibling detection applies when no common project root")
+    void fallbackSiblingDetectionWhenNoCommonProjectRoot() {
+      Set<String> sources = Set.of("foo.alpha", "bar.beta");
+      assertTrue(PackageClassifier.isSiblingPackage("foo.gamma", sources));
+    }
   }
 
   // =====================================================================
@@ -320,6 +349,58 @@ class PackageClassifierTest {
       assertEquals("no.ntnu.eitri",
           PackageClassifier.computeProjectRoot(
               Set.of("no.ntnu.eitri.parser", "no.ntnu.eitri.parser.java")));
+    }
+  }
+
+  // =====================================================================
+  // extractPackageFromFqn
+  // =====================================================================
+
+  @Nested
+  @DisplayName("extractPackageFromFqn")
+  class ExtractPackageTests {
+
+    @Test
+    @DisplayName("extracts package from standard FQN")
+    void standardFqn() {
+      assertEquals("com.example", PackageClassifier.extractPackageFromFqn("com.example.MyClass"));
+    }
+
+    @Test
+    @DisplayName("extracts package from nested type FQN")
+    void nestedClassFqn() {
+      assertEquals("com.example", PackageClassifier.extractPackageFromFqn("com.example.Outer.Inner"));
+    }
+
+    @Test
+    @DisplayName("extracts package from deep FQN")
+    void deepFqn() {
+      assertEquals("no.ntnu.eitri.parser.java",
+          PackageClassifier.extractPackageFromFqn("no.ntnu.eitri.parser.java.TypeVisitor"));
+    }
+
+    @Test
+    @DisplayName("returns empty for simple class name")
+    void simpleClassName() {
+      assertEquals("", PackageClassifier.extractPackageFromFqn("MyClass"));
+    }
+
+    @Test
+    @DisplayName("returns empty for null")
+    void nullInput() {
+      assertEquals("", PackageClassifier.extractPackageFromFqn(null));
+    }
+
+    @Test
+    @DisplayName("returns empty for blank")
+    void blankInput() {
+      assertEquals("", PackageClassifier.extractPackageFromFqn(""));
+    }
+
+    @Test
+    @DisplayName("extracts common package")
+    void commonPackageFqn() {
+      assertEquals("java.util", PackageClassifier.extractPackageFromFqn("java.util.List"));
     }
   }
 }

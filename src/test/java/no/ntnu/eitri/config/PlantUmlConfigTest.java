@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class EitriConfigTest {
+class PlantUmlConfigTest {
 
     @Test
     void plantUmlDefaultsAreStable() {
@@ -19,7 +19,8 @@ class EitriConfigTest {
         assertEquals("diagram", config.diagramName());
         assertEquals(LayoutDirection.TOP_TO_BOTTOM, config.direction());
         assertTrue(config.showLabels());
-        assertTrue(config.showNested());
+        assertFalse(config.showNested());
+        assertTrue(config.showUnlinked());
         assertTrue(config.hideEmptyMembers());
     }
 
@@ -38,26 +39,25 @@ class EitriConfigTest {
                 false,
                 false,
                 true,
-                false,
-                false,
-                true,
-                true,
-                false,
-                true,
-                true,
-                true,
-                true,
-                true,
-                true,
-                true,
                 true,
                 true,
                 true,
                 true,
                 false,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
                 false,
-                false
-        );
+                false,
+                false);
 
         assertEquals("diagram", config.diagramName());
         assertEquals(LayoutDirection.TOP_TO_BOTTOM, config.direction());
@@ -73,8 +73,7 @@ class EitriConfigTest {
                 "java",
                 "puml",
                 true,
-                false
-        );
+                false);
 
         assertNotNull(config.sourcePaths());
         assertTrue(config.sourcePaths().isEmpty());

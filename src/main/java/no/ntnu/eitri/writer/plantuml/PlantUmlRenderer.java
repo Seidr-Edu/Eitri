@@ -21,42 +21,46 @@ import java.util.stream.Collectors;
 public final class PlantUmlRenderer {
 
     /**
+     * Converts Java-like FQNs to PlantUML-safe names for nested types.
+     *
+     * <p>
+     * PlantUML relation endpoints are significantly more stable when nested classes
+     * are addressed with {@code $} separators (e.g. {@code Outer$Inner}) instead of
+     * dotted nested notation ({@code Outer.Inner}), especially for external types not
+     * declared in this diagram.
+     */
+    public String displayNameForFqn(String fqn) {
+        if (fqn == null || fqn.isBlank()) {
+            return fqn;
+        }
+
+        String[] parts = fqn.split("\\.");
+        int firstTypeIdx = -1;
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
+                firstTypeIdx = i;
+                break;
+            }
+        }
+
+        if (firstTypeIdx <= 0 || firstTypeIdx >= parts.length) {
+            return fqn;
+        }
+
+        String packageName = String.join(".", java.util.Arrays.copyOfRange(parts, 0, firstTypeIdx));
+        String nestedTypePath = String.join("$", java.util.Arrays.copyOfRange(parts, firstTypeIdx, parts.length));
+        return packageName + "." + nestedTypePath;
+    }
+
+    /**
      * Return FQN display name for the type to be used for consistent referencing.
      */
     public String displayNameForType(UmlType type) {
         if (!type.isNested()) {
             return type.getFqn();
         }
-
-        // For nested types, extract the nested path from FQN
-        String fqn = type.getFqn();
-        int lastDot = fqn.lastIndexOf('.');
-        if (lastDot < 0) {
-            return type.getFqn();
-        }
-
-        // Find where the type hierarchy starts (first uppercase segment)
-        String[] parts = fqn.split("\\.");
-        StringBuilder nestedName = new StringBuilder();
-        boolean foundFirstType = false;
-
-        for (String part : parts) {
-            if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
-                if (foundFirstType) {
-                    nestedName.append("$");
-                }
-                nestedName.append(part);
-                foundFirstType = true;
-            }
-        }
-
-        if (!nestedName.isEmpty()) {
-            String packageName = type.getPackageName();
-            return (packageName == null || packageName.isEmpty())
-                    ? nestedName.toString()
-                    : packageName.concat(".").concat(nestedName.toString());
-        }
-        return type.getFqn();
+        return displayNameForFqn(type.getFqn());
     }
 
     public String renderTypeDeclaration(UmlType type) {

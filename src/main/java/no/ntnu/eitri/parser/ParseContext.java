@@ -111,16 +111,26 @@ public class ParseContext {
      * Resolves a type reference.
      *
      * <p>
-     * Only fully-qualified type names are modeled.
-     * If the type is fully qualified and not already registered,
-     * a placeholder type is created so references can be represented.
+     * Only fully-qualified type names that are already registered are resolved.
+     * External types and unresolved simple names are skipped.
      *
-     * @param fqn            the fully-qualified name to resolve
-     * @param referencedFrom context for warning messages
-     * @return the resolved (normalized) FQN, or null if the type is empty
+     * @param fqn the fully-qualified name to resolve
+     * @return the resolved (normalized) FQN, or null if the type is not registered
      */
-    public String resolveTypeReference(String fqn, String referencedFrom) {
+    public String resolveTypeReference(String fqn) {
         return typeResolver.resolveTypeReference(fqn);
+    }
+
+    /**
+     * Normalizes a type reference to a valid FQN without requiring it to be in
+     * the type registry. Used by relation detection to allow relations targeting
+     * types outside the parsed source.
+     *
+     * @param fqn the type reference to normalize
+     * @return the normalized FQN if valid, or null for primitives, wildcards, etc.
+     */
+    public String normalizeToValidFqn(String fqn) {
+        return typeResolver.normalizeToValidFqn(fqn);
     }
 
     /**
@@ -194,6 +204,9 @@ public class ParseContext {
                 .sourcePackages(types.getSourcePackages());
 
         types.getTypes().forEach(modelBuilder::addType);
+        // Final relation materialization happens after all types are registered so
+        // deferred inheritance, deduplication, and strength selection can be applied
+        // with full type context. Endpoint visibility filtering remains a writer concern.
         relations.buildFinalRelations(types, typeResolver).forEach(modelBuilder::addRelation);
 
         return modelBuilder.build();

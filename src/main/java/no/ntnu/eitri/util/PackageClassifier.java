@@ -12,7 +12,9 @@ import java.util.Set;
  * jdk.*)</li>
  * <li><b>External</b>: Not sharing a common root with any source package</li>
  * <li><b>Sibling</b>: Shares a parent package with a source package but is not
- * itself a source package</li>
+ * itself a source package. In practice this is evaluated as "inside the same
+ * project root, but outside the parsed source subtree" so deeper branches are
+ * also treated as siblings.</li>
  * </ul>
  */
 public final class PackageClassifier {
@@ -79,9 +81,9 @@ public final class PackageClassifier {
    * Checks if a package is a sibling package.
    *
    * <p>
-   * A sibling package shares a parent with a source package but is not itself
-   * a source package. For example, if parsing {@code no.ntnu.eitri.parser}, then
-   * {@code no.ntnu.eitri.model} is a sibling (same parent {@code no.ntnu.eitri}).
+   * A sibling package is part of the same project root but outside the parsed
+   * source subtree. For example, if parsing {@code example.cli}, then
+   * {@code example.api.plugins} and {@code example.core.export} are siblings.
    *
    * <p>
    * If source packages are empty, no package is considered a sibling.
@@ -112,7 +114,21 @@ public final class PackageClassifier {
       }
     }
 
-    // Check if it shares a parent package with any source package
+    // If package is under the project root but outside all source subtrees,
+    // classify it as sibling. This captures deeper sibling branches such as
+    // 'example.api.plugins' when parsing 'example.cli'.
+    String projectRoot = computeProjectRoot(sourcePackages);
+    if (projectRoot != null && !projectRoot.isEmpty()) {
+      if (packageName.equals(projectRoot)) {
+        return false;
+      }
+      if (packageName.startsWith(projectRoot + ".")) {
+        return true;
+      }
+    }
+
+    // Fallback for edge-cases where a stable project root cannot be computed:
+    // keep legacy immediate-parent sibling semantics.
     String targetParent = parentPackage(packageName);
     if (targetParent == null) {
       return false;
@@ -216,5 +232,35 @@ public final class PackageClassifier {
     }
     int lastDot = packageName.lastIndexOf('.');
     return lastDot > 0 ? packageName.substring(0, lastDot) : null;
+  }
+
+  /**
+   * Extracts the package name from a fully-qualified type name.
+   *
+   * <p>
+   * Uses the same heuristic as {@code UmlType.computePackageName()}: walks the
+   * dot-separated segments left-to-right and treats the first segment starting
+   * with an uppercase letter as the beginning of the type hierarchy. Everything
+   * before it is the package.
+   *
+   * @param fqn the fully-qualified type name (e.g., {@code com.example.Foo})
+   * @return the package name, or an empty string if no package can be determined
+   */
+  public static String extractPackageFromFqn(String fqn) {
+    if (fqn == null || fqn.isBlank()) {
+      return "";
+    }
+    String[] parts = fqn.split("\\.");
+    StringBuilder pkg = new StringBuilder();
+    for (String part : parts) {
+      if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
+        break;
+      }
+      if (!pkg.isEmpty()) {
+        pkg.append(".");
+      }
+      pkg.append(part);
+    }
+    return pkg.toString();
   }
 }
