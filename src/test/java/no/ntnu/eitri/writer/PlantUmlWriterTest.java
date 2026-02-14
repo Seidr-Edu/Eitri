@@ -358,6 +358,44 @@ class PlantUmlWriterTest {
         }
 
         @Test
+        void rendersRelationToExternalNestedFqnUsingDollarPath() {
+                UmlType source = UmlType.builder().fqn("jadx.cli.JadxCLIArgs").simpleName("JadxCLIArgs")
+                                .visibility(Visibility.PUBLIC).build();
+                UmlModel model = UmlModel.builder()
+                                .addType(source)
+                                .addRelation(UmlRelation.association(source.getFqn(), "jadx.api.JadxArgs.RenameEnum", null))
+                                .sourcePackages(java.util.Set.of("jadx.cli"))
+                                .build();
+
+                PlantUmlConfig config = config("showAssociation", true, "showNested", true,
+                                "hideExternalPackages", false);
+
+                String output = new PlantUmlWriter().render(model, config);
+
+                assertTrue(output.contains("jadx.cli.JadxCLIArgs -- jadx.api.JadxArgs$RenameEnum"));
+                assertFalse(output.contains("jadx.cli.JadxCLIArgs -- jadx.api.JadxArgs.RenameEnum"));
+        }
+
+        @Test
+        void hidesRelationToExternalNestedFqnWhenShowNestedIsFalse() {
+                UmlType source = UmlType.builder().fqn("jadx.cli.JadxCLIArgs").simpleName("JadxCLIArgs")
+                                .visibility(Visibility.PUBLIC).build();
+                UmlModel model = UmlModel.builder()
+                                .addType(source)
+                                .addRelation(UmlRelation.association(source.getFqn(), "jadx.api.JadxArgs.RenameEnum", null))
+                                .sourcePackages(java.util.Set.of("jadx.cli"))
+                                .build();
+
+                PlantUmlConfig config = config("showAssociation", true, "showNested", false,
+                                "hideExternalPackages", false);
+
+                String output = new PlantUmlWriter().render(model, config);
+
+                assertFalse(output.contains("jadx.cli.JadxCLIArgs -- jadx.api.JadxArgs$RenameEnum"));
+                assertFalse(output.contains("jadx.api.JadxArgs.RenameEnum"));
+        }
+
+        @Test
         void hidesRelationToExternalFqnWhenHideExternalPackages() {
                 UmlType source = UmlType.builder().fqn("no.ntnu.eitri.parser.Source").simpleName("Source")
                                 .visibility(Visibility.PUBLIC).build();

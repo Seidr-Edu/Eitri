@@ -311,8 +311,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
         }
 
         if (!config.showNested()
-                && (nestedTypeFqns.contains(fromFqn)
-                        || nestedTypeFqns.contains(toFqn))) {
+            && (isNestedTypeReference(fromFqn, context)
+                || isNestedTypeReference(toFqn, context))) {
             return false;
         }
 
@@ -348,6 +348,17 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
 
         // Package matches source but type was not parsed — allow
         return true;
+    }
+
+    private boolean isNestedTypeReference(String fqn, RenderContext context) {
+        if (context.nestedTypeFqns().contains(fqn)) {
+            return true;
+        }
+        if (context.typesByFqn().containsKey(fqn)) {
+            return false;
+        }
+        String displayName = renderer.displayNameForFqn(fqn);
+        return displayName != null && displayName.contains("$");
     }
 
     /**
@@ -396,8 +407,12 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
      * Renders a relation.
      */
     private String renderRelation(UmlRelation relation, PlantUmlConfig config, RenderContext context) {
-        String fromName = context.typeNames().getOrDefault(relation.getFromTypeFqn(), relation.getFromTypeFqn());
-        String toName = context.typeNames().getOrDefault(relation.getToTypeFqn(), relation.getToTypeFqn());
+        String fromName = context.typeNames().getOrDefault(
+            relation.getFromTypeFqn(),
+            renderer.displayNameForFqn(relation.getFromTypeFqn()));
+        String toName = context.typeNames().getOrDefault(
+            relation.getToTypeFqn(),
+            renderer.displayNameForFqn(relation.getToTypeFqn()));
         return renderer.renderRelation(relation, fromName, toName, config.showLabels(),
                 config.showMultiplicities());
     }
