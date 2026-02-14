@@ -29,6 +29,14 @@ class TypeReferenceResolverTest {
     }
 
     @Test
+    void resolveTypeReferenceSkipsNullAndEmptyInput() {
+        TypeReferenceResolver resolver = new TypeReferenceResolver(new TypeRegistry());
+
+        assertNull(resolver.resolveTypeReference(null));
+        assertNull(resolver.resolveTypeReference(""));
+    }
+
+    @Test
     void resolveTypeReferenceSkipsPrimitiveAndWildcardTypes() {
         TypeReferenceResolver resolver = new TypeReferenceResolver(new TypeRegistry());
 
@@ -111,5 +119,13 @@ class TypeReferenceResolverTest {
 
         assertNull(resolver.normalizeToValidFqn("java.lang.String, java.lang.String"));
         assertNull(resolver.normalizeToValidFqn("java.lang.String java.lang.Integer"));
+    }
+
+    @Test
+    void resolveTypeReferenceRejectsCommaAndSpaceSeparatedTypes() {
+        TypeReferenceResolver resolver = new TypeReferenceResolver(new TypeRegistry());
+
+        assertNull(resolver.resolveTypeReference("java.lang.String, java.lang.Integer"));
+        assertNull(resolver.resolveTypeReference("java.lang.String java.lang.Integer"));
     }
 }

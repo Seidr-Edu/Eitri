@@ -26,9 +26,13 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PlantUmlWriterTest {
+
+        @TempDir
+        Path tempDir;
 
         @Test
         void omitsVoidReturnTypeWhenDisabled() {
@@ -272,6 +276,38 @@ class PlantUmlWriterTest {
                 String output = new PlantUmlWriter().render(model, PlantUmlConfig.defaults());
 
                 assertTrue(output.contains("top to bottom direction"));
+        }
+
+        @Test
+        void writeCreatesParentDirectoriesWhenMissing() throws Exception {
+                UmlType type = UmlType.builder()
+                                .fqn("com.example.TestClass")
+                                .simpleName("TestClass")
+                                .kind(TypeKind.CLASS)
+                                .visibility(Visibility.PUBLIC)
+                                .build();
+                UmlModel model = UmlModel.builder().addType(type).build();
+
+                Path outputFile = tempDir.resolve("nested").resolve("diagram.puml");
+                assertFalse(Files.exists(outputFile.getParent()));
+
+                new PlantUmlWriter().write(model, PlantUmlConfig.defaults(), outputFile);
+
+                assertTrue(Files.exists(outputFile.getParent()));
+                assertTrue(Files.exists(outputFile));
+        }
+
+        @Test
+        void writeThrowsWriteExceptionWhenOutputPathIsDirectory() throws Exception {
+                UmlModel model = UmlModel.builder().build();
+                Path directoryAsOutput = tempDir.resolve("outdir");
+                Files.createDirectories(directoryAsOutput);
+
+                WriteException exception = assertThrows(
+                                WriteException.class,
+                                () -> new PlantUmlWriter().write(model, PlantUmlConfig.defaults(), directoryAsOutput));
+
+                assertTrue(exception.getMessage().contains("Failed to write PlantUML file"));
         }
 
         @Test

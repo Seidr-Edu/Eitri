@@ -279,6 +279,20 @@ class PackageClassifierTest {
       Set<String> sources = Set.of("example.cli");
       assertFalse(PackageClassifier.isSiblingPackage("example.cli.commands", sources));
     }
+
+    @Test
+    @DisplayName("common package is never sibling")
+    void commonPackageNotSibling() {
+      Set<String> sources = Set.of("no.ntnu.eitri.parser");
+      assertFalse(PackageClassifier.isSiblingPackage("java.util", sources));
+    }
+
+    @Test
+    @DisplayName("fallback parent-based sibling detection applies when no common project root")
+    void fallbackSiblingDetectionWhenNoCommonProjectRoot() {
+      Set<String> sources = Set.of("foo.alpha", "bar.beta");
+      assertTrue(PackageClassifier.isSiblingPackage("foo.gamma", sources));
+    }
   }
 
   // =====================================================================

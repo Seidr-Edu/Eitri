@@ -34,6 +34,24 @@ class JavaSourceParserBehaviorTest {
     }
 
     @Test
+    void throwsWhenSourcePathsListIsNull() {
+        JavaSourceParser parser = new JavaSourceParser();
+        RunConfig runConfig = new RunConfig(List.of(tempDir), tempDir.resolve("out.puml"), null, null, false, false);
+
+        ParseException exception = assertThrows(ParseException.class, () -> parser.parse(null, runConfig));
+        assertTrue(exception.getMessage().contains("No source paths provided"));
+    }
+
+    @Test
+    void throwsWhenSourcePathsListIsEmpty() {
+        JavaSourceParser parser = new JavaSourceParser();
+        RunConfig runConfig = new RunConfig(List.of(tempDir), tempDir.resolve("out.puml"), null, null, false, false);
+
+        ParseException exception = assertThrows(ParseException.class, () -> parser.parse(List.of(), runConfig));
+        assertTrue(exception.getMessage().contains("No source paths provided"));
+    }
+
+    @Test
     void continuesParsingWhenOneFileHasSyntaxError() throws Exception {
         Path src = tempDir.resolve("src");
         Files.createDirectories(src);
@@ -135,6 +153,15 @@ class JavaSourceParserBehaviorTest {
         assertTrue(modules.contains("a"));
         assertTrue(modules.contains("b:c"));
         assertTrue(modules.contains("d:e:f"));
+    }
+
+    @Test
+    void parseIncludedModuleIdsReturnsEmptyForMissingFile() {
+        Path missing = tempDir.resolve("missing.settings.gradle.kts");
+
+        Set<String> modules = JavaSourceParser.parseIncludedModuleIds(missing);
+
+        assertTrue(modules.isEmpty());
     }
 
     @Test
@@ -279,6 +306,18 @@ class JavaSourceParserBehaviorTest {
         assertTrue(jars.contains(directJar.toAbsolutePath().normalize()));
         assertTrue(jars.contains(companionJar.toAbsolutePath().normalize()));
         assertFalse(jars.contains(sourcesJar.toAbsolutePath().normalize()));
+    }
+
+    @Test
+    void resolveGradleDependencyJarsSkipsMalformedCoordinates() throws Exception {
+        Path gradleCacheRoot = tempDir.resolve(".gradle/caches/modules-2/files-2.1");
+        Files.createDirectories(gradleCacheRoot);
+
+        Set<Path> jars = JavaSourceParser.resolveGradleDependencyJars(
+                Set.of("org.example:missingVersion", "notACoordinate"),
+                gradleCacheRoot);
+
+        assertTrue(jars.isEmpty());
     }
 
     @Test
