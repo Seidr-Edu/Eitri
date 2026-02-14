@@ -115,6 +115,9 @@ public class RelationDetector {
         if (genericContent == null) {
             return;
         }
+        // Map-like declarations contain multiple type arguments. Splitting here
+        // avoids emitting invalid combined targets such as "java.lang.String,
+        // java.lang.String" as a single relation endpoint.
         for (String elementType : genericContent.split(",")) {
             addFieldRelationIfValid(ownerFqn, field, elementType.trim(), RelationKind.AGGREGATION, "*");
         }

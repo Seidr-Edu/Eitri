@@ -313,6 +313,9 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
         if (!config.showNested()
             && (isNestedTypeReference(fromFqn, context)
                 || isNestedTypeReference(toFqn, context))) {
+            // Apply showNested consistently for both modeled and external endpoints.
+            // Without this, external nested types can bypass filtering simply because
+            // they are not represented as UmlType instances.
             return false;
         }
 
@@ -357,6 +360,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
         if (context.typesByFqn().containsKey(fqn)) {
             return false;
         }
+        // For external endpoints we infer nested-ness from the same normalization used
+        // for PlantUML names. This keeps filtering and rendering decisions aligned.
         String displayName = renderer.displayNameForFqn(fqn);
         return displayName != null && displayName.contains("$");
     }

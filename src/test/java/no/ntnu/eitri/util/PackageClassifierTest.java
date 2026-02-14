@@ -268,16 +268,16 @@ class PackageClassifierTest {
     @Test
     @DisplayName("deep package under same project root is sibling")
     void deepPackageUnderRootIsSibling() {
-      Set<String> sources = Set.of("jadx.cli");
-      assertTrue(PackageClassifier.isSiblingPackage("jadx.api.plugins", sources));
-      assertTrue(PackageClassifier.isSiblingPackage("jadx.core.export", sources));
+      Set<String> sources = Set.of("example.cli");
+      assertTrue(PackageClassifier.isSiblingPackage("example.api.plugins", sources));
+      assertTrue(PackageClassifier.isSiblingPackage("example.core.export", sources));
     }
 
     @Test
     @DisplayName("source subtree package is not sibling even when under project root")
     void sourceSubtreeIsNotSiblingUnderRoot() {
-      Set<String> sources = Set.of("jadx.cli");
-      assertFalse(PackageClassifier.isSiblingPackage("jadx.cli.commands", sources));
+      Set<String> sources = Set.of("example.cli");
+      assertFalse(PackageClassifier.isSiblingPackage("example.cli.commands", sources));
     }
   }
 

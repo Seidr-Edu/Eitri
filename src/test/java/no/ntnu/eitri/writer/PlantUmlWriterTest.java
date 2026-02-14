@@ -359,12 +359,13 @@ class PlantUmlWriterTest {
 
         @Test
         void rendersRelationToExternalNestedFqnUsingDollarPath() {
-                UmlType source = UmlType.builder().fqn("jadx.cli.JadxCLIArgs").simpleName("JadxCLIArgs")
+                UmlType source = UmlType.builder().fqn("example.cli.JadxCLIArgs").simpleName("JadxCLIArgs")
                                 .visibility(Visibility.PUBLIC).build();
                 UmlModel model = UmlModel.builder()
                                 .addType(source)
-                                .addRelation(UmlRelation.association(source.getFqn(), "jadx.api.JadxArgs.RenameEnum", null))
-                                .sourcePackages(java.util.Set.of("jadx.cli"))
+                                .addRelation(UmlRelation.association(source.getFqn(), "example.api.JadxArgs.RenameEnum",
+                                                null))
+                                .sourcePackages(java.util.Set.of("example.cli"))
                                 .build();
 
                 PlantUmlConfig config = config("showAssociation", true, "showNested", true,
@@ -372,18 +373,19 @@ class PlantUmlWriterTest {
 
                 String output = new PlantUmlWriter().render(model, config);
 
-                assertTrue(output.contains("jadx.cli.JadxCLIArgs -- jadx.api.JadxArgs$RenameEnum"));
-                assertFalse(output.contains("jadx.cli.JadxCLIArgs -- jadx.api.JadxArgs.RenameEnum"));
+                assertTrue(output.contains("example.cli.JadxCLIArgs -- example.api.JadxArgs$RenameEnum"));
+                assertFalse(output.contains("example.cli.JadxCLIArgs -- example.api.JadxArgs.RenameEnum"));
         }
 
         @Test
         void hidesRelationToExternalNestedFqnWhenShowNestedIsFalse() {
-                UmlType source = UmlType.builder().fqn("jadx.cli.JadxCLIArgs").simpleName("JadxCLIArgs")
+                UmlType source = UmlType.builder().fqn("example.cli.JadxCLIArgs").simpleName("JadxCLIArgs")
                                 .visibility(Visibility.PUBLIC).build();
                 UmlModel model = UmlModel.builder()
                                 .addType(source)
-                                .addRelation(UmlRelation.association(source.getFqn(), "jadx.api.JadxArgs.RenameEnum", null))
-                                .sourcePackages(java.util.Set.of("jadx.cli"))
+                                .addRelation(UmlRelation.association(source.getFqn(), "example.api.JadxArgs.RenameEnum",
+                                                null))
+                                .sourcePackages(java.util.Set.of("example.cli"))
                                 .build();
 
                 PlantUmlConfig config = config("showAssociation", true, "showNested", false,
@@ -391,8 +393,8 @@ class PlantUmlWriterTest {
 
                 String output = new PlantUmlWriter().render(model, config);
 
-                assertFalse(output.contains("jadx.cli.JadxCLIArgs -- jadx.api.JadxArgs$RenameEnum"));
-                assertFalse(output.contains("jadx.api.JadxArgs.RenameEnum"));
+                assertFalse(output.contains("example.cli.JadxCLIArgs -- example.api.JadxArgs$RenameEnum"));
+                assertFalse(output.contains("example.api.JadxArgs.RenameEnum"));
         }
 
         @Test

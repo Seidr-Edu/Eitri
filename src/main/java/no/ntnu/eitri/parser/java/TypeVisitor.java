@@ -461,6 +461,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
 
         ClassOrInterfaceType classType = type.asClassOrInterfaceType();
         if (classType.getScope().isPresent()) {
+            // Scoped names (e.g. pkg.Type or Outer.Inner) already carry context; this
+            // fallback is only for bare simple names where symbol solving failed.
             return null;
         }
 
@@ -472,6 +474,8 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         String simpleName = classType.getNameAsString();
         for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
             if (importDeclaration.isAsterisk() || importDeclaration.isStatic()) {
+                // Star/static imports are intentionally skipped here because guessing from
+                // them can introduce incorrect FQNs and noisy false-positive relations.
                 continue;
             }
 

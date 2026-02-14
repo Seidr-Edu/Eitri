@@ -12,7 +12,9 @@ import java.util.Set;
  * jdk.*)</li>
  * <li><b>External</b>: Not sharing a common root with any source package</li>
  * <li><b>Sibling</b>: Shares a parent package with a source package but is not
- * itself a source package</li>
+ * itself a source package. In practice this is evaluated as "inside the same
+ * project root, but outside the parsed source subtree" so deeper branches are
+ * also treated as siblings.</li>
  * </ul>
  */
 public final class PackageClassifier {
@@ -79,9 +81,9 @@ public final class PackageClassifier {
    * Checks if a package is a sibling package.
    *
    * <p>
-   * A sibling package shares a parent with a source package but is not itself
-   * a source package. For example, if parsing {@code no.ntnu.eitri.parser}, then
-   * {@code no.ntnu.eitri.model} is a sibling (same parent {@code no.ntnu.eitri}).
+   * A sibling package is part of the same project root but outside the parsed
+   * source subtree. For example, if parsing {@code example.cli}, then
+   * {@code example.api.plugins} and {@code example.core.export} are siblings.
    *
    * <p>
    * If source packages are empty, no package is considered a sibling.
@@ -114,7 +116,7 @@ public final class PackageClassifier {
 
     // If package is under the project root but outside all source subtrees,
     // classify it as sibling. This captures deeper sibling branches such as
-    // 'jadx.api.plugins' when parsing 'jadx.cli'.
+    // 'example.api.plugins' when parsing 'example.cli'.
     String projectRoot = computeProjectRoot(sourcePackages);
     if (projectRoot != null && !projectRoot.isEmpty()) {
       if (packageName.equals(projectRoot)) {

@@ -204,6 +204,9 @@ public class ParseContext {
                 .sourcePackages(types.getSourcePackages());
 
         types.getTypes().forEach(modelBuilder::addType);
+        // Final relation materialization happens after all types are registered so
+        // deferred inheritance, deduplication, and strength selection can be applied
+        // with full type context. Endpoint visibility filtering remains a writer concern.
         relations.buildFinalRelations(types, typeResolver).forEach(modelBuilder::addRelation);
 
         return modelBuilder.build();

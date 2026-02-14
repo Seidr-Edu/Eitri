@@ -60,11 +60,11 @@ class TypeReferenceResolverTest {
     @Test
     void resolveTypeReferenceAcceptsUnconventionalPackageNames() {
         TypeRegistry registry = new TypeRegistry();
-        // Package names like jadx.cli are valid even without com. prefix
-        registry.addType(UmlType.builder().fqn("jadx.cli.JadxCLI").simpleName("JadxCLI").build());
+        // Package names like example.cli are valid even without com. prefix
+        registry.addType(UmlType.builder().fqn("example.cli.JadxCLI").simpleName("JadxCLI").build());
         TypeReferenceResolver resolver = new TypeReferenceResolver(registry);
 
-        assertEquals("jadx.cli.JadxCLI", resolver.resolveTypeReference("jadx.cli.JadxCLI"));
+        assertEquals("example.cli.JadxCLI", resolver.resolveTypeReference("example.cli.JadxCLI"));
     }
 
     @Test

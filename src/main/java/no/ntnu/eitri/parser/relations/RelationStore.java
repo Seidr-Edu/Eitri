@@ -39,6 +39,9 @@ public final class RelationStore {
         for (ParseContext.PendingInheritance pi : pendingInheritance) {
             String targetFqn = typeResolver.normalizeToValidFqn(pi.toFqn());
             if (targetFqn != null) {
+                // Inheritance targets are normalized but not forced to be registered.
+                // This preserves extends/implements edges to external supertypes while
+                // still filtering out malformed tokens.
                 mergedRelations.add(UmlRelation.builder()
                         .fromTypeFqn(pi.fromFqn())
                         .toTypeFqn(targetFqn)
@@ -69,6 +72,11 @@ public final class RelationStore {
     /**
      * Applies global "strongest wins" per endpoint pair (from->to), keeping a
      * single relation between each pair.
+      *
+      * <p>
+      * This intentionally favors readability over exhaustiveness for large models:
+      * multiple weaker edges between the same two types are suppressed once a
+      * stronger semantic relation exists.
      */
     private List<UmlRelation> selectStrongestPerEndpoint(Iterable<UmlRelation> relations) {
         Map<String, UmlRelation> strongestByEndpoint = new LinkedHashMap<>();
@@ -93,8 +101,8 @@ public final class RelationStore {
             return candidateStrength > existingStrength;
         }
 
-        // When equally strong, prefer the one with more details (multiplicity, member,
-        // label).
+        // When equally strong, keep the most informative edge so labels/member context
+        // are not lost in deduplication.
         int candidateDetail = detailScore(candidate);
         int existingDetail = detailScore(existing);
         if (candidateDetail != existingDetail) {

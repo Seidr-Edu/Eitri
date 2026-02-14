@@ -35,6 +35,9 @@ public final class TypeReferenceResolver {
         String normalized = normalization.normalized();
 
         if (!isFullyQualifiedTypeName(normalized)) {
+            // Keep the registry-backed resolver strict: simple names and partially
+            // qualified names are intentionally rejected to avoid accidental links to
+            // wrong local types with matching simple names.
             skippedNonFqn++;
             return null;
         }
@@ -76,6 +79,9 @@ public final class TypeReferenceResolver {
         String normalized = normalization.normalized();
 
         if (!isFullyQualifiedTypeName(normalized)) {
+            // Normalization-only path uses the same lexical guard as the registry path.
+            // This keeps relation endpoints deterministic and prevents malformed targets
+            // from entering downstream package filtering/rendering logic.
             return null;
         }
 
@@ -139,6 +145,8 @@ public final class TypeReferenceResolver {
      */
     private boolean isFullyQualifiedTypeName(String type) {
         if (type.indexOf(',') >= 0 || type.indexOf(' ') >= 0) {
+            // Defensively reject concatenated type fragments (e.g. broken generic splits)
+            // so they do not appear as synthetic FQNs in relation endpoints.
             return false;
         }
         int firstDot = type.indexOf('.');

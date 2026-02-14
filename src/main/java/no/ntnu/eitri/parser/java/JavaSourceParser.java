@@ -123,6 +123,9 @@ public class JavaSourceParser implements SourceParser {
     private void configureParser(List<Path> sourcePaths, boolean verbose) {
         CombinedTypeSolver typeSolver = new CombinedTypeSolver();
         typeSolver.add(new ReflectionTypeSolver(false)); // JDK types only, no jrt module
+        // Keep current process classpath visible to the solver. This is important when
+        // Eitri itself is run from a fat jar, because that classpath often already
+        // contains libraries needed to resolve source references.
         typeSolver.add(new ClassLoaderTypeSolver(Thread.currentThread().getContextClassLoader()));
 
         for (Path sourcePath : sourcePaths) {
@@ -148,6 +151,10 @@ public class JavaSourceParser implements SourceParser {
                 typeSolver.add(new JarTypeSolver(jarPath.toString()));
                 addedJarSolvers++;
             } catch (Exception | LinkageError e) {
+                // Some jars in local caches are valid artifacts but still fail to load in
+                // JavaParser/Javassist (module-info edge-cases, bytecode quirks, etc.).
+                // We intentionally skip those jars to keep parsing best effort instead of
+                // aborting the whole run.
                 LOGGER.log(Level.FINE, "Failed to add jar type solver for: {0}", jarPath);
             }
         }
@@ -189,6 +196,9 @@ public class JavaSourceParser implements SourceParser {
             if (entry.endsWith(File.separator + GLOB_ALL)) {
                 Path dir = Path.of(entry.substring(0, entry.length() - 2)).toAbsolutePath().normalize();
                 if (Files.isDirectory(dir)) {
+                    // Classpath wildcards in Java are directory-local (dir/*), not recursive.
+                    // Keep depth=1 here so behavior matches user expectations from JVM classpath
+                    // semantics.
                     collectJarFilesFromDirectory(dir, target, 1);
                 }
                 continue;
@@ -265,6 +275,9 @@ public class JavaSourceParser implements SourceParser {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                     if (isExcludedBuildScanDirectory(moduleRoot, dir)) {
+                        // Build outputs and Gradle internals can contain copied/generated
+                        // build scripts that should not be interpreted as source module
+                        // definitions.
                         return FileVisitResult.SKIP_SUBTREE;
                     }
                     return FileVisitResult.CONTINUE;
@@ -346,6 +359,9 @@ public class JavaSourceParser implements SourceParser {
 
             coordinates.addAll(parseGradleDependencyCoordinates(currentBuildFile));
 
+            // Follow precompiled convention plugins from buildSrc because projects like
+            // jadx centralize key dependencies (e.g. slf4j) there instead of declaring
+            // them directly in every module build file.
             for (String pluginId : parseAppliedGradlePluginIds(currentBuildFile)) {
                 Path pluginBuildFile = resolveBuildSrcPluginFile(repoRoot, pluginId);
                 if (pluginBuildFile != null) {
@@ -409,6 +425,9 @@ public class JavaSourceParser implements SourceParser {
 
             Path artifactDir = gradleCacheRoot.resolve(group).resolve(artifact).resolve(version);
             collectJarFilesFromDirectory(artifactDir, jars, 3);
+            // Include sibling artifacts in the same group/version because some ecosystems
+            // split APIs and implementations (for example directories-jni + directories).
+            // Resolving only the direct artifact can leave otherwise importable types missing.
             collectGroupVersionJarFiles(gradleCacheRoot, group, version, jars);
         }
         return jars;
@@ -447,6 +466,8 @@ public class JavaSourceParser implements SourceParser {
 
     private static boolean isBinaryJar(Path jarPath) {
         String fileName = jarPath.getFileName() == null ? "" : jarPath.getFileName().toString();
+        // Source/javadoc jars are intentionally excluded: they do not provide bytecode for
+        // symbol solving and can trigger avoidable loader failures.
         return !fileName.endsWith("-sources.jar")
                 && !fileName.endsWith("-javadoc.jar");
     }
