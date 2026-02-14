@@ -122,10 +122,12 @@ class JavaSourceParserWarningsTest {
 
         @Override
         public void flush() {
+            // No-op since we're just capturing messages in memory
         }
 
         @Override
         public void close() throws SecurityException {
+            // No-op since we're not holding any resources
         }
     }
 }

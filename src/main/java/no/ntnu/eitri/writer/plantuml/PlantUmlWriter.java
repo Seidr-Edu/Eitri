@@ -291,7 +291,6 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
         String fromFqn = relation.getFromTypeFqn();
         String toFqn = relation.getToTypeFqn();
         Set<String> renderedTypeFqns = context.renderedTypeFqns();
-        Set<String> nestedTypeFqns = context.nestedTypeFqns();
 
         // The FROM side must always be a rendered (parsed) type
         if (!renderedTypeFqns.contains(fromFqn)) {
@@ -311,8 +310,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
         }
 
         if (!config.showNested()
-            && (isNestedTypeReference(fromFqn, context)
-                || isNestedTypeReference(toFqn, context))) {
+                && (isNestedTypeReference(fromFqn, context)
+                        || isNestedTypeReference(toFqn, context))) {
             // Apply showNested consistently for both modeled and external endpoints.
             // Without this, external nested types can bypass filtering simply because
             // they are not represented as UmlType instances.
@@ -413,11 +412,11 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
      */
     private String renderRelation(UmlRelation relation, PlantUmlConfig config, RenderContext context) {
         String fromName = context.typeNames().getOrDefault(
-            relation.getFromTypeFqn(),
-            renderer.displayNameForFqn(relation.getFromTypeFqn()));
+                relation.getFromTypeFqn(),
+                renderer.displayNameForFqn(relation.getFromTypeFqn()));
         String toName = context.typeNames().getOrDefault(
-            relation.getToTypeFqn(),
-            renderer.displayNameForFqn(relation.getToTypeFqn()));
+                relation.getToTypeFqn(),
+                renderer.displayNameForFqn(relation.getToTypeFqn()));
         return renderer.renderRelation(relation, fromName, toName, config.showLabels(),
                 config.showMultiplicities());
     }

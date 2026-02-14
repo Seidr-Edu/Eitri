@@ -150,12 +150,12 @@ public class JavaSourceParser implements SourceParser {
             try {
                 typeSolver.add(new JarTypeSolver(jarPath.toString()));
                 addedJarSolvers++;
-            } catch (Exception | LinkageError e) {
+            } catch (Exception | LinkageError _) {
                 // Some jars in local caches are valid artifacts but still fail to load in
                 // JavaParser/Javassist (module-info edge-cases, bytecode quirks, etc.).
                 // We intentionally skip those jars to keep parsing best effort instead of
                 // aborting the whole run.
-                LOGGER.log(Level.FINE, "Failed to add jar type solver for: {0}", jarPath);
+                LOGGER.log(Level.WARNING, "Failed to add jar type solver for: {0}", jarPath);
             }
         }
 
@@ -292,8 +292,8 @@ public class JavaSourceParser implements SourceParser {
                     return FileVisitResult.CONTINUE;
                 }
             });
-        } catch (IOException e) {
-            LOGGER.log(Level.FINE, "Failed to scan Gradle build files under: {0}", moduleRoot);
+        } catch (IOException _) {
+            LOGGER.log(Level.WARNING, "Failed to scan Gradle build files under: {0}", moduleRoot);
         }
 
         return buildFiles;
@@ -335,8 +335,8 @@ public class JavaSourceParser implements SourceParser {
                     coordinates.add(matcher.group(1));
                 }
             }
-        } catch (IOException e) {
-            LOGGER.log(Level.FINE, "Failed to read build file: {0}", buildFile);
+        } catch (IOException _) {
+            LOGGER.log(Level.WARNING, "Failed to read build file: {0}", buildFile);
         }
         return coordinates;
     }
@@ -382,8 +382,8 @@ public class JavaSourceParser implements SourceParser {
                     pluginIds.add(matcher.group(1));
                 }
             }
-        } catch (IOException e) {
-            LOGGER.log(Level.FINE, "Failed to parse plugin IDs from build file: {0}", buildFile);
+        } catch (IOException _) {
+            LOGGER.log(Level.WARNING, "Failed to parse plugin IDs from build file: {0}", buildFile);
         }
         return pluginIds;
     }
@@ -427,7 +427,8 @@ public class JavaSourceParser implements SourceParser {
             collectJarFilesFromDirectory(artifactDir, jars, 3);
             // Include sibling artifacts in the same group/version because some ecosystems
             // split APIs and implementations (for example directories-jni + directories).
-            // Resolving only the direct artifact can leave otherwise importable types missing.
+            // Resolving only the direct artifact can leave otherwise importable types
+            // missing.
             collectGroupVersionJarFiles(gradleCacheRoot, group, version, jars);
         }
         return jars;
@@ -445,8 +446,8 @@ public class JavaSourceParser implements SourceParser {
                     .map(artifactDir -> artifactDir.resolve(version))
                     .filter(Files::isDirectory)
                     .forEach(versionDir -> collectJarFilesFromDirectory(versionDir, jars, 3));
-        } catch (IOException e) {
-            LOGGER.log(Level.FINE, "Failed to scan Gradle group directory: {0}", groupDir);
+        } catch (IOException _) {
+            LOGGER.log(Level.WARNING, "Failed to scan Gradle group directory: {0}", groupDir);
         }
     }
 
@@ -459,14 +460,15 @@ public class JavaSourceParser implements SourceParser {
                     .filter(path -> path.toString().endsWith(JAR_EXTENSION))
                     .filter(JavaSourceParser::isBinaryJar)
                     .forEach(path -> target.add(path.toAbsolutePath().normalize()));
-        } catch (IOException e) {
-            LOGGER.log(Level.FINE, "Failed to scan jar directory: {0}", dir);
+        } catch (IOException _) {
+            LOGGER.log(Level.WARNING, "Failed to scan jar directory: {0}", dir);
         }
     }
 
     private static boolean isBinaryJar(Path jarPath) {
         String fileName = jarPath.getFileName() == null ? "" : jarPath.getFileName().toString();
-        // Source/javadoc jars are intentionally excluded: they do not provide bytecode for
+        // Source/javadoc jars are intentionally excluded: they do not provide bytecode
+        // for
         // symbol solving and can trigger avoidable loader failures.
         return !fileName.endsWith("-sources.jar")
                 && !fileName.endsWith("-javadoc.jar");
@@ -572,8 +574,8 @@ public class JavaSourceParser implements SourceParser {
                     moduleIds.add(matcher.group(1));
                 }
             }
-        } catch (IOException e) {
-            LOGGER.log(Level.FINE, "Failed to read settings file: {0}", settingsFile);
+        } catch (IOException _) {
+            LOGGER.log(Level.WARNING, "Failed to read settings file: {0}", settingsFile);
         }
         return moduleIds;
     }
@@ -594,7 +596,8 @@ public class JavaSourceParser implements SourceParser {
                 context.addWarning("Failed to parse file: " + javaFile + " - " + e.getMessage());
                 failed++;
             } catch (Exception e) {
-                LOGGER.info(() -> "Unexpected error parsing " + javaFile + " - " + e.getMessage());
+                LOGGER.log(Level.WARNING, "Unexpected error parsing {0} - {1}",
+                        new Object[] { javaFile, e.getMessage() });
                 context.addWarning("Unexpected error parsing: " + javaFile + " - " + e.getMessage());
                 failed++;
             }

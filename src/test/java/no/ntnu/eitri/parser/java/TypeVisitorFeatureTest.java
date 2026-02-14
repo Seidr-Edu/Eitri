@@ -104,8 +104,8 @@ class TypeVisitorFeatureTest {
         CompilationUnit cu = parser.parse(source).getResult().orElseThrow();
         cu.accept(new TypeVisitor(context), null);
 
-        UmlType record = context.build().getType("com.example.Point").orElseThrow();
-        assertEquals(TypeKind.RECORD, record.getKind());
-        assertTrue(record.getStereotypes().stream().anyMatch(s -> "record".equals(s.name())));
+        UmlType recordType = context.build().getType("com.example.Point").orElseThrow();
+        assertEquals(TypeKind.RECORD, recordType.getKind());
+        assertTrue(recordType.getStereotypes().stream().anyMatch(s -> "record".equals(s.name())));
     }
 }
