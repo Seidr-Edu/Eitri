@@ -127,6 +127,11 @@ public final class TypeReferenceResolver {
             return new NormalizationResult(null, SkipReason.PRIMITIVE);
         }
 
+        // Reject obvious "multiple types in one token" forms after normalization.
+        if (base.indexOf(',') >= 0 || base.indexOf(' ') >= 0) {
+            return new NormalizationResult(null, SkipReason.NON_FQN);
+        }
+
         return new NormalizationResult(base, null);
     }
 
@@ -144,11 +149,6 @@ public final class TypeReferenceResolver {
      * where the first dot-separated segment starts with an uppercase letter.
      */
     private boolean isFullyQualifiedTypeName(String type) {
-        if (type.indexOf(',') >= 0 || type.indexOf(' ') >= 0) {
-            // Defensively reject concatenated type fragments (e.g. broken generic splits)
-            // so they do not appear as synthetic FQNs in relation endpoints.
-            return false;
-        }
         int firstDot = type.indexOf('.');
         if (firstDot < 0) {
             return false;
@@ -162,13 +162,15 @@ public final class TypeReferenceResolver {
             case NULL_OR_EMPTY -> skippedNullOrEmpty++;
             case WILDCARD -> skippedWildcard++;
             case PRIMITIVE -> skippedPrimitive++;
+            case NON_FQN -> skippedNonFqn++;
         }
     }
 
     private enum SkipReason {
         NULL_OR_EMPTY,
         WILDCARD,
-        PRIMITIVE
+        PRIMITIVE,
+        NON_FQN
     }
 
     private record NormalizationResult(String normalized, SkipReason skipReason) {
