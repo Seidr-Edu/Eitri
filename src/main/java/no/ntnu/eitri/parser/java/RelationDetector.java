@@ -171,8 +171,7 @@ public class RelationDetector {
 
         if (ownerType != null
                 && ownerType.getKind() == TypeKind.CLASS
-                && targetType != null
-                && targetType.getKind() == TypeKind.ENUM) {
+                && isEnumTypeReference(resolvedType, targetType)) {
             return RelationKind.ASSOCIATION;
         }
 
@@ -182,6 +181,19 @@ public class RelationDetector {
         }
         // Non-final fields suggest weaker association
         return RelationKind.ASSOCIATION;
+    }
+
+    private boolean isEnumTypeReference(String resolvedType, UmlType targetType) {
+        if (targetType != null) {
+            return targetType.getKind() == TypeKind.ENUM;
+        }
+
+        try {
+            Class<?> type = Class.forName(resolvedType, false, Thread.currentThread().getContextClassLoader());
+            return type.isEnum();
+        } catch (ClassNotFoundException | LinkageError _) {
+            return false;
+        }
     }
 
     /**

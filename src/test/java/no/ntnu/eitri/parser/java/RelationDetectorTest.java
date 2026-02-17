@@ -271,6 +271,27 @@ class RelationDetectorTest {
     }
 
     @Test
+    void classFieldOfExternalEnumTypeCreatesAssociationWhenEnumIsLoadable() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Schedule")
+                .simpleName("Schedule")
+                .kind(TypeKind.CLASS)
+                .addField(UmlField.builder().name("day").type("java.time.DayOfWeek").isFinal(true).build())
+                .build();
+        context.addType(owner);
+        // java.time.DayOfWeek is not registered in the parse context.
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(1, model.getRelations().size());
+        assertEquals(RelationKind.ASSOCIATION, model.getRelations().getFirst().getKind());
+        assertEquals("java.time.DayOfWeek", model.getRelations().getFirst().getToTypeFqn());
+        assertEquals("1", model.getRelations().getFirst().getToMultiplicity());
+    }
+
+    @Test
     void staticSelfTypeFieldDoesNotCreateRelation() {
         ParseContext context = new ParseContext(false);
         UmlType owner = UmlType.builder()
