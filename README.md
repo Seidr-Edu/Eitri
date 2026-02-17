@@ -191,6 +191,10 @@ Open `.puml` files with:
 - **Command line**: `java -jar plantuml.jar diagram.puml` (generates PNG/SVG)
 - **Online**: [PlantUML Web Server](http://www.plantuml.com/plantuml)
 
+## Known Limitations
+
+- The Java parser intentionally skips directory trees named `test` and `tests` while scanning sources. This is a convention-based heuristic to avoid test code in diagrams, but it can also skip production code if a project uses those names for non-test source directories.
+
 ## License
 
 MIT

@@ -98,14 +98,39 @@ class JavaSourceParserBehaviorTest {
     void isTestDirectoryMatchesSrcTest() {
         assertTrue(JavaSourceParser.isTestDirectory(Path.of("/project/src/test")));
         assertTrue(JavaSourceParser.isTestDirectory(Path.of("src/test")));
+        assertTrue(JavaSourceParser.isTestDirectory(Path.of("/project/test")));
+        assertTrue(JavaSourceParser.isTestDirectory(Path.of("/project/tests")));
+        assertTrue(JavaSourceParser.isTestDirectory(Path.of("test")));
     }
 
     @Test
     void isTestDirectoryRejectsNonTestPaths() {
         assertFalse(JavaSourceParser.isTestDirectory(Path.of("/project/src/main")));
-        assertFalse(JavaSourceParser.isTestDirectory(Path.of("/project/test")));
         assertFalse(JavaSourceParser.isTestDirectory(Path.of("/project/src/test/java")));
-        assertFalse(JavaSourceParser.isTestDirectory(Path.of("test")));
+        assertFalse(JavaSourceParser.isTestDirectory(Path.of("/project/src/contest")));
+    }
+
+    @Test
+    void skipsTopLevelTestAndTestsDirectories() throws Exception {
+        Path mainSrc = tempDir.resolve("src/main/java");
+        Path topLevelTest = tempDir.resolve("test/unit");
+        Path topLevelTests = tempDir.resolve("tests/integration");
+        Files.createDirectories(mainSrc);
+        Files.createDirectories(topLevelTest);
+        Files.createDirectories(topLevelTests);
+
+        Files.writeString(mainSrc.resolve("Main.java"), "package com.example; public class Main {}");
+        Files.writeString(topLevelTest.resolve("UnitOnly.java"), "package com.example; public class UnitOnly {}");
+        Files.writeString(topLevelTests.resolve("IntegrationOnly.java"),
+                "package com.example; public class IntegrationOnly {}");
+
+        JavaSourceParser parser = new JavaSourceParser();
+        RunConfig runConfig = new RunConfig(List.of(tempDir), tempDir.resolve("out.puml"), null, null, false, false);
+        UmlModel model = parser.parse(List.of(tempDir), runConfig);
+
+        assertTrue(model.hasType("com.example.Main"));
+        assertFalse(model.hasType("com.example.UnitOnly"));
+        assertFalse(model.hasType("com.example.IntegrationOnly"));
     }
 
     @Test

@@ -657,17 +657,17 @@ public class JavaSourceParser implements SourceParser {
 
     /**
      * Returns {@code true} if the directory is a test source root.
-     * Matches directories named {@code test} directly under a {@code src} parent,
-     * following the standard Maven/Gradle {@code src/test/java} convention.
+     * Matches directories named {@code test} or {@code tests}, including
+     * layouts like {@code src/test/java}, {@code test/unit}, and top-level
+     * {@code test} trees used by some projects.
      */
     static boolean isTestDirectory(Path dir) {
         Path name = dir.getFileName();
-        Path parent = dir.getParent();
-        return name != null
-                && parent != null
-                && name.toString().equals("test")
-                && parent.getFileName() != null
-                && parent.getFileName().toString().equals("src");
+        if (name == null) {
+            return false;
+        }
+        String dirName = name.toString();
+        return "test".equals(dirName) || "tests".equals(dirName);
     }
 
     private void logTypeResolutionStats(TypeResolutionStats stats) {
