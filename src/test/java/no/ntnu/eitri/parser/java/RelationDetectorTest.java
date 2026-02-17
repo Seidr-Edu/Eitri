@@ -127,6 +127,29 @@ class RelationDetectorTest {
     }
 
     @Test
+    void methodDependenciesSplitNestedGenericArgumentsAtTopLevelOnly() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addMethod(UmlMethod.builder()
+                        .name("convert")
+                        .returnType("java.util.Map<com.example.Pair<com.example.A, com.example.B>, com.example.Value>")
+                        .build())
+                .build();
+        context.addType(owner);
+        context.addType(UmlType.builder().fqn("com.example.Pair").simpleName("Pair").build());
+        context.addType(UmlType.builder().fqn("com.example.Value").simpleName("Value").build());
+
+        new RelationDetector(context).detectMethodDependencies(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertTrue(model.getRelations().stream().anyMatch(r -> "com.example.Pair".equals(r.getToTypeFqn())));
+        assertTrue(model.getRelations().stream().anyMatch(r -> "com.example.Value".equals(r.getToTypeFqn())));
+        assertTrue(model.getRelations().stream().noneMatch(r -> r.getToTypeFqn().endsWith(">")));
+    }
+
+    @Test
     void fieldRelationToExternalTypeIsCreated() {
         ParseContext context = new ParseContext(false);
         UmlType owner = UmlType.builder()
@@ -183,6 +206,29 @@ class RelationDetectorTest {
         assertTrue(model.getRelations().stream().allMatch(r -> r.getKind() == RelationKind.AGGREGATION));
         assertTrue(model.getRelations().stream().anyMatch(r -> "com.example.Key".equals(r.getToTypeFqn())));
         assertTrue(model.getRelations().stream().anyMatch(r -> "com.example.Value".equals(r.getToTypeFqn())));
+    }
+
+    @Test
+    void mapFieldWithNestedGenericTypeArgumentsSplitsOnlyAtTopLevelCommas() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addField(UmlField.builder().name("lookup")
+                        .type("java.util.Map<com.example.Pair<com.example.A, com.example.B>, com.example.Value>")
+                        .build())
+                .build();
+        context.addType(owner);
+        context.addType(UmlType.builder().fqn("com.example.Pair").simpleName("Pair").build());
+        context.addType(UmlType.builder().fqn("com.example.Value").simpleName("Value").build());
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(2, model.getRelations().size());
+        assertTrue(model.getRelations().stream().anyMatch(r -> "com.example.Pair".equals(r.getToTypeFqn())));
+        assertTrue(model.getRelations().stream().anyMatch(r -> "com.example.Value".equals(r.getToTypeFqn())));
+        assertTrue(model.getRelations().stream().noneMatch(r -> r.getToTypeFqn().endsWith(">")));
     }
 
     @Test

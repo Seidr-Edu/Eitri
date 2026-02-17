@@ -10,9 +10,9 @@ import no.ntnu.eitri.model.UmlType;
 import no.ntnu.eitri.parser.ParseContext;
 
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Detects relationships between types based on their members.
@@ -36,9 +36,6 @@ import java.util.regex.Pattern;
 public class RelationDetector {
 
     private final ParseContext context;
-
-    /** Pattern to extract generic type arguments like List<String> → String */
-    private static final Pattern GENERIC_PATTERN = Pattern.compile("<([^<>]+)>");
 
     /** Collection type names that indicate aggregation */
     private static final Set<String> COLLECTION_TYPES = Set.of(
@@ -115,11 +112,10 @@ public class RelationDetector {
         if (genericContent == null) {
             return;
         }
-        // Map-like declarations contain multiple type arguments. Splitting here
-        // avoids emitting invalid combined targets such as "java.lang.String,
-        // java.lang.String" as a single relation endpoint.
-        for (String elementType : genericContent.split(",")) {
-            addFieldRelationIfValid(ownerFqn, field, elementType.trim(), RelationKind.AGGREGATION, "*");
+        // Map-like declarations contain multiple type arguments. Split only at
+        // top-level commas so nested generic commas are preserved.
+        for (String elementType : splitTopLevelTypeArguments(genericContent)) {
+            addFieldRelationIfValid(ownerFqn, field, elementType, RelationKind.AGGREGATION, "*");
         }
     }
 
@@ -255,13 +251,50 @@ public class RelationDetector {
             String genericArg = extractGenericArgument(baseType);
             if (genericArg != null) {
                 // Handle multiple generic arguments (e.g., Map<K, V>)
-                for (String arg : genericArg.split(",")) {
-                    dependencies.add(arg.trim());
+                for (String arg : splitTopLevelTypeArguments(genericArg)) {
+                    dependencies.add(arg);
                 }
             }
         } else {
             dependencies.add(baseType);
         }
+    }
+
+    private List<String> splitTopLevelTypeArguments(String genericContent) {
+        List<String> args = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int depth = 0;
+
+        for (int i = 0; i < genericContent.length(); i++) {
+            char c = genericContent.charAt(i);
+            if (c == '<') {
+                depth++;
+                current.append(c);
+                continue;
+            }
+            if (c == '>') {
+                if (depth > 0) {
+                    depth--;
+                }
+                current.append(c);
+                continue;
+            }
+            if (c == ',' && depth == 0) {
+                String token = current.toString().trim();
+                if (!token.isEmpty()) {
+                    args.add(token);
+                }
+                current.setLength(0);
+                continue;
+            }
+            current.append(c);
+        }
+
+        String token = current.toString().trim();
+        if (!token.isEmpty()) {
+            args.add(token);
+        }
+        return args;
     }
 
     /**
@@ -286,14 +319,30 @@ public class RelationDetector {
     }
 
     /**
-     * Extracts the first generic type argument from a parameterized type.
-     * e.g., "List<String>" → "String", "Map<String, Integer>" → "String, Integer"
+     * Extracts top-level generic content from a parameterized type.
+     * e.g., "List<String>" -> "String",
+     * "Map<String, Integer>" -> "String, Integer",
+     * "Map<Pair<A,B>, Value>" -> "Pair<A,B>, Value"
      */
     private String extractGenericArgument(String type) {
-        Matcher matcher = GENERIC_PATTERN.matcher(type);
-        if (matcher.find()) {
-            return matcher.group(1);
+        int start = type.indexOf('<');
+        if (start < 0) {
+            return null;
         }
+
+        int depth = 0;
+        for (int i = start; i < type.length(); i++) {
+            char c = type.charAt(i);
+            if (c == '<') {
+                depth++;
+            } else if (c == '>') {
+                depth--;
+                if (depth == 0) {
+                    return type.substring(start + 1, i).trim();
+                }
+            }
+        }
+
         return null;
     }
 }
