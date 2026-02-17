@@ -27,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -125,7 +126,26 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
 
     private void renderTypes(UmlModel model, PlantUmlConfig config, RenderContext context, StringBuilder sb) {
         renderTypesGroupedByPackage(model, config, context, sb);
+        renderExternalTypes(model, config, context, sb);
         sb.append("\n");
+    }
+
+    private void renderExternalTypes(UmlModel model, PlantUmlConfig config, RenderContext context, StringBuilder sb) {
+        Set<String> externalTypeFqns = new TreeSet<>();
+        for (UmlRelation relation : model.getRelationsSorted()) {
+            if (!shouldRenderRelation(relation, config, context)) {
+                continue;
+            }
+            String toFqn = relation.getToTypeFqn();
+            if (!context.typesByFqn().containsKey(toFqn)) {
+                externalTypeFqns.add(toFqn);
+            }
+        }
+
+        for (String fqn : externalTypeFqns) {
+            String displayName = renderer.displayNameForFqn(fqn);
+            sb.append("class ").append(displayName).append(" <<external>>\n");
+        }
     }
 
     private void renderRelations(UmlModel model, PlantUmlConfig config, RenderContext context, StringBuilder sb) {
