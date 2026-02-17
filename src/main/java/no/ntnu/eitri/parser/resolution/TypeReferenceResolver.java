@@ -144,17 +144,41 @@ public final class TypeReferenceResolver {
 
     /**
      * Validates that a type name is a proper fully-qualified Java type name.
-     * Requires at least one leading lowercase package segment before an uppercase type segment.
-     * Rejects inner-class-style names like {@code JCommander.Builder} or {@code LogHelper.LogLevelEnum}
-     * where the first dot-separated segment starts with an uppercase letter.
+     * Allows uppercase package segments, but still requires at least one
+     * package-like (lowercase-leading) segment before the terminal type segment.
+     * This keeps names like {@code Acme.tools.Service} valid while rejecting
+     * likely no-package inner-class-style names like {@code JCommander.Builder}.
      */
     private boolean isFullyQualifiedTypeName(String type) {
-        int firstDot = type.indexOf('.');
-        if (firstDot < 0) {
+        String[] segments = type.split("\\.");
+        if (segments.length < 2) {
             return false;
         }
-        String firstSegment = type.substring(0, firstDot);
-        return !firstSegment.isEmpty() && Character.isLowerCase(firstSegment.charAt(0));
+
+        boolean hasLowercaseLeadingPackageSegment = false;
+        for (int i = 0; i < segments.length; i++) {
+            String segment = segments[i];
+            if (segment.isEmpty() || !isJavaIdentifier(segment)) {
+                return false;
+            }
+            if (i < segments.length - 1 && Character.isLowerCase(segment.charAt(0))) {
+                hasLowercaseLeadingPackageSegment = true;
+            }
+        }
+
+        return hasLowercaseLeadingPackageSegment;
+    }
+
+    private boolean isJavaIdentifier(String segment) {
+        if (!Character.isJavaIdentifierStart(segment.charAt(0))) {
+            return false;
+        }
+        for (int i = 1; i < segment.length(); i++) {
+            if (!Character.isJavaIdentifierPart(segment.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void incrementSkipCounter(SkipReason reason) {

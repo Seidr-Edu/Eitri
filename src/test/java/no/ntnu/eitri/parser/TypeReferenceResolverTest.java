@@ -76,6 +76,15 @@ class TypeReferenceResolverTest {
     }
 
     @Test
+    void resolveTypeReferenceAcceptsUppercaseFirstPackageSegmentWhenPackageHasLowercaseSegment() {
+        TypeRegistry registry = new TypeRegistry();
+        registry.addType(UmlType.builder().fqn("Acme.tools.Service").simpleName("Service").build());
+        TypeReferenceResolver resolver = new TypeReferenceResolver(registry);
+
+        assertEquals("Acme.tools.Service", resolver.resolveTypeReference("Acme.tools.Service"));
+    }
+
+    @Test
     void resolveTypeReferenceTracksSkippedUnknownFqnStats() {
         TypeRegistry registry = new TypeRegistry();
         registry.addType(UmlType.builder().fqn("com.example.Known").simpleName("Known").build());
@@ -98,6 +107,7 @@ class TypeReferenceResolverTest {
         assertEquals("com.example.Unknown", resolver.normalizeToValidFqn("com.example.Unknown"));
         assertEquals("java.util.List", resolver.normalizeToValidFqn("java.util.List<com.example.Foo>"));
         assertEquals("com.example.Order", resolver.normalizeToValidFqn(" com.example.Order[] "));
+        assertEquals("Acme.tools.Outer.Inner", resolver.normalizeToValidFqn("Acme.tools.Outer.Inner"));
     }
 
     @Test
