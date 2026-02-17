@@ -194,6 +194,7 @@ Open `.puml` files with:
 ## Known Limitations
 
 - The Java parser intentionally skips directory trees named `test` and `tests` while scanning sources. This is a convention-based heuristic to avoid test code in diagrams, but it can also skip production code if a project uses those names for non-test source directories.
+- Symbol solving is best-effort. During parsing, JavaParser may log warnings like `Failed to add jar type solver for ...` for some classpath/dependency jars (for example certain test/runtime artifacts). These warnings do not fail the run; unsupported jars are skipped and parsing continues.
 
 ## License
 

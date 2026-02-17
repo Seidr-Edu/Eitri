@@ -137,8 +137,15 @@ public class JavaSourceParser implements SourceParser {
         }
 
         Set<Path> jarPaths = new LinkedHashSet<>();
+        Path currentAppJar = currentApplicationJar();
         for (Path classpathEntry : detectClasspathEntries()) {
             if (Files.isRegularFile(classpathEntry) && classpathEntry.toString().endsWith(JAR_EXTENSION)) {
+                if (currentAppJar != null && currentAppJar.equals(classpathEntry.toAbsolutePath().normalize())) {
+                    // Running from a fat jar puts the tool itself on java.class.path.
+                    // That jar often cannot be consumed by JarTypeSolver and is not a
+                    // domain dependency of the parsed project.
+                    continue;
+                }
                 jarPaths.add(classpathEntry);
             }
         }
@@ -168,6 +175,22 @@ public class JavaSourceParser implements SourceParser {
                 .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_25);
 
         StaticJavaParser.setConfiguration(parserConfig);
+    }
+
+    private static Path currentApplicationJar() {
+        try {
+            var codeSource = JavaSourceParser.class.getProtectionDomain().getCodeSource();
+            if (codeSource == null || codeSource.getLocation() == null) {
+                return null;
+            }
+            Path location = Path.of(codeSource.getLocation().toURI()).toAbsolutePath().normalize();
+            if (Files.isRegularFile(location) && location.toString().endsWith(JAR_EXTENSION)) {
+                return location;
+            }
+        } catch (Exception _) {
+            // Best effort only. If we cannot resolve it, keep existing behavior.
+        }
+        return null;
     }
 
     static Set<Path> detectClasspathEntries() {
