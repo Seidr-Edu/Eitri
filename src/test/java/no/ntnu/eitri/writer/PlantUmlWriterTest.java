@@ -391,6 +391,7 @@ class PlantUmlWriterTest {
                 String output = new PlantUmlWriter().render(model, config);
 
                 assertTrue(output.contains("no.ntnu.eitri.parser.Source ..> org.external.Library"));
+                assertTrue(output.contains("class org.external.Library <<external>>"));
         }
 
         @Test
@@ -411,6 +412,7 @@ class PlantUmlWriterTest {
 
                 assertTrue(output.contains("example.cli.JadxCLIArgs -- example.api.JadxArgs$RenameEnum"));
                 assertFalse(output.contains("example.cli.JadxCLIArgs -- example.api.JadxArgs.RenameEnum"));
+                assertTrue(output.contains("class example.api.JadxArgs$RenameEnum <<external>>"));
         }
 
         @Test
@@ -448,6 +450,7 @@ class PlantUmlWriterTest {
                 String output = new PlantUmlWriter().render(model, config);
 
                 assertFalse(output.contains("org.external.Library"));
+                assertFalse(output.contains("<<external>>"));
         }
 
         @Test
