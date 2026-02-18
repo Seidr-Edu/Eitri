@@ -212,6 +212,17 @@ class JavaSourceParserBehaviorTest {
     }
 
     @Test
+    void detectGradleSiblingSourceRootsReturnsEmptyWhenSettingsFileMissing() throws Exception {
+        Path repoRoot = tempDir.resolve("repo-no-settings");
+        Path module = repoRoot.resolve("mod");
+        Files.createDirectories(module.resolve("src/main/java"));
+
+        Set<Path> roots = JavaSourceParser.detectGradleSiblingSourceRoots(module);
+
+        assertTrue(roots.isEmpty());
+    }
+
+    @Test
     void detectClasspathEntriesParsesJavaClasspathAndEnvClasspath() throws Exception {
         Path jar1 = tempDir.resolve("a.jar");
         Path jar2 = tempDir.resolve("b.jar");
@@ -238,6 +249,19 @@ class JavaSourceParserBehaviorTest {
         Set<Path> entries = JavaSourceParser.detectClasspathEntries(javaClasspath, null);
 
         assertTrue(entries.contains(libJar.toAbsolutePath().normalize()));
+    }
+
+    @Test
+    void detectClasspathEntriesSkipsBlankAndMissingEntries() throws Exception {
+        Path presentJar = tempDir.resolve("present.jar");
+        Files.writeString(presentJar, "");
+
+        String classpath = "   " + File.pathSeparator + tempDir.resolve("missing.jar")
+                + File.pathSeparator + presentJar;
+        Set<Path> entries = JavaSourceParser.detectClasspathEntries(classpath, null);
+
+        assertEquals(1, entries.size());
+        assertTrue(entries.contains(presentJar.toAbsolutePath().normalize()));
     }
 
     @Test

@@ -357,4 +357,76 @@ class RelationDetectorTest {
 
         assertEquals(0, model.getRelations().size());
     }
+
+    @Test
+    void collectionFieldWithoutGenericArgumentProducesNoRelation() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addField(UmlField.builder().name("items").type("java.util.List").build())
+                .build();
+        context.addType(owner);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(0, model.getRelations().size());
+    }
+
+    @Test
+    void collectionFieldWithTypeVariableArgumentProducesNoRelation() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addField(UmlField.builder().name("items").type("java.util.List<T>").build())
+                .build();
+        context.addType(owner);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(0, model.getRelations().size());
+    }
+
+    @Test
+    void malformedCollectionGenericProducesNoRelation() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.Owner")
+                .simpleName("Owner")
+                .addField(UmlField.builder().name("items").type("java.util.List<com.example.Item").build())
+                .build();
+        context.addType(owner);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(0, model.getRelations().size());
+    }
+
+    @Test
+    void interfaceOwnerWithFinalEnumFieldStillCreatesComposition() {
+        ParseContext context = new ParseContext(false);
+        UmlType owner = UmlType.builder()
+                .fqn("com.example.View")
+                .simpleName("View")
+                .kind(TypeKind.INTERFACE)
+                .addField(UmlField.builder().name("mode").type("com.example.Mode").isFinal(true).build())
+                .build();
+        UmlType enumType = UmlType.builder()
+                .fqn("com.example.Mode")
+                .simpleName("Mode")
+                .kind(TypeKind.ENUM)
+                .build();
+        context.addType(owner);
+        context.addType(enumType);
+
+        new RelationDetector(context).detectFieldRelations(owner.getFqn(), owner);
+        UmlModel model = context.build();
+
+        assertEquals(1, model.getRelations().size());
+        assertEquals(RelationKind.COMPOSITION, model.getRelations().getFirst().getKind());
+    }
 }
