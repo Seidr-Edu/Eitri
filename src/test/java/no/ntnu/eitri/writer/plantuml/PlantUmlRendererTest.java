@@ -43,7 +43,7 @@ class PlantUmlRendererTest {
                     .visibility(Visibility.PUBLIC)
                     .build();
 
-            assertEquals("+class com.example.Customer", renderer.renderTypeDeclaration(type));
+            assertEquals("+class com.example.Customer", renderer.renderTypeDeclaration(type, true));
         }
 
         @Test
@@ -63,8 +63,8 @@ class PlantUmlRendererTest {
                     .visibility(Visibility.PUBLIC)
                     .build();
 
-            assertEquals("+interface com.example.Repository", renderer.renderTypeDeclaration(iface));
-            assertEquals("+abstract class com.example.BaseEntity", renderer.renderTypeDeclaration(abs));
+            assertEquals("+interface com.example.Repository", renderer.renderTypeDeclaration(iface, true));
+            assertEquals("+abstract class com.example.BaseEntity", renderer.renderTypeDeclaration(abs, true));
         }
 
         @Test
@@ -91,9 +91,9 @@ class PlantUmlRendererTest {
                     .visibility(Visibility.PUBLIC)
                     .build();
 
-            assertEquals("+enum com.example.Status", renderer.renderTypeDeclaration(enumType));
-            assertEquals("+annotation com.example.Entity", renderer.renderTypeDeclaration(annotation));
-            assertEquals("+class com.example.Point", renderer.renderTypeDeclaration(recordType));
+            assertEquals("+enum com.example.Status", renderer.renderTypeDeclaration(enumType, true));
+            assertEquals("+annotation com.example.Entity", renderer.renderTypeDeclaration(annotation, true));
+            assertEquals("+class com.example.Point", renderer.renderTypeDeclaration(recordType, true));
         }
 
         @Test
@@ -131,10 +131,24 @@ class PlantUmlRendererTest {
                     .addStereotype(new UmlStereotype("Aggregate", 'A', "#FF0000"))
                     .build();
 
-            assertEquals("+interface com.example.Repository<T>", renderer.renderTypeDeclaration(generic));
-            assertEquals("+interface com.example.Comparable<T extends Number>", renderer.renderTypeDeclaration(bounded));
-            assertEquals("+class com.example.Customer <<Entity>>", renderer.renderTypeDeclaration(stereotype));
-            assertEquals("+class com.example.Order << (A,#FF0000) Aggregate >>", renderer.renderTypeDeclaration(spot));
+            assertEquals("+interface com.example.Repository<T>", renderer.renderTypeDeclaration(generic, true));
+            assertEquals("+interface com.example.Comparable<T extends Number>", renderer.renderTypeDeclaration(bounded, true));
+            assertEquals("+class com.example.Customer <<Entity>>", renderer.renderTypeDeclaration(stereotype, true));
+            assertEquals("+class com.example.Order << (A,#FF0000) Aggregate >>", renderer.renderTypeDeclaration(spot, true));
+        }
+
+        @Test
+        @DisplayName("Type generic bounds hidden when disabled")
+        void typeGenericBoundsHiddenWhenDisabled() {
+            UmlType type = UmlType.builder()
+                    .fqn("com.example.Repository")
+                    .simpleName("Repository")
+                    .kind(TypeKind.INTERFACE)
+                    .visibility(Visibility.PUBLIC)
+                    .addGeneric(new UmlGeneric("T", "extends Number"))
+                    .build();
+
+            assertEquals("+interface com.example.Repository", renderer.renderTypeDeclaration(type, false));
         }
 
         @Test
@@ -151,7 +165,7 @@ class PlantUmlRendererTest {
                     .build();
 
             assertEquals("+class \"Order Service\" as com.example.OrderService $core #lightblue",
-                    renderer.renderTypeDeclaration(type));
+                    renderer.renderTypeDeclaration(type, true));
         }
     }
 
@@ -384,7 +398,7 @@ class PlantUmlRendererTest {
                 .visibility(Visibility.PUBLIC)
                 .build();
 
-        String rendered = renderer.renderTypeDeclaration(type);
+        String rendered = renderer.renderTypeDeclaration(type, true);
 
         assertTrue(rendered.contains("MyClass"), "Should contain simple name");
         assertFalse(rendered.contains("$"), "Should not contain $ for top-level type");
@@ -401,7 +415,7 @@ class PlantUmlRendererTest {
                 .outerTypeFqn("com.example.Outer")
                 .build();
 
-        String rendered = renderer.renderTypeDeclaration(type);
+        String rendered = renderer.renderTypeDeclaration(type, true);
 
         assertTrue(rendered.contains("Outer$Inner"), 
                 "Should render nested type with $ format. Got: " + rendered);
@@ -418,7 +432,7 @@ class PlantUmlRendererTest {
                 .outerTypeFqn("com.example.A.B")
                 .build();
 
-        String rendered = renderer.renderTypeDeclaration(type);
+        String rendered = renderer.renderTypeDeclaration(type, true);
 
         assertTrue(rendered.contains("A$B$C"), 
                 "Should render deeply nested type with $ format. Got: " + rendered);
@@ -436,7 +450,7 @@ class PlantUmlRendererTest {
                 .outerTypeFqn("com.example.Outer")
                 .build();
 
-        String rendered = renderer.renderTypeDeclaration(type);
+        String rendered = renderer.renderTypeDeclaration(type, true);
 
         assertTrue(rendered.contains("\"CustomAlias\""), 
                 "Should contain quoted alias");

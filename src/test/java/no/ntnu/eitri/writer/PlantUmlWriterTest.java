@@ -124,6 +124,28 @@ class PlantUmlWriterTest {
         }
 
         @Test
+        void typeGenericBoundsAreShownOnlyWhenShowGenericsEnabled() {
+                UmlType type = UmlType.builder()
+                                .fqn("com.example.Repository")
+                                .simpleName("Repository")
+                                .kind(TypeKind.INTERFACE)
+                                .visibility(Visibility.PUBLIC)
+                                .addGeneric(new UmlGeneric("T", "extends Number"))
+                                .build();
+
+                UmlModel model = UmlModel.builder()
+                                .addType(type)
+                                .build();
+
+                PlantUmlWriter writer = new PlantUmlWriter();
+                String withoutGenerics = writer.render(model, config("showGenerics", false));
+                String withGenerics = writer.render(model, config("showGenerics", true));
+
+                assertFalse(withoutGenerics.contains("Repository<T extends Number>"));
+                assertTrue(withGenerics.contains("+interface com.example.Repository<T extends Number>"));
+        }
+
+        @Test
         void includesNestedRelationsWhenEnabled() {
                 UmlType outer = UmlType.builder()
                                 .fqn("com.example.Outer")
