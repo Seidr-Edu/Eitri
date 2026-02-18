@@ -63,7 +63,7 @@ public final class PlantUmlRenderer {
         return displayNameForFqn(type.getFqn());
     }
 
-    public String renderTypeDeclaration(UmlType type) {
+    public String renderTypeDeclaration(UmlType type, boolean showGenerics) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(visibilitySymbol(type.getVisibility()));
@@ -77,7 +77,7 @@ public final class PlantUmlRenderer {
             sb.append(displayNameForType(type));
         }
 
-        if (!type.getGenerics().isEmpty()) {
+        if (showGenerics && !type.getGenerics().isEmpty()) {
             String genericStr = type.getGenerics().stream()
                     .map(this::renderGeneric)
                     .collect(Collectors.joining(", "));

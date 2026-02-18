@@ -205,9 +205,6 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
                                                                                             // default
             sb.append("skinparam classAttributeIconSize ").append(config.classAttributeIconSize()).append("\n");
         }
-        if (config.showGenerics()) {
-            sb.append("skinparam genericDisplay old\n");
-        }
         sb.append("\n");
     }
 
@@ -402,7 +399,7 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
      */
     private void renderType(UmlType type, PlantUmlConfig config, StringBuilder sb) {
         // Type declaration line
-        sb.append(renderer.renderTypeDeclaration(type));
+        sb.append(renderer.renderTypeDeclaration(type, config.showGenerics()));
         sb.append(" {\n");
 
         // Fields
