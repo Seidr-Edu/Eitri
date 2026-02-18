@@ -125,7 +125,9 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
     }
 
     private void renderTypes(UmlModel model, PlantUmlConfig config, RenderContext context, StringBuilder sb) {
+        sb.append("' Types\n");
         renderTypesGroupedByPackage(model, config, context, sb);
+        sb.append("\n' External Types\n");
         renderExternalTypes(model, config, context, sb);
         sb.append("\n");
     }
@@ -149,6 +151,7 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
     }
 
     private void renderRelations(UmlModel model, PlantUmlConfig config, RenderContext context, StringBuilder sb) {
+        sb.append("' Relations\n");
         Set<String> renderedRelationLines = new LinkedHashSet<>();
         for (UmlRelation relation : model.getRelationsSorted()) {
             if (shouldRenderRelation(relation, config, context)) {
