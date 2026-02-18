@@ -22,6 +22,7 @@ class PlantUmlConfigTest {
         assertFalse(config.showNested());
         assertTrue(config.showUnlinked());
         assertTrue(config.hideEmptyMembers());
+        assertFalse(config.showThrows());
     }
 
     @Test
@@ -39,6 +40,7 @@ class PlantUmlConfigTest {
                 false,
                 false,
                 true,
+                false,
                 true,
                 true,
                 true,

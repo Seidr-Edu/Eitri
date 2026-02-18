@@ -94,6 +94,36 @@ class PlantUmlWriterTest {
         }
 
         @Test
+        void thrownExceptionsAreShownOnlyWhenEnabled() {
+                UmlMethod method = UmlMethod.builder()
+                                .name("parse")
+                                .returnType("void")
+                                .visibility(Visibility.PUBLIC)
+                                .addThrownException("java.io.IOException")
+                                .addThrownException("com.example.ParseException")
+                                .build();
+
+                UmlType type = UmlType.builder()
+                                .fqn("com.example.Service")
+                                .simpleName("Service")
+                                .kind(TypeKind.CLASS)
+                                .visibility(Visibility.PUBLIC)
+                                .addMethod(method)
+                                .build();
+
+                UmlModel model = UmlModel.builder()
+                                .addType(type)
+                                .build();
+
+                PlantUmlWriter writer = new PlantUmlWriter();
+                String withoutThrows = writer.render(model, config("showThrows", false));
+                String withThrows = writer.render(model, config("showThrows", true));
+
+                assertFalse(withoutThrows.contains("throws IOException"));
+                assertTrue(withThrows.contains("+parse() : void throws IOException, ParseException"));
+        }
+
+        @Test
         void methodGenericBoundsAreShownOnlyWhenShowGenericsEnabled() {
                 UmlMethod method = UmlMethod.builder()
                                 .name("withConfig")

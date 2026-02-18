@@ -118,7 +118,10 @@ public final class PlantUmlRenderer {
         return sb.toString();
     }
 
-    public String renderMethod(UmlMethod method, boolean showVoidReturnTypes, boolean showGenerics) {
+    public String renderMethod(UmlMethod method,
+            boolean showVoidReturnTypes,
+            boolean showGenerics,
+            boolean showThrows) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(visibilitySymbol(method.getVisibility()));
@@ -134,6 +137,12 @@ public final class PlantUmlRenderer {
                 && (showVoidReturnTypes || !"void".equals(method.getReturnTypeSimpleName()));
         if (showReturnType) {
             sb.append(" : ").append(method.getReturnTypeSimpleName());
+        }
+        if (showThrows && !method.getThrownExceptions().isEmpty()) {
+            String exceptions = method.getThrownExceptions().stream()
+                    .map(this::simplifyTypeName)
+                    .collect(Collectors.joining(", "));
+            sb.append(" throws ").append(exceptions);
         }
 
         return sb.toString();
@@ -210,6 +219,49 @@ public final class PlantUmlRenderer {
             return generic.identifier() + " " + generic.bounds();
         }
         return generic.identifier();
+    }
+
+    private String simplifyTypeName(String fullType) {
+        if (fullType == null || fullType.isBlank()) {
+            return fullType;
+        }
+        int genericStart = fullType.indexOf('<');
+        if (genericStart > 0) {
+            int genericEnd = fullType.lastIndexOf('>');
+            if (genericEnd > genericStart) {
+                String basePart = fullType.substring(0, genericStart);
+                String genericPart = fullType.substring(genericStart + 1, genericEnd);
+                return simplifySingleType(basePart) + "<" + simplifyGenericArguments(genericPart) + ">";
+            }
+        }
+        return simplifySingleType(fullType);
+    }
+
+    private String simplifySingleType(String typeName) {
+        String trimmed = typeName.trim();
+        int lastDot = trimmed.lastIndexOf('.');
+        String simple = lastDot >= 0 ? trimmed.substring(lastDot + 1) : trimmed;
+        return simple.replace('$', '.');
+    }
+
+    private String simplifyGenericArguments(String genericPart) {
+        StringBuilder result = new StringBuilder();
+        int depth = 0;
+        int start = 0;
+        for (int i = 0; i < genericPart.length(); i++) {
+            char c = genericPart.charAt(i);
+            if (c == '<') {
+                depth++;
+            } else if (c == '>') {
+                depth--;
+            } else if (c == ',' && depth == 0) {
+                result.append(simplifyTypeName(genericPart.substring(start, i).trim()));
+                result.append(", ");
+                start = i + 1;
+            }
+        }
+        result.append(simplifyTypeName(genericPart.substring(start).trim()));
+        return result.toString();
     }
 
     private String renderStereotype(UmlStereotype stereotype) {
