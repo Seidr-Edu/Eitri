@@ -604,6 +604,10 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
                 .isStatic(isStatic)
                 .isAbstract(isAbstract);
 
+        for (TypeParameter typeParameter : method.getTypeParameters()) {
+            builder.addGeneric(extractGeneric(typeParameter));
+        }
+
         // Extract modifiers
         @SuppressWarnings("null")
         EnumSet<no.ntnu.eitri.model.Modifier> modifiers = EnumSet.noneOf(no.ntnu.eitri.model.Modifier.class);
@@ -657,6 +661,10 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
                 .visibility(visibility)
                 .constructor(true)
                 .addAnnotation("constructor");
+
+        for (TypeParameter typeParameter : ctor.getTypeParameters()) {
+            builder.addGeneric(extractGeneric(typeParameter));
+        }
 
         // Extract parameters with FQN types
         ctor.getParameters().forEach(param -> {

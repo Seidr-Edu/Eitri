@@ -118,7 +118,7 @@ public final class PlantUmlRenderer {
         return sb.toString();
     }
 
-    public String renderMethod(UmlMethod method, boolean showVoidReturnTypes) {
+    public String renderMethod(UmlMethod method, boolean showVoidReturnTypes, boolean showGenerics) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(visibilitySymbol(method.getVisibility()));
@@ -128,7 +128,7 @@ public final class PlantUmlRenderer {
             sb.append(modifiers).append(" ");
         }
 
-        sb.append(renderMethodSignature(method));
+        sb.append(renderMethodSignature(method, showGenerics));
 
         boolean showReturnType = !method.isConstructor()
                 && (showVoidReturnTypes || !"void".equals(method.getReturnTypeSimpleName()));
@@ -183,11 +183,17 @@ public final class PlantUmlRenderer {
         return sb.toString();
     }
 
-    private String renderMethodSignature(UmlMethod method) {
+    private String renderMethodSignature(UmlMethod method, boolean showGenerics) {
+        String methodGenerics = "";
+        if (showGenerics && !method.getGenerics().isEmpty()) {
+            methodGenerics = method.getGenerics().stream()
+                    .map(this::renderGeneric)
+                    .collect(Collectors.joining(", ", "<", ">"));
+        }
         String params = method.getParameters().stream()
                 .map(this::renderParameter)
                 .collect(Collectors.joining(", "));
-        return method.getName() + "(" + params + ")";
+        return method.getName() + methodGenerics + "(" + params + ")";
     }
 
     private String renderParameter(UmlParameter parameter) {

@@ -213,7 +213,7 @@ class PlantUmlRendererTest {
                     .addParameter("y", "int")
                     .build();
 
-            assertEquals("+calculate(x: int, y: int) : double", renderer.renderMethod(method, true));
+            assertEquals("+calculate(x: int, y: int) : double", renderer.renderMethod(method, true, false));
         }
 
         @Test
@@ -225,7 +225,7 @@ class PlantUmlRendererTest {
                     .visibility(Visibility.PRIVATE)
                     .build();
 
-            assertEquals("-init() : void", renderer.renderMethod(method, true));
+            assertEquals("-init() : void", renderer.renderMethod(method, true, false));
         }
 
         @Test
@@ -245,8 +245,8 @@ class PlantUmlRendererTest {
                     .addModifier(Modifier.ABSTRACT)
                     .build();
 
-            assertEquals("+{static} getInstance() : Singleton", renderer.renderMethod(staticMethod, true));
-            assertEquals("+{abstract} execute() : void", renderer.renderMethod(abstractMethod, true));
+            assertEquals("+{static} getInstance() : Singleton", renderer.renderMethod(staticMethod, true, false));
+            assertEquals("+{abstract} execute() : void", renderer.renderMethod(abstractMethod, true, false));
         }
 
         @Test
@@ -259,7 +259,7 @@ class PlantUmlRendererTest {
                     .addParameter("name", "String")
                     .build();
 
-            assertEquals("+Customer(name: String)", renderer.renderMethod(constructor, true));
+            assertEquals("+Customer(name: String)", renderer.renderMethod(constructor, true, false));
         }
 
         @Test
@@ -271,7 +271,33 @@ class PlantUmlRendererTest {
                     .visibility(Visibility.PUBLIC)
                     .build();
 
-            assertEquals("+getItems() : List<String>", renderer.renderMethod(method, true));
+            assertEquals("+getItems() : List<String>", renderer.renderMethod(method, true, false));
+        }
+
+        @Test
+        @DisplayName("Method generic bounds shown when enabled")
+        void methodGenericBoundsShownWhenEnabled() {
+            UmlMethod method = UmlMethod.builder()
+                    .name("withConfig")
+                    .returnType("void")
+                    .visibility(Visibility.PUBLIC)
+                    .addGeneric(new UmlGeneric("C", "extends WriterConfig"))
+                    .build();
+
+            assertEquals("+withConfig<C extends WriterConfig>() : void", renderer.renderMethod(method, true, true));
+        }
+
+        @Test
+        @DisplayName("Method generic bounds hidden when disabled")
+        void methodGenericBoundsHiddenWhenDisabled() {
+            UmlMethod method = UmlMethod.builder()
+                    .name("withConfig")
+                    .returnType("void")
+                    .visibility(Visibility.PUBLIC)
+                    .addGeneric(new UmlGeneric("C", "extends WriterConfig"))
+                    .build();
+
+            assertEquals("+withConfig() : void", renderer.renderMethod(method, true, false));
         }
     }
 

@@ -108,4 +108,31 @@ class TypeVisitorFeatureTest {
         assertEquals(TypeKind.RECORD, recordType.getKind());
         assertTrue(recordType.getStereotypes().stream().anyMatch(s -> "record".equals(s.name())));
     }
+
+    @Test
+    void methodTypeParametersAreCapturedWithBounds() {
+        String source = """
+                package com.example;
+                public class Runner {
+                    public <C extends WriterConfig> String resolve(C config) {
+                        return "";
+                    }
+                }
+                interface WriterConfig {}
+                """;
+
+        ParseContext context = new ParseContext(false);
+        CompilationUnit cu = parser.parse(source).getResult().orElseThrow();
+        cu.accept(new TypeVisitor(context), null);
+
+        UmlType runner = context.build().getType("com.example.Runner").orElseThrow();
+        UmlMethod method = runner.getMethods().stream()
+                .filter(m -> m.getName().equals("resolve"))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(1, method.getGenerics().size());
+        assertEquals("C", method.getGenerics().getFirst().identifier());
+        assertEquals("extends WriterConfig", method.getGenerics().getFirst().bounds());
+    }
 }

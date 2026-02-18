@@ -113,12 +113,14 @@ class UmlMethodTest {
             UmlMethod method = UmlMethod.builder()
                     .name("work")
                     .addParameter("id", "long")
+                    .addGeneric(new UmlGeneric("T", "extends Number"))
                     .addAnnotation("Transactional")
                     .addThrownException("java.io.IOException")
                     .addModifier(Modifier.STATIC)
                     .build();
 
             assertThrows(UnsupportedOperationException.class, () -> method.getParameters().add(new UmlParameter("x", "int")));
+            assertThrows(UnsupportedOperationException.class, () -> method.getGenerics().add(new UmlGeneric("X")));
             assertThrows(UnsupportedOperationException.class, () -> method.getAnnotations().add("Other"));
             assertThrows(UnsupportedOperationException.class, () -> method.getThrownExceptions().add("java.lang.Exception"));
             assertThrows(UnsupportedOperationException.class, () -> method.getModifiers().add(Modifier.FINAL));
