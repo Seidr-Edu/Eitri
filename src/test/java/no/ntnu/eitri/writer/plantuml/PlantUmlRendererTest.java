@@ -227,7 +227,7 @@ class PlantUmlRendererTest {
                     .addParameter("y", "int")
                     .build();
 
-            assertEquals("+calculate(x: int, y: int) : double", renderer.renderMethod(method, true, false));
+            assertEquals("+calculate(x: int, y: int) : double", renderer.renderMethod(method, true, false, false));
         }
 
         @Test
@@ -239,7 +239,7 @@ class PlantUmlRendererTest {
                     .visibility(Visibility.PRIVATE)
                     .build();
 
-            assertEquals("-init() : void", renderer.renderMethod(method, true, false));
+            assertEquals("-init() : void", renderer.renderMethod(method, true, false, false));
         }
 
         @Test
@@ -259,8 +259,8 @@ class PlantUmlRendererTest {
                     .addModifier(Modifier.ABSTRACT)
                     .build();
 
-            assertEquals("+{static} getInstance() : Singleton", renderer.renderMethod(staticMethod, true, false));
-            assertEquals("+{abstract} execute() : void", renderer.renderMethod(abstractMethod, true, false));
+            assertEquals("+{static} getInstance() : Singleton", renderer.renderMethod(staticMethod, true, false, false));
+            assertEquals("+{abstract} execute() : void", renderer.renderMethod(abstractMethod, true, false, false));
         }
 
         @Test
@@ -273,7 +273,7 @@ class PlantUmlRendererTest {
                     .addParameter("name", "String")
                     .build();
 
-            assertEquals("+Customer(name: String)", renderer.renderMethod(constructor, true, false));
+            assertEquals("+Customer(name: String)", renderer.renderMethod(constructor, true, false, false));
         }
 
         @Test
@@ -285,7 +285,7 @@ class PlantUmlRendererTest {
                     .visibility(Visibility.PUBLIC)
                     .build();
 
-            assertEquals("+getItems() : List<String>", renderer.renderMethod(method, true, false));
+            assertEquals("+getItems() : List<String>", renderer.renderMethod(method, true, false, false));
         }
 
         @Test
@@ -298,7 +298,7 @@ class PlantUmlRendererTest {
                     .addGeneric(new UmlGeneric("C", "extends WriterConfig"))
                     .build();
 
-            assertEquals("+withConfig<C extends WriterConfig>() : void", renderer.renderMethod(method, true, true));
+            assertEquals("+withConfig<C extends WriterConfig>() : void", renderer.renderMethod(method, true, true, false));
         }
 
         @Test
@@ -311,7 +311,35 @@ class PlantUmlRendererTest {
                     .addGeneric(new UmlGeneric("C", "extends WriterConfig"))
                     .build();
 
-            assertEquals("+withConfig() : void", renderer.renderMethod(method, true, false));
+            assertEquals("+withConfig() : void", renderer.renderMethod(method, true, false, false));
+        }
+
+        @Test
+        @DisplayName("Thrown exceptions shown when enabled")
+        void thrownExceptionsShownWhenEnabled() {
+            UmlMethod method = UmlMethod.builder()
+                    .name("parse")
+                    .returnType("void")
+                    .visibility(Visibility.PUBLIC)
+                    .addThrownException("java.io.IOException")
+                    .addThrownException("com.example.ParseException")
+                    .build();
+
+            assertEquals("+parse() : void throws IOException, ParseException",
+                    renderer.renderMethod(method, true, false, true));
+        }
+
+        @Test
+        @DisplayName("Thrown exceptions hidden when disabled")
+        void thrownExceptionsHiddenWhenDisabled() {
+            UmlMethod method = UmlMethod.builder()
+                    .name("parse")
+                    .returnType("void")
+                    .visibility(Visibility.PUBLIC)
+                    .addThrownException("java.io.IOException")
+                    .build();
+
+            assertEquals("+parse() : void", renderer.renderMethod(method, true, false, false));
         }
     }
 

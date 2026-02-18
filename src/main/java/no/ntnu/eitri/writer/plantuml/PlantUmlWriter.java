@@ -418,7 +418,8 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
                     sb.append("    ").append(renderer.renderMethod(
                             method,
                             config.showVoidReturnTypes(),
-                            config.showGenerics()))
+                            config.showGenerics(),
+                            config.showThrows()))
                             .append("\n");
                 }
             }

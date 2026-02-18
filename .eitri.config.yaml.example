@@ -26,6 +26,7 @@ writers:
     showLabels: true                # Show relation labels
     showReadOnly: true              # Show read-only modifier for fields
     showVoidReturnTypes: true       # Show : void on methods
+    showThrows: false # Show thrown exceptions in method signatures
 
     # ----- Relations ----- #
     showInheritance: true           # Show extends relations
