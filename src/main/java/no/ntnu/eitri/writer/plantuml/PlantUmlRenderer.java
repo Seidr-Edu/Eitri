@@ -223,7 +223,7 @@ public final class PlantUmlRenderer {
 
     private String renderThrownExceptionType(String typeName) {
         String simpleName = new UmlParameter("_", typeName).typeSimpleName();
-        return simpleName != null ? simpleName.replace('$', '.') : typeName;
+        return simpleName != null ? simpleName : typeName;
     }
 
     private String renderStereotype(UmlStereotype stereotype) {
