@@ -117,10 +117,6 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
         }
         sb.append("\n\n");
 
-        if (config.direction() != null) {
-            sb.append(toPlantUmlDirection(config.direction())).append("\n\n");
-        }
-
         renderGlobalSettings(config, sb);
     }
 
@@ -189,6 +185,9 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
      * Renders global PlantUML settings based on configuration.
      */
     private void renderGlobalSettings(PlantUmlConfig config, StringBuilder sb) {
+        if (config.direction() != null) {
+            sb.append(toPlantUmlDirection(config.direction())).append("\n");
+        }
         if (!config.showCircle()) {
             sb.append("hide circle\n");
         }
