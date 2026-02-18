@@ -418,7 +418,10 @@ public class PlantUmlWriter implements DiagramWriter<PlantUmlConfig> {
         if (!config.hideMethods()) {
             for (UmlMethod method : type.getMethods()) {
                 if (shouldRenderMember(method.getVisibility(), config)) {
-                    sb.append("    ").append(renderer.renderMethod(method, config.showVoidReturnTypes()))
+                    sb.append("    ").append(renderer.renderMethod(
+                            method,
+                            config.showVoidReturnTypes(),
+                            config.showGenerics()))
                             .append("\n");
                 }
             }

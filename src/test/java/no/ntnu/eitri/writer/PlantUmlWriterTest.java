@@ -8,6 +8,7 @@ import no.ntnu.eitri.config.RunConfig;
 import no.ntnu.eitri.model.RelationKind;
 import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlField;
+import no.ntnu.eitri.model.UmlGeneric;
 import no.ntnu.eitri.model.UmlMethod;
 import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlRelation;
@@ -90,6 +91,36 @@ class PlantUmlWriterTest {
                 String output = writer.render(model, config);
 
                 assertTrue(output.contains(": void"));
+        }
+
+        @Test
+        void methodGenericBoundsAreShownOnlyWhenShowGenericsEnabled() {
+                UmlMethod method = UmlMethod.builder()
+                                .name("withConfig")
+                                .returnType("void")
+                                .visibility(Visibility.PUBLIC)
+                                .addGeneric(new UmlGeneric("C", "extends WriterConfig"))
+                                .build();
+
+                UmlType type = UmlType.builder()
+                                .fqn("com.example.Service")
+                                .simpleName("Service")
+                                .kind(TypeKind.CLASS)
+                                .visibility(Visibility.PUBLIC)
+                                .addMethod(method)
+                                .build();
+
+                UmlModel model = UmlModel.builder()
+                                .addType(type)
+                                .build();
+
+                PlantUmlWriter writer = new PlantUmlWriter();
+                String withoutGenerics = writer.render(model, config("showGenerics", false));
+                String withGenerics = writer.render(model, config("showGenerics", true));
+
+                assertTrue(withoutGenerics.contains("+withConfig()"));
+                assertFalse(withoutGenerics.contains("withConfig<C extends"));
+                assertTrue(withGenerics.contains("+withConfig<C extends WriterConfig>()"));
         }
 
         @Test

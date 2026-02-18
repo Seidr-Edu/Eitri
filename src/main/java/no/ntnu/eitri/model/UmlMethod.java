@@ -19,6 +19,7 @@ public final class UmlMethod {
     private final boolean constructor;
     private final List<String> annotations;
     private final List<String> thrownExceptions;
+    private final List<UmlGeneric> generics;
 
     private UmlMethod(Builder builder) {
         this.name = Objects.requireNonNull(builder.name, "Method name cannot be null");
@@ -32,6 +33,7 @@ public final class UmlMethod {
         this.constructor = builder.constructor;
         this.annotations = builder.annotations != null ? List.copyOf(builder.annotations) : List.of();
         this.thrownExceptions = builder.thrownExceptions != null ? List.copyOf(builder.thrownExceptions) : List.of();
+        this.generics = builder.generics != null ? List.copyOf(builder.generics) : List.of();
     }
 
     public String getName() {
@@ -68,6 +70,10 @@ public final class UmlMethod {
 
     public List<String> getThrownExceptions() {
         return thrownExceptions;
+    }
+
+    public List<UmlGeneric> getGenerics() {
+        return generics;
     }
 
     public boolean isStatic() {
@@ -148,6 +154,7 @@ public final class UmlMethod {
         private boolean constructor;
         private List<String> annotations;
         private List<String> thrownExceptions;
+        private List<UmlGeneric> generics;
 
         private Builder() {}
 
@@ -247,6 +254,23 @@ public final class UmlMethod {
             }
             this.thrownExceptions.add(exception);
             return this;
+        }
+
+        public Builder generics(List<UmlGeneric> generics) {
+            this.generics = generics;
+            return this;
+        }
+
+        public Builder addGeneric(UmlGeneric generic) {
+            if (this.generics == null) {
+                this.generics = new ArrayList<>();
+            }
+            this.generics.add(generic);
+            return this;
+        }
+
+        public Builder addGeneric(String identifier) {
+            return addGeneric(new UmlGeneric(identifier));
         }
 
         public UmlMethod build() {
