@@ -34,7 +34,7 @@ writers:
     showComposition: true           # Show composition relations
     showAggregation: true           # Show aggregation relations
     showAssociation: true           # Show association relations
-    showDependency: false           # Show dependency relations (often noisy)
+    showDependency: true            # Show dependency relations (often noisy when modeling with common and external packages)
     showNested: true                # Show nested types and their relations
 
     # ----- Packages ----- #
