@@ -46,7 +46,7 @@ mvn clean package
 This produces an executable uber-jar:
 
 ```
-target/eitri-1.0-SNAPSHOT-jar-with-dependencies.jar
+target/eitri-1.0-jar-with-dependencies.jar
 ```
 
 ## ▶️ Usage
@@ -54,7 +54,7 @@ target/eitri-1.0-SNAPSHOT-jar-with-dependencies.jar
 ### Basic Usage
 
 ```bash
-java -jar target/eitri-1.0-SNAPSHOT-jar-with-dependencies.jar \
+java -jar target/eitri-1.0-jar-with-dependencies.jar \
   --src src/main/java \
   --out diagram.puml
 ```
@@ -162,7 +162,7 @@ Process all projects in a directory:
 ```bash
 #!/usr/bin/env bash
 
-JAR="target/eitri-1.0-SNAPSHOT-jar-with-dependencies.jar"
+JAR="target/eitri-1.0-jar-with-dependencies.jar"
 PROJECTS_ROOT="/path/to/projects"
 OUT_ROOT="/path/to/diagrams"
 
