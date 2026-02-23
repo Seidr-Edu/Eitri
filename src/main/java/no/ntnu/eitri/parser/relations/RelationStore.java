@@ -37,7 +37,7 @@ public final class RelationStore {
         List<UmlRelation> mergedRelations = new ArrayList<>(relations);
 
         for (ParseContext.PendingInheritance pi : pendingInheritance) {
-            String targetFqn = typeResolver.normalizeToValidFqn(pi.toFqn());
+            String targetFqn = resolvePendingInheritanceTargetFqn(pi, types, typeResolver);
             if (targetFqn != null) {
                 // Inheritance targets are normalized but not forced to be registered.
                 // This preserves extends/implements edges to external supertypes while
@@ -69,14 +69,66 @@ public final class RelationStore {
         return selectStrongestPerEndpoint(deduped.values());
     }
 
+    private String resolvePendingInheritanceTargetFqn(ParseContext.PendingInheritance pending,
+            TypeRegistry types, TypeReferenceResolver typeResolver) {
+        String normalizedTarget = typeResolver.normalizeToValidFqn(pending.toFqn());
+        if (normalizedTarget != null) {
+            return normalizedTarget;
+        }
+
+        String simpleName = pending.toFqn();
+        if (!isSimpleTypeName(simpleName)) {
+            return null;
+        }
+
+        String fromPackage = packageNameOf(pending.fromFqn());
+        if (fromPackage == null || fromPackage.isBlank()) {
+            return null;
+        }
+
+        String samePackageCandidate = fromPackage + "." + simpleName;
+        String normalizedCandidate = typeResolver.normalizeToValidFqn(samePackageCandidate);
+        if (normalizedCandidate != null && types.hasType(normalizedCandidate)) {
+            return normalizedCandidate;
+        }
+
+        return null;
+    }
+
+    private boolean isSimpleTypeName(String typeName) {
+        if (typeName == null || typeName.isBlank() || typeName.contains(".")) {
+            return false;
+        }
+        if (!Character.isJavaIdentifierStart(typeName.charAt(0))) {
+            return false;
+        }
+        for (int i = 1; i < typeName.length(); i++) {
+            if (!Character.isJavaIdentifierPart(typeName.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String packageNameOf(String fqn) {
+        if (fqn == null) {
+            return null;
+        }
+        int lastDot = fqn.lastIndexOf('.');
+        if (lastDot <= 0) {
+            return null;
+        }
+        return fqn.substring(0, lastDot);
+    }
+
     /**
      * Applies global "strongest wins" per endpoint pair (from->to), keeping a
      * single relation between each pair.
-      *
-      * <p>
-      * This intentionally favors readability over exhaustiveness for large models:
-      * multiple weaker edges between the same two types are suppressed once a
-      * stronger semantic relation exists.
+     *
+     * <p>
+     * This intentionally favors readability over exhaustiveness for large models:
+     * multiple weaker edges between the same two types are suppressed once a
+     * stronger semantic relation exists.
      */
     private List<UmlRelation> selectStrongestPerEndpoint(Iterable<UmlRelation> relations) {
         Map<String, UmlRelation> strongestByEndpoint = new LinkedHashMap<>();
@@ -140,7 +192,8 @@ public final class RelationStore {
     }
 
     /**
-     * Enum self-relations are typically parser artifacts (enum constants and implicit
+     * Enum self-relations are typically parser artifacts (enum constants and
+     * implicit
      * enum APIs) and add little diagram value.
      */
     private boolean isRedundantEnumSelfRelation(UmlRelation relation, TypeRegistry types) {

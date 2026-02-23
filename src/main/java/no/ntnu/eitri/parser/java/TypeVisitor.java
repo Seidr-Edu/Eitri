@@ -215,9 +215,6 @@ public class TypeVisitor extends VoidVisitorAdapter<Void> {
         context.addPendingInheritance(new ParseContext.PendingInheritance(fromFqn, resolvedFqn, kind));
     }
 
-    /**
-     * Process an enum declaration.
-     */
     private void processEnumDeclaration(EnumDeclaration n) {
         TypeBuildContext typeBuild = createTypeBuildContext(n, TypeKind.ENUM);
         UmlType.Builder builder = typeBuild.builder();
