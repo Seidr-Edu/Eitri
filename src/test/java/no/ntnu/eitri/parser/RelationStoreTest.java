@@ -26,13 +26,35 @@ class RelationStoreTest {
         RelationStore store = new RelationStore();
 
         store.addPendingInheritance(new ParseContext.PendingInheritance(
-                "com.example.A", "com.example.Base", RelationKind.EXTENDS
-        ));
+                "com.example.A", "com.example.Base", RelationKind.EXTENDS));
 
         List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
 
         assertEquals(1, relations.size());
         assertEquals(RelationKind.EXTENDS, relations.getFirst().getKind());
+    }
+
+    @Test
+    void buildFinalRelationsResolvesPendingInheritanceSimpleNameInSamePackage() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.core.DefaultExecutorSupplier")
+                .simpleName("DefaultExecutorSupplier").build());
+        types.addType(UmlType.builder().fqn("com.example.core.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+
+        TypeReferenceResolver resolver = new TypeReferenceResolver(types);
+        RelationStore store = new RelationStore();
+
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.core.DefaultExecutorSupplier", "ExecutorSupplier", RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
+
+        assertEquals(1, relations.size());
+        assertEquals(RelationKind.IMPLEMENTS, relations.getFirst().getKind());
+        assertEquals("com.example.core.ExecutorSupplier", relations.getFirst().getToTypeFqn());
     }
 
     @Test
@@ -143,8 +165,7 @@ class RelationStoreTest {
         RelationStore store = new RelationStore();
 
         store.addPendingInheritance(new ParseContext.PendingInheritance(
-                "com.example.A", "org.external.Base", RelationKind.EXTENDS
-        ));
+                "com.example.A", "org.external.Base", RelationKind.EXTENDS));
 
         List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
 

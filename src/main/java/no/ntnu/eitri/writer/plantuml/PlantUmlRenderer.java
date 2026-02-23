@@ -26,8 +26,8 @@ public final class PlantUmlRenderer {
      * <p>
      * PlantUML relation endpoints are significantly more stable when nested classes
      * are addressed with {@code $} separators (e.g. {@code Outer$Inner}) instead of
-     * dotted nested notation ({@code Outer.Inner}), especially for external types not
-     * declared in this diagram.
+     * dotted nested notation ({@code Outer.Inner}), especially for external types
+     * not declared in this diagram.
      */
     public String displayNameForFqn(String fqn) {
         if (fqn == null || fqn.isBlank()) {
