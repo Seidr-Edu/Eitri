@@ -48,7 +48,8 @@ class RelationStoreTest {
         RelationStore store = new RelationStore();
 
         store.addPendingInheritance(new ParseContext.PendingInheritance(
-                "com.example.core.DefaultExecutorSupplier", "ExecutorSupplier", RelationKind.IMPLEMENTS));
+                "com.example.core.DefaultExecutorSupplier", "ExecutorSupplier",
+                RelationKind.IMPLEMENTS));
 
         List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
 
@@ -71,7 +72,8 @@ class RelationStoreTest {
         RelationStore store = new RelationStore();
 
         store.addPendingInheritance(new ParseContext.PendingInheritance(
-                "com.example.core.DefaultExecutorSupplier", "ExecutorSupplier", RelationKind.IMPLEMENTS));
+                "com.example.core.DefaultExecutorSupplier", "ExecutorSupplier",
+                RelationKind.IMPLEMENTS));
 
         List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
 
@@ -93,7 +95,8 @@ class RelationStoreTest {
         RelationStore store = new RelationStore();
 
         store.addPendingInheritance(new ParseContext.PendingInheritance(
-                "com.example.core.DefaultExecutorSupplier", "ExecutorSupplier", RelationKind.IMPLEMENTS));
+                "com.example.core.DefaultExecutorSupplier", "ExecutorSupplier",
+                RelationKind.IMPLEMENTS));
 
         List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
 
@@ -152,6 +155,132 @@ class RelationStoreTest {
         assertEquals(1, relations.size());
         assertEquals(RelationKind.IMPLEMENTS, relations.getFirst().getKind());
         assertEquals("com.example.core.ExecutorSupplier", relations.getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void buildFinalRelationsSkipsPendingInheritanceWhenTargetSimpleNameIsEmpty() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
+        types.addType(UmlType.builder().fqn("com.example.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+
+        RelationStore store = new RelationStore();
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.A", "", RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(0, relations.size());
+    }
+
+    @Test
+    void buildFinalRelationsSkipsPendingInheritanceWhenTargetSimpleNameIsNull() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
+        types.addType(UmlType.builder().fqn("com.example.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+
+        RelationStore store = new RelationStore();
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.A", null, RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(0, relations.size());
+    }
+
+    @Test
+    void buildFinalRelationsSkipsPendingInheritanceWhenTargetContainsDollarSign() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
+        types.addType(UmlType.builder().fqn("com.example.Outer.Inner")
+                .simpleName("Inner")
+                .build());
+
+        RelationStore store = new RelationStore();
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.A", "Outer$Inner", RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(0, relations.size());
+    }
+
+    @Test
+    void buildFinalRelationsSkipsPendingInheritanceWhenTargetIsNotValidJavaIdentifier() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
+        types.addType(UmlType.builder().fqn("com.example.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+
+        RelationStore store = new RelationStore();
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.A", "1ExecutorSupplier", RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(0, relations.size());
+    }
+
+    @Test
+    void buildFinalRelationsResolvesFromSourceWithDollarNestedClassName() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.Outer$Inner")
+                .simpleName("Inner")
+                .outerTypeFqn("com.example.Outer")
+                .build());
+        types.addType(UmlType.builder().fqn("com.example.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+        types.addType(UmlType.builder().fqn("com.aaa.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+
+        RelationStore store = new RelationStore();
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.Outer$Inner", "ExecutorSupplier", RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, new TypeReferenceResolver(types));
+
+        assertEquals(1, relations.size());
+        assertEquals("com.example.ExecutorSupplier", relations.getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void buildFinalRelationsResolvesSamePackageFromNestedSourceType() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.Outer.Inner")
+                .simpleName("Inner")
+                .outerTypeFqn("com.example.Outer")
+                .build());
+        types.addType(UmlType.builder().fqn("com.example.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+        types.addType(UmlType.builder().fqn("com.aaa.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+
+        TypeReferenceResolver resolver = new TypeReferenceResolver(types);
+        RelationStore store = new RelationStore();
+
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.Outer.Inner", "ExecutorSupplier", RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
+
+        assertEquals(1, relations.size());
+        assertEquals(RelationKind.IMPLEMENTS, relations.getFirst().getKind());
+        assertEquals("com.example.ExecutorSupplier", relations.getFirst().getToTypeFqn());
     }
 
     @Test
