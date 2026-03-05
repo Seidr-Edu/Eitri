@@ -35,9 +35,10 @@ public final class RelationStore {
 
     public List<UmlRelation> buildFinalRelations(TypeRegistry types, TypeReferenceResolver typeResolver) {
         List<UmlRelation> mergedRelations = new ArrayList<>(relations);
+        Map<String, String> bestFqnBySimpleName = buildBestFqnBySimpleNameIndex(types);
 
         for (ParseContext.PendingInheritance pi : pendingInheritance) {
-            String targetFqn = resolvePendingInheritanceTargetFqn(pi, types, typeResolver);
+            String targetFqn = resolvePendingInheritanceTargetFqn(pi, types, typeResolver, bestFqnBySimpleName);
             if (targetFqn != null) {
                 // Inheritance targets are normalized but not forced to be registered.
                 // This preserves extends/implements edges to external supertypes while
@@ -70,7 +71,8 @@ public final class RelationStore {
     }
 
     private String resolvePendingInheritanceTargetFqn(ParseContext.PendingInheritance pending,
-            TypeRegistry types, TypeReferenceResolver typeResolver) {
+            TypeRegistry types, TypeReferenceResolver typeResolver,
+            Map<String, String> bestFqnBySimpleName) {
         String normalizedTarget = typeResolver.normalizeToValidFqn(pending.toFqn());
         if (normalizedTarget != null) {
             return normalizedTarget;
@@ -90,21 +92,24 @@ public final class RelationStore {
             }
         }
 
-        return resolveRegisteredTypeBySimpleName(simpleName, types);
+        return resolveRegisteredTypeBySimpleName(simpleName, bestFqnBySimpleName);
     }
 
-    private String resolveRegisteredTypeBySimpleName(String simpleName, TypeRegistry types) {
-        String bestMatch = null;
+    private Map<String, String> buildBestFqnBySimpleNameIndex(TypeRegistry types) {
+        Map<String, String> bestFqnBySimpleName = new LinkedHashMap<>();
         for (UmlType type : types.getTypes()) {
-            if (!simpleName.equals(type.getSimpleName())) {
-                continue;
-            }
+            String simpleName = type.getSimpleName();
             String fqn = type.getFqn();
-            if (bestMatch == null || fqn.compareTo(bestMatch) < 0) {
-                bestMatch = fqn;
+            String currentBest = bestFqnBySimpleName.get(simpleName);
+            if (currentBest == null || fqn.compareTo(currentBest) < 0) {
+                bestFqnBySimpleName.put(simpleName, fqn);
             }
         }
-        return bestMatch;
+        return bestFqnBySimpleName;
+    }
+
+    private String resolveRegisteredTypeBySimpleName(String simpleName, Map<String, String> bestFqnBySimpleName) {
+        return bestFqnBySimpleName.get(simpleName);
     }
 
     /**
