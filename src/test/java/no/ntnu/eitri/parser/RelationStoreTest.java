@@ -59,7 +59,7 @@ class RelationStoreTest {
     }
 
     @Test
-    void buildFinalRelationsDoesNotUseDifferentPackageForSameSimpleNameWhenSamePackageResolutionFails() {
+        void buildFinalRelationsFallsBackToDifferentPackageWhenSamePackageResolutionFails() {
         TypeRegistry types = new TypeRegistry();
         types.addType(UmlType.builder().fqn("com.example.core.DefaultExecutorSupplier")
                 .simpleName("DefaultExecutorSupplier").build());
