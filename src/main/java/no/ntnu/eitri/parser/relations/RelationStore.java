@@ -82,17 +82,29 @@ public final class RelationStore {
         }
 
         String fromPackage = packageNameOf(pending.fromFqn());
-        if (fromPackage == null || fromPackage.isBlank()) {
-            return null;
+        if (fromPackage != null && !fromPackage.isBlank()) {
+            String samePackageCandidate = fromPackage + "." + simpleName;
+            String normalizedCandidate = typeResolver.normalizeToValidFqn(samePackageCandidate);
+            if (normalizedCandidate != null && types.hasType(normalizedCandidate)) {
+                return normalizedCandidate;
+            }
         }
 
-        String samePackageCandidate = fromPackage + "." + simpleName;
-        String normalizedCandidate = typeResolver.normalizeToValidFqn(samePackageCandidate);
-        if (normalizedCandidate != null && types.hasType(normalizedCandidate)) {
-            return normalizedCandidate;
-        }
+        return resolveRegisteredTypeBySimpleName(simpleName, types);
+    }
 
-        return null;
+    private String resolveRegisteredTypeBySimpleName(String simpleName, TypeRegistry types) {
+        String bestMatch = null;
+        for (UmlType type : types.getTypes()) {
+            if (!simpleName.equals(type.getSimpleName())) {
+                continue;
+            }
+            String fqn = type.getFqn();
+            if (bestMatch == null || fqn.compareTo(bestMatch) < 0) {
+                bestMatch = fqn;
+            }
+        }
+        return bestMatch;
     }
 
     private boolean isSimpleTypeName(String typeName) {

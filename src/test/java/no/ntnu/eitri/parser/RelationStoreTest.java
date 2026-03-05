@@ -58,6 +58,103 @@ class RelationStoreTest {
     }
 
     @Test
+    void buildFinalRelationsDoesNotUseDifferentPackageForSameSimpleNameWhenSamePackageResolutionFails() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.core.DefaultExecutorSupplier")
+                .simpleName("DefaultExecutorSupplier").build());
+        types.addType(UmlType.builder().fqn("com.other.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+
+        TypeReferenceResolver resolver = new TypeReferenceResolver(types);
+        RelationStore store = new RelationStore();
+
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.core.DefaultExecutorSupplier", "ExecutorSupplier", RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
+
+        // Same-package resolution should fail, and fallback resolver should select the
+        // matching type
+        // in a different package.
+        assertEquals(1, relations.size());
+        assertEquals(RelationKind.IMPLEMENTS, relations.getFirst().getKind());
+        assertEquals("com.other.ExecutorSupplier", relations.getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void buildFinalRelationsSkipsRelationWhenSimpleNameDoesNotMatchAnyType() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.core.DefaultExecutorSupplier")
+                .simpleName("DefaultExecutorSupplier").build());
+
+        TypeReferenceResolver resolver = new TypeReferenceResolver(types);
+        RelationStore store = new RelationStore();
+
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.core.DefaultExecutorSupplier", "ExecutorSupplier", RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
+
+        // No matching type exists for "ExecutorSupplier", so no relation should be
+        // produced.
+        assertEquals(0, relations.size());
+    }
+
+    @Test
+    void buildFinalRelationsResolvesPendingInheritanceFromDefaultPackageSource() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("DefaultExecutorSupplier")
+                .simpleName("DefaultExecutorSupplier").build());
+        types.addType(UmlType.builder().fqn("com.example.core.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+
+        TypeReferenceResolver resolver = new TypeReferenceResolver(types);
+        RelationStore store = new RelationStore();
+
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "DefaultExecutorSupplier", "ExecutorSupplier", RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
+
+        // Source type is in the default package; fallback resolution should still
+        // resolve the simple name.
+        assertEquals(1, relations.size());
+        assertEquals(RelationKind.IMPLEMENTS, relations.getFirst().getKind());
+        assertEquals("com.example.core.ExecutorSupplier", relations.getFirst().getToTypeFqn());
+    }
+
+    @Test
+    void buildFinalRelationsTreatsTargetWithDotsAsFqnNotSimpleName() {
+        TypeRegistry types = new TypeRegistry();
+        types.addType(UmlType.builder().fqn("com.example.core.DefaultExecutorSupplier")
+                .simpleName("DefaultExecutorSupplier").build());
+        types.addType(UmlType.builder().fqn("com.example.core.ExecutorSupplier")
+                .simpleName("ExecutorSupplier")
+                .kind(TypeKind.INTERFACE)
+                .build());
+
+        TypeReferenceResolver resolver = new TypeReferenceResolver(types);
+        RelationStore store = new RelationStore();
+
+        store.addPendingInheritance(new ParseContext.PendingInheritance(
+                "com.example.core.DefaultExecutorSupplier",
+                "com.example.core.ExecutorSupplier",
+                RelationKind.IMPLEMENTS));
+
+        List<UmlRelation> relations = store.buildFinalRelations(types, resolver);
+
+        // Target contains dots and should be treated as an FQN; resolution must succeed
+        // accordingly.
+        assertEquals(1, relations.size());
+        assertEquals(RelationKind.IMPLEMENTS, relations.getFirst().getKind());
+        assertEquals("com.example.core.ExecutorSupplier", relations.getFirst().getToTypeFqn());
+    }
+
+    @Test
     void buildFinalRelationsKeepsOnlyStrongestRelationKindForSameTypePair() {
         TypeRegistry types = new TypeRegistry();
         types.addType(UmlType.builder().fqn("com.example.A").simpleName("A").build());
