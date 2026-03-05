@@ -81,7 +81,7 @@ public final class RelationStore {
             return null;
         }
 
-        String fromPackage = packageNameOf(pending.fromFqn());
+        String fromPackage = packageNameOf(pending.fromFqn(), types);
         if (fromPackage != null && !fromPackage.isBlank()) {
             String samePackageCandidate = fromPackage + "." + simpleName;
             String normalizedCandidate = typeResolver.normalizeToValidFqn(samePackageCandidate);
@@ -107,8 +107,26 @@ public final class RelationStore {
         return bestMatch;
     }
 
+    /**
+     * Returns {@code true} when the token looks like a simple, unqualified Java
+     * type name.
+     *
+     * <p>
+     * Assumptions used by pending-inheritance fallback resolution:
+     * <ul>
+     * <li>The value must be a single identifier (no package qualification), so
+     * dotted names are rejected.</li>
+     * <li>Binary/inner-class syntax is not treated as a simple type token here,
+     * so names containing {@code '$'} are rejected.</li>
+     * <li>The remaining characters must satisfy Java identifier rules.</li>
+     * </ul>
+     *
+     * <p>
+     * This method is intentionally lexical only; it does not verify that the type
+     * exists.
+     */
     private boolean isSimpleTypeName(String typeName) {
-        if (typeName == null || typeName.isBlank() || typeName.contains(".")) {
+        if (typeName == null || typeName.isBlank() || typeName.contains(".") || typeName.contains("$")) {
             return false;
         }
         if (!Character.isJavaIdentifierStart(typeName.charAt(0))) {
@@ -122,15 +140,36 @@ public final class RelationStore {
         return true;
     }
 
-    private String packageNameOf(String fqn) {
+    private String packageNameOf(String fqn, TypeRegistry types) {
+        UmlType fromType = types.getType(fqn);
+        if (fromType != null) {
+            String packageName = fromType.getPackageName();
+            return packageName == null || packageName.isBlank() ? null : packageName;
+        }
+
         if (fqn == null) {
             return null;
         }
-        int lastDot = fqn.lastIndexOf('.');
-        if (lastDot <= 0) {
+        String[] segments = fqn.split("\\.");
+        if (segments.length < 2) {
             return null;
         }
-        return fqn.substring(0, lastDot);
+
+        StringBuilder packageName = new StringBuilder();
+        for (String segment : segments) {
+            if (segment.isEmpty()) {
+                return null;
+            }
+            if (Character.isUpperCase(segment.charAt(0))) {
+                break;
+            }
+            if (!packageName.isEmpty()) {
+                packageName.append('.');
+            }
+            packageName.append(segment);
+        }
+
+        return packageName.isEmpty() ? null : packageName.toString();
     }
 
     /**
