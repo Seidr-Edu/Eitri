@@ -195,6 +195,7 @@ Open `.puml` files with:
 
 - The Java parser intentionally skips directory trees named `test` and `tests` while scanning sources. This is a convention-based heuristic to avoid test code in diagrams, but it can also skip production code if a project uses those names for non-test source directories.
 - Symbol solving is best-effort. During parsing, JavaParser may log warnings like `Failed to add jar type solver for ...` for some classpath/dependency jars (for example certain test/runtime artifacts). These warnings do not fail the run; unsupported jars are skipped and parsing continues.
+- Type declarations use FQNs directly in PlantUML output (with package grouping blocks), rather than only simple class names to ensure no conflict between the same class name across packages.
 
 ## License
 
