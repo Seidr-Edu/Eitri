@@ -1,0 +1,10 @@
+.git
+.github
+.idea
+.cursor
+target
+node_modules
+*.iml
+*.log
+README.md
+*.puml

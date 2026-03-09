@@ -49,6 +49,32 @@ This produces an executable uber-jar:
 target/eitri-1.0-jar-with-dependencies.jar
 ```
 
+## 🐳 Container Image (GHCR)
+
+Images are published to GitHub Container Registry on every published GitHub Release:
+
+- `ghcr.io/<owner>/eitri:<release-tag>`
+- `ghcr.io/<owner>/eitri:latest`
+
+Pull the image:
+
+```bash
+docker pull ghcr.io/<owner>/eitri:latest
+```
+
+Run Eitri in a container:
+
+```bash
+docker run --rm \
+  -v "$PWD/src/main/java:/work/input:ro" \
+  -v "$PWD:/work/output" \
+  ghcr.io/<owner>/eitri:latest \
+  --src /work/input \
+  --out /work/output/diagram.puml
+```
+
+If the package is private on first publish, set it to public in GitHub Packages before using it from external orchestrators.
+
 ## ▶️ Usage
 
 ### Basic Usage
@@ -180,6 +206,28 @@ for project in "$PROJECTS_ROOT"/*; do
     echo "Skipping $name (no src/main/java)"
   fi
 done
+```
+
+## 🧩 Orchestrator Composer Integration
+
+Use the image as a task container and pass CLI flags directly.
+
+```yaml
+services:
+  eitri:
+    image: ghcr.io/<owner>/eitri:latest
+    command:
+      - --src
+      - /work/input
+      - --out
+      - /work/output/result.puml
+      # Optional:
+      # - --config
+      # - /work/config/.eitri.config.yaml
+    volumes:
+      - ./input:/work/input:ro
+      - ./output:/work/output
+      - ./.eitri.config.yaml:/work/config/.eitri.config.yaml:ro
 ```
 
 ## 🔧 Viewing Diagrams
