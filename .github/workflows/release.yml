@@ -27,7 +27,15 @@ jobs:
       - name: Install dependencies
         run: npm install -g semantic-release @semantic-release/git @semantic-release/github
 
+      - name: Generate token
+        id: token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASE_BOT_TOKEN_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_TOKEN_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
       - name: Release
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_WORKFLOW_TOKEN }}
+          GH_TOKEN: ${{ steps.token.outputs.token }}
         run: npx semantic-release
