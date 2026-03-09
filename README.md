@@ -53,13 +53,13 @@ target/eitri-1.0-jar-with-dependencies.jar
 
 Images are published to GitHub Container Registry on every published GitHub Release:
 
-- `ghcr.io/<owner>/eitri:<release-tag>`
-- `ghcr.io/<owner>/eitri:latest`
+- `ghcr.io/Seidr-Edu/eitri:<release-tag>`
+- `ghcr.io/Seidr-Edu/eitri:latest`
 
 Pull the image:
 
 ```bash
-docker pull ghcr.io/<owner>/eitri:latest
+docker pull ghcr.io/Seidr-Edu/eitri:latest
 ```
 
 Run Eitri in a container:
@@ -67,8 +67,8 @@ Run Eitri in a container:
 ```bash
 docker run --rm \
   -v "$PWD/src/main/java:/work/input:ro" \
-  -v "$PWD:/work/output" \
-  ghcr.io/<owner>/eitri:latest \
+  -v "$PWD/output:/work/output" \
+  ghcr.io/Seidr-Edu/eitri:latest \
   --src /work/input \
   --out /work/output/diagram.puml
 ```
@@ -215,7 +215,7 @@ Use the image as a task container and pass CLI flags directly.
 ```yaml
 services:
   eitri:
-    image: ghcr.io/<owner>/eitri:latest
+    image: ghcr.io/Seidr-Edu/eitri:latest
     command:
       - --src
       - /work/input
