@@ -26,7 +26,7 @@ jobs:
           node-version: "lts/*"
 
       - name: Install dependencies
-        run: npm install -g semantic-release @semantic-release/git @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/changelog
+        run: npm install -g semantic-release @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator
 
       - name: Generate token
         id: token
