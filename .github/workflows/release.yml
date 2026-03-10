@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - master
 
 permissions:
   contents: write
@@ -25,11 +26,11 @@ jobs:
           node-version: "lts/*"
 
       - name: Install dependencies
-        run: npm install -g semantic-release @semantic-release/git @semantic-release/github
+        run: npm install -g semantic-release @semantic-release/git @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/changelog
 
       - name: Generate token
         id: token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
         with:
           app-id: ${{ secrets.RELEASE_BOT_TOKEN_APP_ID }}
           private-key: ${{ secrets.RELEASE_BOT_TOKEN_PRIVATE_KEY }}
@@ -38,4 +39,4 @@ jobs:
       - name: Release
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
-        run: npx semantic-release
+        run: semantic-release
