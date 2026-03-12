@@ -23,12 +23,12 @@ class EitriServiceManifestLoaderTest {
         Path manifest = tempDir.resolve("manifest.yaml");
         Files.writeString(manifest, """
                 version: 1
-                run_id: run-123
+                run_id: "  run-123  "
                 source_relpaths:
-                  - src/main/java
-                  - shared/src/main/java
-                parser_extension: .java
-                writer_extension: .puml
+                  - "  src/main/java  "
+                  - " shared/src/main/java "
+                parser_extension: " .java "
+                writer_extension: " .puml "
                 verbose: true
                 writers:
                   plantuml:
@@ -39,7 +39,7 @@ class EitriServiceManifestLoaderTest {
         EitriServiceManifest loaded = EitriServiceManifestLoader.load(manifest);
 
         assertEquals("run-123", loaded.runId());
-        assertEquals(2, loaded.sourceRelpaths().size());
+        assertEquals(List.of("src/main/java", "shared/src/main/java"), loaded.sourceRelpaths());
         assertEquals(".java", loaded.parserExtension());
         assertEquals(".puml", loaded.writerExtension());
         assertTrue(loaded.verbose());
@@ -135,6 +135,23 @@ class EitriServiceManifestLoaderTest {
     }
 
     @Test
+    void rejectsNonIntegralNumericVersions() throws Exception {
+        EitriServiceManifestException decimalError = assertManifestError("""
+                version: 1.1
+                source_relpaths:
+                  - src/main/java
+                """);
+        assertEquals("unsupported-manifest-version", decimalError.reasonCode());
+
+        EitriServiceManifestException floatError = assertManifestError("""
+                version: 1.0
+                source_relpaths:
+                  - src/main/java
+                """);
+        assertEquals("unsupported-manifest-version", floatError.reasonCode());
+    }
+
+    @Test
     void rejectsBlankOptionalStringFields() throws Exception {
         EitriServiceManifestException error = assertManifestError("""
                 version: 1
@@ -220,6 +237,32 @@ class EitriServiceManifestLoaderTest {
     @Test
     void rejectsMalformedYaml() throws Exception {
         EitriServiceManifestException error = assertManifestError("version: [");
+
+        assertEquals("invalid-manifest", error.reasonCode());
+        assertTrue(error.getMessage().contains("Failed to parse manifest YAML"));
+    }
+
+    @Test
+    void rejectsDuplicateKeys() throws Exception {
+        EitriServiceManifestException error = assertManifestError("""
+                version: 1
+                version: 2
+                source_relpaths:
+                  - src/main/java
+                """);
+
+        assertEquals("invalid-manifest", error.reasonCode());
+        assertTrue(error.getMessage().contains("Failed to parse manifest YAML"));
+    }
+
+    @Test
+    void rejectsUnsafeGlobalTags() throws Exception {
+        EitriServiceManifestException error = assertManifestError("""
+                version: 1
+                run_id: !!java.net.URL "https://example.com"
+                source_relpaths:
+                  - src/main/java
+                """);
 
         assertEquals("invalid-manifest", error.reasonCode());
         assertTrue(error.getMessage().contains("Failed to parse manifest YAML"));

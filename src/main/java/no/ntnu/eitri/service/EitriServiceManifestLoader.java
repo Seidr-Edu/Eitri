@@ -1,12 +1,15 @@
 package no.ntnu.eitri.service;
 
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,7 +52,7 @@ final class EitriServiceManifestLoader {
 
     private static Map<String, Object> parseYaml(Path manifestPath) throws EitriServiceManifestException {
         try (InputStream in = Files.newInputStream(manifestPath)) {
-            Object loaded = new Yaml().load(in);
+            Object loaded = createManifestYaml().load(in);
             if (loaded == null) {
                 return Map.of();
             }
@@ -83,7 +86,7 @@ final class EitriServiceManifestLoader {
             throw new EitriServiceManifestException("invalid-manifest", "Manifest field 'version' is required.");
         }
 
-        if (rawVersion instanceof Number number && number.intValue() == 1) {
+        if (isSupportedVersionNumber(rawVersion)) {
             return;
         }
         if (rawVersion instanceof String stringValue && "1".equals(stringValue.trim())) {
@@ -105,12 +108,13 @@ final class EitriServiceManifestLoader {
                     "invalid-manifest",
                     "Manifest field '" + key + "' must be a string.");
         }
-        if (stringValue.isBlank()) {
+        String trimmedValue = stringValue.trim();
+        if (trimmedValue.isBlank()) {
             throw new EitriServiceManifestException(
                     "invalid-manifest",
                     "Manifest field '" + key + "' must not be blank.");
         }
-        return stringValue;
+        return trimmedValue;
     }
 
     private static boolean readOptionalBoolean(
@@ -148,12 +152,18 @@ final class EitriServiceManifestLoader {
 
         List<String> values = new ArrayList<>(items.size());
         for (Object item : items) {
-            if (!(item instanceof String stringValue) || stringValue.isBlank()) {
+            if (!(item instanceof String stringValue)) {
                 throw new EitriServiceManifestException(
                         "invalid-manifest",
                         "Manifest field '" + key + "' must contain only non-empty strings.");
             }
-            values.add(stringValue);
+            String trimmedValue = stringValue.trim();
+            if (trimmedValue.isBlank()) {
+                throw new EitriServiceManifestException(
+                        "invalid-manifest",
+                        "Manifest field '" + key + "' must contain only non-empty strings.");
+            }
+            values.add(trimmedValue);
         }
         return values;
     }
@@ -198,5 +208,23 @@ final class EitriServiceManifestLoader {
             return normalized;
         }
         return value;
+    }
+
+    private static Yaml createManifestYaml() {
+        LoaderOptions loaderOptions = new LoaderOptions();
+        loaderOptions.setAllowDuplicateKeys(false);
+        loaderOptions.setWarnOnDuplicateKeys(false);
+        return new Yaml(new SafeConstructor(loaderOptions));
+    }
+
+    private static boolean isSupportedVersionNumber(Object rawVersion) {
+        return switch (rawVersion) {
+            case Byte number -> number == 1;
+            case Short number -> number == 1;
+            case Integer number -> number == 1;
+            case Long number -> number == 1L;
+            case BigInteger number -> BigInteger.ONE.equals(number);
+            default -> false;
+        };
     }
 }

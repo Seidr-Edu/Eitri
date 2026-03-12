@@ -59,12 +59,12 @@ class EitriServiceTest {
 
         Files.writeString(manifestPath, """
                 version: 1
-                run_id: service-run-1
+                run_id: "  service-run-1  "
                 source_relpaths:
-                  - module-a/src/main/java
-                  - module-b/src/main/java
-                parser_extension: .java
-                writer_extension: .puml
+                  - "  module-a/src/main/java  "
+                  - " module-b/src/main/java "
+                parser_extension: " .java "
+                writer_extension: " .puml "
                 verbose: true
                 writers:
                   plantuml:
@@ -99,6 +99,8 @@ class EitriServiceTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> inputs = (Map<String, Object>) report.get("inputs");
         assertEquals(List.of("module-a/src/main/java", "module-b/src/main/java"), inputs.get("source_relpaths"));
+        assertEquals(".java", inputs.get("parser_extension"));
+        assertEquals(".puml", inputs.get("writer_extension"));
 
         @SuppressWarnings("unchecked")
         Map<String, Object> artifacts = (Map<String, Object>) report.get("artifacts");
