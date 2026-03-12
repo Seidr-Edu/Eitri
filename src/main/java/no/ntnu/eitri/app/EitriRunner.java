@@ -54,6 +54,7 @@ public class EitriRunner {
                 return new RunResult(
                         0,
                         null,
+                        null,
                         model.getTypes().size(),
                         model.getRelations().size(),
                         runConfig.outputPath(),
@@ -64,6 +65,7 @@ public class EitriRunner {
             return new RunResult(
                     0,
                     null,
+                    null,
                     model.getTypes().size(),
                     model.getRelations().size(),
                     runConfig.outputPath(),
@@ -71,25 +73,25 @@ public class EitriRunner {
 
         } catch (ConfigException e) {
             LOGGER.log(Level.SEVERE, "Configuration error: {0}", e.getMessage());
-            return new RunResult(1, e.getMessage(), 0, 0, null, cliOptions.dryRun());
+            return new RunResult(1, RunFailureKind.CONFIG_ERROR, e.getMessage(), 0, 0, null, cliOptions.dryRun());
         } catch (ParseException e) {
             LOGGER.log(Level.SEVERE, "Parse error: {0}", e.getMessage());
             if (cliOptions.verbose() && e.getCause() != null) {
                 LOGGER.log(Level.SEVERE, "Cause:", e.getCause());
             }
-            return new RunResult(1, e.getMessage(), 0, 0, null, cliOptions.dryRun());
+            return new RunResult(1, RunFailureKind.PARSE_ERROR, e.getMessage(), 0, 0, null, cliOptions.dryRun());
         } catch (WriteException e) {
             LOGGER.log(Level.SEVERE, "Write error: {0}", e.getMessage());
             if (cliOptions.verbose() && e.getCause() != null) {
                 LOGGER.log(Level.SEVERE, "Cause:", e.getCause());
             }
-            return new RunResult(1, e.getMessage(), 0, 0, null, cliOptions.dryRun());
+            return new RunResult(1, RunFailureKind.WRITE_ERROR, e.getMessage(), 0, 0, null, cliOptions.dryRun());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Unexpected error: {0}", e.getMessage());
             if (cliOptions.verbose()) {
                 LOGGER.log(Level.SEVERE, "Stack trace:", e);
             }
-            return new RunResult(1, e.getMessage(), 0, 0, null, cliOptions.dryRun());
+            return new RunResult(1, RunFailureKind.UNEXPECTED_ERROR, e.getMessage(), 0, 0, null, cliOptions.dryRun());
         }
     }
 

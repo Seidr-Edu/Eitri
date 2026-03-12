@@ -7,6 +7,7 @@ import java.nio.file.Path;
  */
 public record RunResult(
         int exitCode,
+        RunFailureKind failureKind,
         String errorMessage,
         int typeCount,
         int relationCount,

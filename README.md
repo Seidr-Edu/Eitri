@@ -62,18 +62,143 @@ Pull the image:
 docker pull ghcr.io/Seidr-Edu/eitri:latest
 ```
 
-Run Eitri in a container:
+The container entrypoint is service mode (`eitri-service.sh`). For direct CLI use,
+override the entrypoint:
 
 ```bash
-docker run --rm \
+docker run --rm --entrypoint java \
   -v "$PWD/src/main/java:/work/input:ro" \
   -v "$PWD/output:/work/output" \
   ghcr.io/Seidr-Edu/eitri:latest \
+  -jar /app/eitri.jar \
   --src /work/input \
   --out /work/output/diagram.puml
 ```
 
 If the package is private on first publish, set it to public in GitHub Packages before using it from external orchestrators.
+
+## Service Mode
+
+Service mode is the production container contract for the pipeline step. The
+service reads `/run/config/manifest.yaml`, consumes `/input/repo` read-only, and
+writes all canonical outputs under `/run`.
+
+### Manifest schema
+
+```yaml
+version: 1
+run_id: 20260312T080000Z__example       # Optional. Auto-generated if absent.
+source_relpaths:                        # Required. One or more paths relative to /input/repo.
+  - src/main/java
+  - shared/src/main/java
+parser_extension: .java                # Optional.
+writer_extension: .puml                # Optional.
+verbose: false                         # Optional. Default false.
+writers:                               # Optional. Passed through to Eitri config as-is.
+  plantuml:
+    diagramName: diagram
+    hidePrivate: true
+```
+
+Validation rules:
+
+- `version` is required and must be `1`.
+- `source_relpaths` is required and must be a non-empty array of strings.
+- `parser_extension` and `writer_extension` must be strings if present.
+- `verbose` must be a boolean if present.
+- `writers` must be a mapping/object if present.
+- Unknown top-level manifest keys are rejected.
+- `source_relpaths` must stay within `/input/repo`; absolute paths, `..`, and `:` are rejected.
+
+The wrapper preserves Eitri's current PlantUML configurability by materializing
+the `writers` subtree into a temporary `.eitri.config.yaml` before invoking the
+existing CLI runner.
+
+### Environment variables
+
+| Variable | Purpose |
+|---|---|
+| `EITRI_MANIFEST` | Override manifest path (default `/run/config/manifest.yaml`) |
+
+### Runtime mounts
+
+| Host path | Container path | Access | Purpose |
+|---|---|---|---|
+| `runs/<runId>/services/eitri/input/repo` | `/input/repo` | read-only | Staged repository snapshot |
+| `runs/<runId>/services/eitri/config` | `/run/config` | read-only | Manifest file |
+| `runs/<runId>/services/eitri/run` | `/run` | read-write | Canonical outputs |
+
+Do not mount the whole run tree into the container. Only mount the staged repo,
+manifest directory, and writable run directory.
+
+### Canonical outputs
+
+| Path | Description |
+|---|---|
+| `/run/artifacts/model/diagram.puml` | Generated PlantUML diagram |
+| `/run/artifacts/model/logs/` | Service log and materialized config |
+| `/run/outputs/run_report.json` | Machine-readable service report (`eitri_service_report.v1`) |
+| `/run/outputs/summary.md` | Human-readable run summary |
+
+### Service report schema
+
+The report always includes at least:
+
+```json
+{
+  "service_schema_version": "eitri_service_report.v1",
+  "run_id": "20260312T080000Z__example",
+  "status": "passed | error",
+  "reason": null,
+  "status_detail": null,
+  "started_at": "2026-03-12T08:00:00Z",
+  "finished_at": "2026-03-12T08:00:02Z",
+  "type_count": 2,
+  "relation_count": 0,
+  "inputs": {
+    "source_root": "/input/repo",
+    "source_relpaths": ["src/main/java", "shared/src/main/java"],
+    "parser_extension": ".java",
+    "writer_extension": ".puml",
+    "verbose": false
+  },
+  "artifacts": {
+    "diagram_path": "/run/artifacts/model/diagram.puml",
+    "logs_dir": "/run/artifacts/model/logs"
+  }
+}
+```
+
+If manifest validation or Eitri execution fails, the service still writes
+`run_report.json` and `summary.md` unless `/run` is not writable. The
+orchestrator should branch on `run_report.json.status`, not on the process exit
+code.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | `run_report.json` was emitted |
+| `1` | The service could not emit a report, usually because `/run` was not writable |
+
+### Example `docker run`
+
+```bash
+docker run --rm \
+  -e EITRI_MANIFEST=/run/config/manifest.yaml \
+  -v /srv/pipeline/runs/<runId>/services/eitri/input/repo:/input/repo:ro \
+  -v /srv/pipeline/runs/<runId>/services/eitri/config:/run/config:ro \
+  -v /srv/pipeline/runs/<runId>/services/eitri/run:/run \
+  ghcr.io/Seidr-Edu/eitri:latest
+```
+
+### Orchestrator integration
+
+1. Stage the repository snapshot at `runs/<runId>/services/eitri/input/repo/`.
+2. Write `runs/<runId>/services/eitri/config/manifest.yaml`.
+3. Launch the container with `/input/repo`, `/run/config`, and `/run`.
+4. Consume `runs/<runId>/services/eitri/run/outputs/run_report.json`.
+5. Consume `runs/<runId>/services/eitri/run/artifacts/model/diagram.puml`.
 
 ## ▶️ Usage
 
@@ -206,28 +331,6 @@ for project in "$PROJECTS_ROOT"/*; do
     echo "Skipping $name (no src/main/java)"
   fi
 done
-```
-
-## 🧩 Orchestrator Composer Integration
-
-Use the image as a task container and pass CLI flags directly.
-
-```yaml
-services:
-  eitri:
-    image: ghcr.io/Seidr-Edu/eitri:latest
-    command:
-      - --src
-      - /work/input
-      - --out
-      - /work/output/result.puml
-      # Optional:
-      # - --config
-      # - /work/config/.eitri.config.yaml
-    volumes:
-      - ./input:/work/input:ro
-      - ./output:/work/output
-      - ./.eitri.config.yaml:/work/config/.eitri.config.yaml:ro
 ```
 
 ## 🔧 Viewing Diagrams
