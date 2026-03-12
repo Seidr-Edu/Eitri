@@ -38,6 +38,7 @@ class EitriRunnerTest {
         RunResult result = runner.run(options);
 
         assertEquals(0, result.exitCode());
+        assertNull(result.failureKind());
         assertEquals(out, result.outputPath());
         assertTrue(result.dryRun());
         assertFalse(Files.exists(out));
@@ -64,6 +65,7 @@ class EitriRunnerTest {
         RunResult result = runner.run(options);
 
         assertEquals(0, result.exitCode());
+        assertNull(result.failureKind());
         assertTrue(Files.exists(out));
         assertFalse(result.dryRun());
     }
