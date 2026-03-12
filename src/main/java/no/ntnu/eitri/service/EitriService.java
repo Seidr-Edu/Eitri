@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
@@ -57,83 +58,90 @@ public final class EitriService {
         try {
             prepareRunDirectories();
         } catch (IOException e) {
-            System.err.println("error: unable to prepare service output directory: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Unable to prepare service output directory.", e);
             return 1;
         }
 
         Path logsDir = logsDir();
-        DetachableLogHandler logHandler = null;
-        try {
-            logHandler = attachLogFile(logsDir.resolve("service.log"));
-        } catch (IOException e) {
-            System.err.println("warning: unable to attach service log file: " + e.getMessage());
-        }
+        DetachableLogHandler logHandler = attachLogFileSafely(logsDir.resolve("service.log"));
 
         try {
-            EitriServiceManifest manifest = EitriServiceManifest.empty(defaultRunId);
-            try {
-                manifest = EitriServiceManifestLoader.load(manifestPath);
-                String runId = manifest.runId() != null ? manifest.runId() : defaultRunId;
-                Path configPath = materializeWriterConfigIfPresent(manifest, logsDir);
-                List<Path> sourcePaths = resolveSourcePaths(manifest.sourceRelpaths());
-
-                CliOptions cliOptions = new CliOptions(
-                        sourcePaths,
-                        diagramPath(),
-                        configPath,
-                        manifest.parserExtension(),
-                        manifest.writerExtension(),
-                        manifest.verbose(),
-                        false);
-
-                LOGGER.log(Level.INFO, "Starting Eitri service run {0}", runId);
-                RunResult result = new EitriRunner().run(cliOptions);
-                writeReports(
-                        runId,
-                        result.exitCode() == 0 ? "passed" : "error",
-                        result.failureKind() != null ? result.failureKind().reasonCode() : null,
-                        result.errorMessage(),
-                        manifest,
-                        result.typeCount(),
-                        result.relationCount(),
-                        startedAt,
-                        clock.instant());
-                return 0;
-            } catch (EitriServiceManifestException e) {
-                LOGGER.log(Level.SEVERE, "Manifest error: {0}", e.getMessage());
-                writeReports(
-                        defaultRunId,
-                        "error",
-                        e.reasonCode(),
-                        e.getMessage(),
-                        manifest,
-                        0,
-                        0,
-                        startedAt,
-                        clock.instant());
-                return 0;
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Unexpected service error", e);
-                writeReports(
-                        manifest.runId() != null ? manifest.runId() : defaultRunId,
-                        "error",
-                        "service-error",
-                        e.getMessage(),
-                        manifest,
-                        0,
-                        0,
-                        startedAt,
-                        clock.instant());
-                return 0;
-            }
+            return executeServiceRun(startedAt, defaultRunId, logsDir);
         } catch (IOException e) {
-            System.err.println("error: unable to emit service report: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Unable to emit service report.", e);
             return 1;
         } finally {
             if (logHandler != null) {
                 logHandler.close();
             }
         }
+    }
+
+    private int executeServiceRun(Instant startedAt, String defaultRunId, Path logsDir) throws IOException {
+        EitriServiceManifest manifest = EitriServiceManifest.empty(defaultRunId);
+        try {
+            manifest = EitriServiceManifestLoader.load(manifestPath);
+            return executeLoadedManifest(manifest, defaultRunId, startedAt, logsDir);
+        } catch (EitriServiceManifestException e) {
+            LOGGER.log(Level.SEVERE, "Manifest error: {0}", e.getMessage());
+            writeReports(
+                    defaultRunId,
+                    "error",
+                    e.reasonCode(),
+                    e.getMessage(),
+                    manifest,
+                    0,
+                    0,
+                    startedAt,
+                    clock.instant());
+            return 0;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Unexpected service error", e);
+            writeReports(
+                    resolveRunId(manifest, defaultRunId),
+                    "error",
+                    "service-error",
+                    e.getMessage(),
+                    manifest,
+                    0,
+                    0,
+                    startedAt,
+                    clock.instant());
+            return 0;
+        }
+    }
+
+    private int executeLoadedManifest(
+            EitriServiceManifest manifest,
+            String defaultRunId,
+            Instant startedAt,
+            Path logsDir) throws IOException, EitriServiceManifestException {
+        String runId = resolveRunId(manifest, defaultRunId);
+        Path configPath = materializeWriterConfigIfPresent(manifest, logsDir);
+        List<Path> sourcePaths = resolveSourcePaths(manifest.sourceRelpaths());
+
+        CliOptions cliOptions = new CliOptions(
+                sourcePaths,
+                diagramPath(),
+                configPath,
+                manifest.parserExtension(),
+                manifest.writerExtension(),
+                manifest.verbose(),
+                false);
+
+        LOGGER.log(Level.INFO, "Starting Eitri service run {0}", runId);
+        RunResult result = new EitriRunner().run(cliOptions);
+        writeReports(
+                runId,
+                result.exitCode() == 0 ? "passed" : "error",
+                result.failureKind() != null ? result.failureKind().reasonCode() : null,
+                result.errorMessage(),
+                manifest,
+                result.typeCount(),
+                result.relationCount(),
+                startedAt,
+                clock.instant());
+        return 0;
     }
 
     private void prepareRunDirectories() throws IOException {
@@ -156,6 +164,15 @@ public final class EitriService {
         Logger rootLogger = Logger.getLogger("");
         rootLogger.addHandler(handler);
         return new DetachableLogHandler(rootLogger, handler);
+    }
+
+    private DetachableLogHandler attachLogFileSafely(Path logPath) {
+        try {
+            return attachLogFile(logPath);
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Unable to attach service log file.", e);
+            return null;
+        }
     }
 
     private Path materializeWriterConfigIfPresent(EitriServiceManifest manifest, Path logsDir) throws IOException {
@@ -280,6 +297,10 @@ public final class EitriService {
         return RUN_ID_FORMATTER.format(instant);
     }
 
+    private static String resolveRunId(EitriServiceManifest manifest, String defaultRunId) {
+        return manifest.runId() != null ? manifest.runId() : defaultRunId;
+    }
+
     private static String nullToEmpty(Object value) {
         return value == null ? "" : value.toString();
     }
@@ -318,8 +339,8 @@ public final class EitriService {
         }
 
         @Override
-        public void publish(java.util.logging.LogRecord record) {
-            delegate.publish(record);
+        public void publish(LogRecord logRecord) {
+            delegate.publish(logRecord);
         }
 
         @Override

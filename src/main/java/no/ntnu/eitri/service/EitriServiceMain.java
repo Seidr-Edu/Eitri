@@ -1,11 +1,15 @@
 package no.ntnu.eitri.service;
 
 import java.nio.file.Path;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Service-mode entrypoint for container execution.
  */
 public final class EitriServiceMain {
+
+    private static final Logger LOGGER = Logger.getLogger(EitriServiceMain.class.getName());
 
     private EitriServiceMain() {
     }
@@ -21,7 +25,9 @@ public final class EitriServiceMain {
             return 0;
         }
         if (args.length > 0) {
-            System.err.println("eitri-service does not accept positional arguments. Use /run/config/manifest.yaml.");
+            LOGGER.log(
+                    Level.SEVERE,
+                    "eitri-service does not accept positional arguments. Use /run/config/manifest.yaml.");
             return 1;
         }
 
