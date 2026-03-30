@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,7 +46,8 @@ class JsonWriterTest {
 
     @Test
     void rejectsUnsupportedValues() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> JsonWriter.toJson(new Object()));
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> JsonWriter.toJson(new Object()));
 
         assertTrue(error.getMessage().contains("Unsupported JSON value"));
     }

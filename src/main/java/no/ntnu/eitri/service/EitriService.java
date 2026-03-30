@@ -1,6 +1,7 @@
 package no.ntnu.eitri.service;
 
 import no.ntnu.eitri.app.EitriRunner;
+import no.ntnu.eitri.app.RepositoryStats;
 import no.ntnu.eitri.app.RunResult;
 import no.ntnu.eitri.cli.CliOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -92,6 +93,7 @@ public final class EitriService {
                     manifest,
                     0,
                     0,
+                    null,
                     startedAt,
                     clock.instant());
             return 0;
@@ -105,6 +107,7 @@ public final class EitriService {
                     manifest,
                     0,
                     0,
+                    null,
                     startedAt,
                     clock.instant());
             return 0;
@@ -139,6 +142,7 @@ public final class EitriService {
                 manifest,
                 result.typeCount(),
                 result.relationCount(),
+                result.repositoryStats(),
                 startedAt,
                 clock.instant());
         return 0;
@@ -228,6 +232,7 @@ public final class EitriService {
             EitriServiceManifest manifest,
             int typeCount,
             int relationCount,
+            RepositoryStats repositoryStats,
             Instant startedAt,
             Instant finishedAt) throws IOException {
 
@@ -241,6 +246,11 @@ public final class EitriService {
         report.put("finished_at", finishedAt.toString());
         report.put("type_count", typeCount);
         report.put("relation_count", relationCount);
+        if (repositoryStats != null) {
+            Map<String, Object> statsDocument = repositoryStatsDocument(repositoryStats);
+            report.put("repository_stats", statsDocument);
+            JsonWriter.write(repositoryStatsPath(), statsDocument);
+        }
 
         Map<String, Object> inputs = new LinkedHashMap<>();
         inputs.put("source_root", inputDir.toString());
@@ -253,6 +263,7 @@ public final class EitriService {
         Map<String, Object> artifacts = new LinkedHashMap<>();
         artifacts.put("diagram_path", diagramPath().toString());
         artifacts.put("logs_dir", logsDir().toString());
+        artifacts.put("repository_stats_path", repositoryStats != null ? repositoryStatsPath().toString() : null);
         report.put("artifacts", artifacts);
 
         JsonWriter.write(reportPath(), report);
@@ -264,6 +275,8 @@ public final class EitriService {
         Map<String, Object> inputs = (Map<String, Object>) report.get("inputs");
         @SuppressWarnings("unchecked")
         Map<String, Object> artifacts = (Map<String, Object>) report.get("artifacts");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> repositoryStats = (Map<String, Object>) report.get("repository_stats");
 
         return """
                 # Eitri Service Run Report
@@ -278,6 +291,8 @@ public final class EitriService {
                 | diagram_path | %s |
                 | type_count | %s |
                 | relation_count | %s |
+                | source_file_count | %s |
+                | package_count | %s |
                 | started_at | %s |
                 | finished_at | %s |
                 """.formatted(
@@ -289,8 +304,24 @@ public final class EitriService {
                 artifacts.get("diagram_path"),
                 report.get("type_count"),
                 report.get("relation_count"),
+                repositoryStats != null ? repositoryStats.get("source_file_count") : "",
+                repositoryStats != null ? repositoryStats.get("package_count") : "",
                 report.get("started_at"),
                 report.get("finished_at"));
+    }
+
+    private Map<String, Object> repositoryStatsDocument(RepositoryStats repositoryStats) {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        stats.put("source_path_count", repositoryStats.sourcePathCount());
+        stats.put("source_file_count", repositoryStats.sourceFileCount());
+        stats.put("type_count", repositoryStats.typeCount());
+        stats.put("top_level_type_count", repositoryStats.topLevelTypeCount());
+        stats.put("nested_type_count", repositoryStats.nestedTypeCount());
+        stats.put("package_count", repositoryStats.packageCount());
+        stats.put("packages", repositoryStats.packages());
+        stats.put("package_type_counts", repositoryStats.packageTypeCounts());
+        stats.put("type_kind_counts", repositoryStats.typeKindCounts());
+        return stats;
     }
 
     private String generateRunId(Instant instant) {
@@ -319,6 +350,10 @@ public final class EitriService {
 
     private Path diagramPath() {
         return modelDir().resolve("diagram.puml");
+    }
+
+    private Path repositoryStatsPath() {
+        return modelDir().resolve("repository_stats.json");
     }
 
     private Path reportPath() {

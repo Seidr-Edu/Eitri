@@ -11,6 +11,7 @@ public record RunResult(
         String errorMessage,
         int typeCount,
         int relationCount,
+        RepositoryStats repositoryStats,
         Path outputPath,
         boolean dryRun
 ) {}
