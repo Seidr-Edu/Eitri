@@ -84,6 +84,7 @@ class EitriServiceTest {
         assertTrue(Files.exists(runDir.resolve("outputs/run_report.json")));
         assertTrue(Files.exists(runDir.resolve("outputs/summary.md")));
         assertTrue(Files.exists(runDir.resolve("artifacts/model/diagram.puml")));
+        assertTrue(Files.exists(runDir.resolve("artifacts/model/model_snapshot.json")));
         assertTrue(Files.exists(runDir.resolve("artifacts/model/repository_stats.json")));
         assertTrue(Files.isDirectory(runDir.resolve("artifacts/model/logs")));
         assertTrue(Files.exists(runDir.resolve("artifacts/model/logs/service.log")));
@@ -113,12 +114,19 @@ class EitriServiceTest {
         Map<String, Object> artifacts = (Map<String, Object>) report.get("artifacts");
         assertEquals(runDir.resolve("artifacts/model/diagram.puml").toString(), artifacts.get("diagram_path"));
         assertEquals(
+                runDir.resolve("artifacts/model/model_snapshot.json").toString(),
+                artifacts.get("model_snapshot_path"));
+        assertEquals(
                 runDir.resolve("artifacts/model/repository_stats.json").toString(),
                 artifacts.get("repository_stats_path"));
 
         String diagram = Files.readString(runDir.resolve("artifacts/model/diagram.puml"));
         assertTrue(diagram.contains("@startuml service-demo"));
         assertFalse(diagram.contains("-secret : int"));
+
+        Map<String, Object> snapshot = readYamlLikeJson(runDir.resolve("artifacts/model/model_snapshot.json"));
+        assertEquals("uml_model_snapshot.v1", snapshot.get("schema_version"));
+        assertEquals(List.of("demo.a", "demo.b"), snapshot.get("packages"));
     }
 
     @Test

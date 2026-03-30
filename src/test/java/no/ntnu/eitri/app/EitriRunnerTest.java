@@ -74,6 +74,7 @@ class EitriRunnerTest {
         assertNotNull(result.repositoryStats());
         assertEquals(1, result.repositoryStats().sourceFileCount());
         assertTrue(Files.exists(out));
+        assertTrue(Files.exists(tempDir.resolve("model_snapshot.json")));
         assertFalse(result.dryRun());
     }
 
