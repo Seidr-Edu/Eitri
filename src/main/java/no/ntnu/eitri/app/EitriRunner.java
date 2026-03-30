@@ -156,9 +156,19 @@ public class EitriRunner {
         OutputPathInitializer.initialize(runConfig.outputPath());
         DiagramWriter<?> writer = resolveWriter(runConfig);
         writeWithResolvedConfig(writer, model, runConfig.outputPath(), resolution);
+        writeSnapshot(model, runConfig.outputPath());
 
         LOGGER.log(Level.INFO, "Generated {0}",
                 new Object[] { runConfig.outputPath() });
+    }
+
+    private void writeSnapshot(UmlModel model, Path outputPath) throws WriteException {
+        Path snapshotPath = ModelSnapshotWriter.defaultPath(outputPath);
+        try {
+            ModelSnapshotWriter.write(model, snapshotPath);
+        } catch (Exception e) {
+            throw new WriteException("Failed to write model snapshot", snapshotPath, e);
+        }
     }
 
     private SourceParser resolveParser(RunConfig runConfig) {

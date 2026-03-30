@@ -262,6 +262,7 @@ public final class EitriService {
 
         Map<String, Object> artifacts = new LinkedHashMap<>();
         artifacts.put("diagram_path", diagramPath().toString());
+        artifacts.put("model_snapshot_path", modelSnapshotPath().toString());
         artifacts.put("logs_dir", logsDir().toString());
         artifacts.put("repository_stats_path", repositoryStats != null ? repositoryStatsPath().toString() : null);
         report.put("artifacts", artifacts);
@@ -354,6 +355,10 @@ public final class EitriService {
 
     private Path repositoryStatsPath() {
         return modelDir().resolve("repository_stats.json");
+    }
+
+    private Path modelSnapshotPath() {
+        return modelDir().resolve("model_snapshot.json");
     }
 
     private Path reportPath() {
