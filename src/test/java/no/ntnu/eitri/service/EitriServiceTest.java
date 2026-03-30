@@ -84,6 +84,7 @@ class EitriServiceTest {
         assertTrue(Files.exists(runDir.resolve("outputs/run_report.json")));
         assertTrue(Files.exists(runDir.resolve("outputs/summary.md")));
         assertTrue(Files.exists(runDir.resolve("artifacts/model/diagram.puml")));
+        assertTrue(Files.exists(runDir.resolve("artifacts/model/repository_stats.json")));
         assertTrue(Files.isDirectory(runDir.resolve("artifacts/model/logs")));
         assertTrue(Files.exists(runDir.resolve("artifacts/model/logs/service.log")));
         assertTrue(Files.exists(runDir.resolve("artifacts/model/logs/.eitri.config.yaml")));
@@ -93,6 +94,12 @@ class EitriServiceTest {
         assertEquals("passed", report.get("status"));
         assertNull(report.get("reason"));
         assertEquals(2, ((Number) report.get("type_count")).intValue());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> repositoryStats = (Map<String, Object>) report.get("repository_stats");
+        assertNotNull(repositoryStats);
+        assertEquals(2, ((Number) repositoryStats.get("source_file_count")).intValue());
+        assertEquals(2, ((Number) repositoryStats.get("package_count")).intValue());
+        assertEquals(List.of("demo.a", "demo.b"), repositoryStats.get("packages"));
         assertNotNull(report.get("started_at"));
         assertNotNull(report.get("finished_at"));
 
@@ -105,6 +112,9 @@ class EitriServiceTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> artifacts = (Map<String, Object>) report.get("artifacts");
         assertEquals(runDir.resolve("artifacts/model/diagram.puml").toString(), artifacts.get("diagram_path"));
+        assertEquals(
+                runDir.resolve("artifacts/model/repository_stats.json").toString(),
+                artifacts.get("repository_stats_path"));
 
         String diagram = Files.readString(runDir.resolve("artifacts/model/diagram.puml"));
         assertTrue(diagram.contains("@startuml service-demo"));

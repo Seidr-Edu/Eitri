@@ -40,6 +40,11 @@ class EitriRunnerTest {
         assertEquals(0, result.exitCode());
         assertNull(result.failureKind());
         assertEquals(out, result.outputPath());
+        assertNotNull(result.repositoryStats());
+        assertEquals(1, result.repositoryStats().sourceFileCount());
+        assertEquals(1, result.repositoryStats().typeCount());
+        assertEquals(1, result.repositoryStats().topLevelTypeCount());
+        assertEquals(0, result.repositoryStats().nestedTypeCount());
         assertTrue(result.dryRun());
         assertFalse(Files.exists(out));
     }
@@ -66,6 +71,8 @@ class EitriRunnerTest {
 
         assertEquals(0, result.exitCode());
         assertNull(result.failureKind());
+        assertNotNull(result.repositoryStats());
+        assertEquals(1, result.repositoryStats().sourceFileCount());
         assertTrue(Files.exists(out));
         assertFalse(result.dryRun());
     }

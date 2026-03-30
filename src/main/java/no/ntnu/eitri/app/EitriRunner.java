@@ -47,7 +47,12 @@ public class EitriRunner {
 
             logResolvedConfig(resolution);
 
-            UmlModel model = parseSources(runConfig);
+            SourceParser parser = resolveParser(runConfig);
+            UmlModel model = parseSources(runConfig, parser);
+            RepositoryStats repositoryStats = RepositoryStatsCollector.collect(
+                    model,
+                    runConfig.sourcePaths(),
+                    parser.getSupportedExtensions());
 
             if (runConfig.dryRun()) {
                 runDryRun(model, runConfig, resolution);
@@ -57,6 +62,7 @@ public class EitriRunner {
                         null,
                         model.getTypes().size(),
                         model.getRelations().size(),
+                        repositoryStats,
                         runConfig.outputPath(),
                         true);
             }
@@ -68,30 +74,32 @@ public class EitriRunner {
                     null,
                     model.getTypes().size(),
                     model.getRelations().size(),
+                    repositoryStats,
                     runConfig.outputPath(),
                     false);
 
         } catch (ConfigException e) {
             LOGGER.log(Level.SEVERE, "Configuration error: {0}", e.getMessage());
-            return new RunResult(1, RunFailureKind.CONFIG_ERROR, e.getMessage(), 0, 0, null, cliOptions.dryRun());
+            return new RunResult(1, RunFailureKind.CONFIG_ERROR, e.getMessage(), 0, 0, null, null, cliOptions.dryRun());
         } catch (ParseException e) {
             LOGGER.log(Level.SEVERE, "Parse error: {0}", e.getMessage());
             if (cliOptions.verbose() && e.getCause() != null) {
                 LOGGER.log(Level.SEVERE, "Cause:", e.getCause());
             }
-            return new RunResult(1, RunFailureKind.PARSE_ERROR, e.getMessage(), 0, 0, null, cliOptions.dryRun());
+            return new RunResult(1, RunFailureKind.PARSE_ERROR, e.getMessage(), 0, 0, null, null, cliOptions.dryRun());
         } catch (WriteException e) {
             LOGGER.log(Level.SEVERE, "Write error: {0}", e.getMessage());
             if (cliOptions.verbose() && e.getCause() != null) {
                 LOGGER.log(Level.SEVERE, "Cause:", e.getCause());
             }
-            return new RunResult(1, RunFailureKind.WRITE_ERROR, e.getMessage(), 0, 0, null, cliOptions.dryRun());
+            return new RunResult(1, RunFailureKind.WRITE_ERROR, e.getMessage(), 0, 0, null, null, cliOptions.dryRun());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Unexpected error: {0}", e.getMessage());
             if (cliOptions.verbose()) {
                 LOGGER.log(Level.SEVERE, "Stack trace:", e);
             }
-            return new RunResult(1, RunFailureKind.UNEXPECTED_ERROR, e.getMessage(), 0, 0, null, cliOptions.dryRun());
+            return new RunResult(1, RunFailureKind.UNEXPECTED_ERROR, e.getMessage(), 0, 0, null, null,
+                    cliOptions.dryRun());
         }
     }
 
@@ -114,8 +122,7 @@ public class EitriRunner {
         LOGGER.log(Level.INFO, "PlantUML config: {0}", resolution.plantUmlConfig());
     }
 
-    private UmlModel parseSources(RunConfig runConfig) throws ParseException {
-        SourceParser parser = resolveParser(runConfig);
+    private UmlModel parseSources(RunConfig runConfig, SourceParser parser) throws ParseException {
         if (runConfig.verbose()) {
             LOGGER.log(Level.INFO, "Parsing with {0}...", parser.getName());
         }
