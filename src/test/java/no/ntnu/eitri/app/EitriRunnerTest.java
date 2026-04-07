@@ -46,6 +46,7 @@ class EitriRunnerTest {
         assertEquals(1, result.repositoryStats().topLevelTypeCount());
         assertEquals(0, result.repositoryStats().nestedTypeCount());
         assertTrue(result.dryRun());
+        assertNotNull(result.model());
         assertFalse(Files.exists(out));
     }
 
@@ -72,6 +73,7 @@ class EitriRunnerTest {
         assertEquals(0, result.exitCode());
         assertNull(result.failureKind());
         assertNotNull(result.repositoryStats());
+        assertNotNull(result.model());
         assertEquals(1, result.repositoryStats().sourceFileCount());
         assertTrue(Files.exists(out));
         assertTrue(Files.exists(tempDir.resolve("model_snapshot.json")));

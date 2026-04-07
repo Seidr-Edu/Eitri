@@ -4,6 +4,13 @@ import no.ntnu.eitri.app.EitriRunner;
 import no.ntnu.eitri.app.RepositoryStats;
 import no.ntnu.eitri.app.RunResult;
 import no.ntnu.eitri.cli.CliOptions;
+import no.ntnu.eitri.config.ConfigException;
+import no.ntnu.eitri.config.ConfigService;
+import no.ntnu.eitri.config.PlantUmlConfig;
+import no.ntnu.eitri.degradation.ModelDegrader;
+import no.ntnu.eitri.model.UmlModel;
+import no.ntnu.eitri.writer.WriteException;
+import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -94,6 +101,7 @@ public final class EitriService {
                     0,
                     0,
                     null,
+                    null,
                     startedAt,
                     clock.instant());
             return 0;
@@ -107,6 +115,7 @@ public final class EitriService {
                     manifest,
                     0,
                     0,
+                    null,
                     null,
                     startedAt,
                     clock.instant());
@@ -134,6 +143,27 @@ public final class EitriService {
 
         LOGGER.log(Level.INFO, "Starting Eitri service run {0}", runId);
         RunResult result = new EitriRunner().run(cliOptions);
+        DegradationArtifacts degradationArtifacts = null;
+        if (result.exitCode() == 0 && result.model() != null) {
+            try {
+                degradationArtifacts = generateDegradedArtifacts(result.model(), cliOptions);
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Failed to generate degraded diagram variants", e);
+                writeReports(
+                        runId,
+                        "error",
+                        "degradation-error",
+                        e.getMessage(),
+                        manifest,
+                        result.typeCount(),
+                        result.relationCount(),
+                        result.repositoryStats(),
+                        degradationArtifacts,
+                        startedAt,
+                        clock.instant());
+                return 0;
+            }
+        }
         writeReports(
                 runId,
                 result.exitCode() == 0 ? "passed" : "error",
@@ -143,6 +173,7 @@ public final class EitriService {
                 result.typeCount(),
                 result.relationCount(),
                 result.repositoryStats(),
+                degradationArtifacts,
                 startedAt,
                 clock.instant());
         return 0;
@@ -233,6 +264,7 @@ public final class EitriService {
             int typeCount,
             int relationCount,
             RepositoryStats repositoryStats,
+            DegradationArtifacts degradationArtifacts,
             Instant startedAt,
             Instant finishedAt) throws IOException {
 
@@ -262,10 +294,13 @@ public final class EitriService {
 
         Map<String, Object> artifacts = new LinkedHashMap<>();
         artifacts.put("diagram_path", diagramPath().toString());
+        artifacts.put("diagram_v2_path", degradationArtifacts != null ? degradationArtifacts.diagramV2Path().toString() : null);
+        artifacts.put("diagram_v3_path", degradationArtifacts != null ? degradationArtifacts.diagramV3Path().toString() : null);
         artifacts.put("model_snapshot_path", modelSnapshotPath().toString());
         artifacts.put("logs_dir", logsDir().toString());
         artifacts.put("repository_stats_path", repositoryStats != null ? repositoryStatsPath().toString() : null);
         report.put("artifacts", artifacts);
+        report.put("degradation", degradationArtifacts != null ? degradationDocument(degradationArtifacts) : null);
 
         JsonWriter.write(reportPath(), report);
         Files.writeString(summaryPath(), renderSummary(report));
@@ -278,6 +313,8 @@ public final class EitriService {
         Map<String, Object> artifacts = (Map<String, Object>) report.get("artifacts");
         @SuppressWarnings("unchecked")
         Map<String, Object> repositoryStats = (Map<String, Object>) report.get("repository_stats");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> degradation = (Map<String, Object>) report.get("degradation");
 
         return """
                 # Eitri Service Run Report
@@ -290,8 +327,12 @@ public final class EitriService {
                 | status_detail | %s |
                 | source_relpaths | %s |
                 | diagram_path | %s |
+                | diagram_v2_path | %s |
+                | diagram_v3_path | %s |
                 | type_count | %s |
                 | relation_count | %s |
+                | diagram_v2_applied_count | %s |
+                | diagram_v3_applied_count | %s |
                 | source_file_count | %s |
                 | package_count | %s |
                 | started_at | %s |
@@ -303,8 +344,12 @@ public final class EitriService {
                 nullToEmpty(report.get("status_detail")),
                 inputs.get("source_relpaths"),
                 artifacts.get("diagram_path"),
+                nullToEmpty(artifacts.get("diagram_v2_path")),
+                nullToEmpty(artifacts.get("diagram_v3_path")),
                 report.get("type_count"),
                 report.get("relation_count"),
+                appliedCountForVariant(degradation, "diagram_v2"),
+                appliedCountForVariant(degradation, "diagram_v3"),
                 repositoryStats != null ? repositoryStats.get("source_file_count") : "",
                 repositoryStats != null ? repositoryStats.get("package_count") : "",
                 report.get("started_at"),
@@ -323,6 +368,82 @@ public final class EitriService {
         stats.put("package_type_counts", repositoryStats.packageTypeCounts());
         stats.put("type_kind_counts", repositoryStats.typeKindCounts());
         return stats;
+    }
+
+    private Map<String, Object> degradationDocument(DegradationArtifacts degradationArtifacts) {
+        Map<String, Object> document = new LinkedHashMap<>();
+        List<Map<String, Object>> variants = new ArrayList<>();
+        for (ModelDegrader.DiagramDegradationResult variant : degradationArtifacts.variants()) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("variant", variant.variant());
+            entry.put("diagram_path", pathForVariant(degradationArtifacts, variant.variant()).toString());
+            entry.put("percentage", variant.percentage());
+            entry.put("minimum", variant.minimum());
+            entry.put("eligible_candidate_count", variant.eligibleCandidateCount());
+            entry.put("applied_count", variant.appliedCount());
+
+            List<Map<String, Object>> applied = new ArrayList<>();
+            for (ModelDegrader.AppliedDegradation degradation : variant.applied()) {
+                Map<String, Object> appliedEntry = new LinkedHashMap<>();
+                appliedEntry.put("kind", degradation.kind());
+                appliedEntry.put("owner_fqn", degradation.ownerFqn());
+                appliedEntry.put("target", degradation.target());
+                appliedEntry.put("detail", degradation.detail());
+                applied.add(appliedEntry);
+            }
+            entry.put("applied", applied);
+            variants.add(entry);
+        }
+        document.put("variants", variants);
+        return document;
+    }
+
+    private Path generateVariantPath(String variantId) {
+        return modelDir().resolve(variantId + ".puml");
+    }
+
+    private DegradationArtifacts generateDegradedArtifacts(UmlModel model, CliOptions cliOptions)
+            throws WriteException, IOException, ConfigException {
+        PlantUmlConfig plantUmlConfig = new ConfigService().resolve(cliOptions).plantUmlConfig();
+        ModelDegrader degrader = new ModelDegrader();
+        List<ModelDegrader.DiagramDegradationResult> variants = degrader.degradeAll(model, plantUmlConfig);
+        PlantUmlWriter writer = new PlantUmlWriter();
+        Path diagramV2 = generateVariantPath("diagram_v2");
+        Path diagramV3 = generateVariantPath("diagram_v3");
+
+        for (ModelDegrader.DiagramDegradationResult variant : variants) {
+            writer.write(variant.model(), plantUmlConfig, generateVariantPath(variant.variant()));
+        }
+        return new DegradationArtifacts(diagramV2, diagramV3, variants);
+    }
+
+    @SuppressWarnings("unchecked")
+    private String appliedCountForVariant(Map<String, Object> degradation, String variantId) {
+        if (degradation == null) {
+            return "";
+        }
+        Object rawVariants = degradation.get("variants");
+        if (!(rawVariants instanceof List<?> variants)) {
+            return "";
+        }
+        for (Object rawVariant : variants) {
+            if (!(rawVariant instanceof Map<?, ?> variantMap)) {
+                continue;
+            }
+            if (variantId.equals(variantMap.get("variant"))) {
+                Object appliedCount = variantMap.get("applied_count");
+                return appliedCount != null ? appliedCount.toString() : "";
+            }
+        }
+        return "";
+    }
+
+    private Path pathForVariant(DegradationArtifacts degradationArtifacts, String variantId) {
+        return switch (variantId) {
+            case "diagram_v2" -> degradationArtifacts.diagramV2Path();
+            case "diagram_v3" -> degradationArtifacts.diagramV3Path();
+            default -> generateVariantPath(variantId);
+        };
     }
 
     private String generateRunId(Instant instant) {
@@ -394,5 +515,11 @@ public final class EitriService {
             delegate.flush();
             delegate.close();
         }
+    }
+
+    private record DegradationArtifacts(
+            Path diagramV2Path,
+            Path diagramV3Path,
+            List<ModelDegrader.DiagramDegradationResult> variants) {
     }
 }

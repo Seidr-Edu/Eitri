@@ -35,5 +35,6 @@ class EitriRunnerErrorTest {
         assertNotEquals(0, result.exitCode());
         assertEquals(RunFailureKind.CONFIG_ERROR, result.failureKind());
         assertNotNull(result.errorMessage());
+        assertNull(result.model());
     }
 }

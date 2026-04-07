@@ -136,6 +136,8 @@ manifest directory, and writable run directory.
 | Path | Description |
 |---|---|
 | `/run/artifacts/model/diagram.puml` | Generated PlantUML diagram |
+| `/run/artifacts/model/diagram_v2.puml` | Slightly degraded PlantUML diagram variant |
+| `/run/artifacts/model/diagram_v3.puml` | Moderately degraded PlantUML diagram variant |
 | `/run/artifacts/model/logs/` | Service log and materialized config |
 | `/run/outputs/run_report.json` | Machine-readable service report (`eitri_service_report.v1`) |
 | `/run/outputs/summary.md` | Human-readable run summary |
@@ -164,7 +166,29 @@ The report always includes at least:
   },
   "artifacts": {
     "diagram_path": "/run/artifacts/model/diagram.puml",
+    "diagram_v2_path": "/run/artifacts/model/diagram_v2.puml",
+    "diagram_v3_path": "/run/artifacts/model/diagram_v3.puml",
     "logs_dir": "/run/artifacts/model/logs"
+  },
+  "degradation": {
+    "variants": [
+      {
+        "variant": "diagram_v2",
+        "diagram_path": "/run/artifacts/model/diagram_v2.puml",
+        "percentage": 8,
+        "minimum": 2,
+        "eligible_candidate_count": 12,
+        "applied_count": 2,
+        "applied": [
+          {
+            "kind": "omit_field",
+            "owner_fqn": "demo.Service",
+            "target": "cache",
+            "detail": "Removed field cache : Cache"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -199,6 +223,7 @@ docker run --rm \
 3. Launch the container with `/input/repo`, `/run/config`, and `/run`.
 4. Consume `runs/<runId>/services/eitri/run/outputs/run_report.json`.
 5. Consume `runs/<runId>/services/eitri/run/artifacts/model/diagram.puml`.
+6. Use `diagram_v2.puml` and `diagram_v3.puml` when running degraded-diagram pipeline experiments.
 
 ## ▶️ Usage
 
