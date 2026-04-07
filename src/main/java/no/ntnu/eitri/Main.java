@@ -1,5 +1,6 @@
 package no.ntnu.eitri;
 
+import no.ntnu.eitri.app.CliArtifactsWriter;
 import no.ntnu.eitri.app.EitriRunner;
 import no.ntnu.eitri.app.RunResult;
 import no.ntnu.eitri.cli.CliOptions;
@@ -84,17 +85,25 @@ public class Main implements Callable<Integer> {
 
     @Override
     public Integer call() {
-                CliOptions cliOptions = new CliOptions(
-                        sourcePaths,
-                        outputPath,
-                        configPath,
-                        parserExtension,
-                        writerExtension,
-                        verbose,
-                        dryRun
-                );
+        CliOptions cliOptions = new CliOptions(
+                sourcePaths,
+                outputPath,
+                configPath,
+                parserExtension,
+                writerExtension,
+                verbose,
+                dryRun
+        );
         EitriRunner runner = new EitriRunner();
         RunResult result = runner.run(cliOptions);
+        if (result.exitCode() == 0) {
+            try {
+                new CliArtifactsWriter().write(cliOptions, result);
+            } catch (Exception e) {
+                throw new CommandLine.ExecutionException(new CommandLine(this),
+                        "Failed to write CLI artifacts: " + e.getMessage(), e);
+            }
+        }
         return result.exitCode();
     }
 }

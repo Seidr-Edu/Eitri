@@ -235,6 +235,15 @@ java -jar target/eitri-1.0-jar-with-dependencies.jar \
   --out diagram.puml
 ```
 
+A successful non-dry CLI run now writes these sibling artifacts beside the
+requested output path:
+
+- `diagram.puml`: best-effort canonical diagram
+- `diagram_v2.puml`: slightly degraded variant
+- `diagram_v3.puml`: moderately degraded variant
+- `run_report.json`: local machine-readable report with degradation details
+- `summary.md`: local human-readable summary
+
 ### Choose Parser and Writer
 
 Parsers and writers are selected by extension id. These are resolved through the registries (built-ins plus any ServiceLoader-provided implementations).
