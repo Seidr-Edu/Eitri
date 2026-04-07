@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -113,6 +114,8 @@ class EitriServiceTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> artifacts = (Map<String, Object>) report.get("artifacts");
         assertEquals(runDir.resolve("artifacts/model/diagram.puml").toString(), artifacts.get("diagram_path"));
+        assertEquals(runDir.resolve("artifacts/model/diagram_v2.puml").toString(), artifacts.get("diagram_v2_path"));
+        assertEquals(runDir.resolve("artifacts/model/diagram_v3.puml").toString(), artifacts.get("diagram_v3_path"));
         assertEquals(
                 runDir.resolve("artifacts/model/model_snapshot.json").toString(),
                 artifacts.get("model_snapshot_path"));
@@ -127,6 +130,89 @@ class EitriServiceTest {
         Map<String, Object> snapshot = readYamlLikeJson(runDir.resolve("artifacts/model/model_snapshot.json"));
         assertEquals("uml_model_snapshot.v1", snapshot.get("schema_version"));
         assertEquals(List.of("demo.a", "demo.b"), snapshot.get("packages"));
+    }
+
+    @Test
+    void emitsDegradedVariantArtifactsAndReportDetails() throws Exception {
+        Path inputDir = tempDir.resolve("input-degraded");
+        Path runDir = tempDir.resolve("run-degraded");
+        Path manifestPath = runDir.resolve("config").resolve("manifest.yaml");
+        Files.createDirectories(manifestPath.getParent());
+
+        writeJavaSource(
+                inputDir.resolve("src/main/java/demo/SampleBase.java"),
+                """
+                        package demo;
+                        public class SampleBase {}
+                        """);
+        writeJavaSource(
+                inputDir.resolve("src/main/java/demo/SampleB.java"),
+                """
+                        package demo;
+                        public class SampleB {
+                            public String label;
+                            public void help() {}
+                        }
+                        """);
+        writeJavaSource(
+                inputDir.resolve("src/main/java/demo/SampleA.java"),
+                """
+                        package demo;
+                        public class SampleA extends SampleBase {
+                            public String value;
+                            public SampleB collaborator;
+                            public int count;
+                            public void ping() {}
+                            public void reset() {}
+                        }
+                        """);
+
+        Files.writeString(manifestPath, """
+                version: 1
+                run_id: degraded-run
+                source_relpaths:
+                  - src/main/java
+                """);
+
+        int exitCode = new EitriService(inputDir, runDir, manifestPath).run();
+
+        assertEquals(0, exitCode);
+        Path diagramPath = runDir.resolve("artifacts/model/diagram.puml");
+        Path diagramV2Path = runDir.resolve("artifacts/model/diagram_v2.puml");
+        Path diagramV3Path = runDir.resolve("artifacts/model/diagram_v3.puml");
+        assertTrue(Files.exists(diagramPath));
+        assertTrue(Files.exists(diagramV2Path));
+        assertTrue(Files.exists(diagramV3Path));
+
+        String canonicalDiagram = Files.readString(diagramPath);
+        String diagramV2 = Files.readString(diagramV2Path);
+        String diagramV3 = Files.readString(diagramV3Path);
+        assertNotEquals(canonicalDiagram, diagramV2);
+        assertNotEquals(canonicalDiagram, diagramV3);
+
+        Map<String, Object> report = readYamlLikeJson(runDir.resolve("outputs/run_report.json"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> artifacts = (Map<String, Object>) report.get("artifacts");
+        assertEquals(diagramV2Path.toString(), artifacts.get("diagram_v2_path"));
+        assertEquals(diagramV3Path.toString(), artifacts.get("diagram_v3_path"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> degradation = (Map<String, Object>) report.get("degradation");
+        assertNotNull(degradation);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> variants = (List<Map<String, Object>>) degradation.get("variants");
+        assertEquals(2, variants.size());
+        for (Map<String, Object> variant : variants) {
+            assertTrue(((Number) variant.get("eligible_candidate_count")).intValue() >=
+                    ((Number) variant.get("applied_count")).intValue());
+            assertTrue(((Number) variant.get("applied_count")).intValue() > 0);
+        }
+
+        String summary = Files.readString(runDir.resolve("outputs/summary.md"));
+        assertTrue(summary.contains("diagram_v2_path"));
+        assertTrue(summary.contains("diagram_v3_path"));
+        assertTrue(summary.contains("diagram_v2_applied_count"));
+        assertTrue(summary.contains("diagram_v3_applied_count"));
     }
 
     @Test

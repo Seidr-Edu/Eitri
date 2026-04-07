@@ -1,5 +1,7 @@
 package no.ntnu.eitri.app;
 
+import no.ntnu.eitri.model.UmlModel;
+
 import java.nio.file.Path;
 
 /**
@@ -13,5 +15,6 @@ public record RunResult(
         int relationCount,
         RepositoryStats repositoryStats,
         Path outputPath,
-        boolean dryRun
+        boolean dryRun,
+        UmlModel model
 ) {}
