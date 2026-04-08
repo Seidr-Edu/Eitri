@@ -107,7 +107,10 @@ public final class CliArtifactsWriter {
             entry.put("percentage", variant.percentage());
             entry.put("minimum", variant.minimum());
             entry.put("eligible_candidate_count", variant.eligibleCandidateCount());
+            entry.put("eligible_kind_counts", variant.eligibleKindCounts());
             entry.put("applied_count", variant.appliedCount());
+            entry.put("applied_kind_counts", appliedKindCounts(variant.applied()));
+            entry.put("effective_percentage", effectivePercentage(variant.appliedCount(), variant.eligibleCandidateCount()));
 
             List<Map<String, Object>> appliedEntries = new ArrayList<>();
             for (ModelDegrader.AppliedDegradation applied : variant.applied()) {
@@ -144,6 +147,12 @@ public final class CliArtifactsWriter {
                 | relation_count | %s |
                 | diagram_v2_applied_count | %s |
                 | diagram_v3_applied_count | %s |
+                | diagram_v2_effective_percentage | %s |
+                | diagram_v3_effective_percentage | %s |
+                | diagram_v2_eligible_kind_counts | %s |
+                | diagram_v3_eligible_kind_counts | %s |
+                | diagram_v2_applied_kind_counts | %s |
+                | diagram_v3_applied_kind_counts | %s |
                 | generated_at | %s |
                 """.formatted(
                 report.get("status"),
@@ -154,6 +163,12 @@ public final class CliArtifactsWriter {
                 report.get("relation_count"),
                 appliedCountForVariant(degradation, "diagram_v2"),
                 appliedCountForVariant(degradation, "diagram_v3"),
+                effectivePercentageForVariant(degradation, "diagram_v2"),
+                effectivePercentageForVariant(degradation, "diagram_v3"),
+                eligibleKindCountsForVariant(degradation, "diagram_v2"),
+                eligibleKindCountsForVariant(degradation, "diagram_v3"),
+                appliedKindCountsForVariant(degradation, "diagram_v2"),
+                appliedKindCountsForVariant(degradation, "diagram_v3"),
                 report.get("generated_at"));
     }
 
@@ -175,6 +190,53 @@ public final class CliArtifactsWriter {
             }
         }
         return "";
+    }
+
+    private String appliedKindCountsForVariant(Map<String, Object> degradation, String variantId) {
+        return valueForVariant(degradation, variantId, "applied_kind_counts");
+    }
+
+    private String eligibleKindCountsForVariant(Map<String, Object> degradation, String variantId) {
+        return valueForVariant(degradation, variantId, "eligible_kind_counts");
+    }
+
+    private String effectivePercentageForVariant(Map<String, Object> degradation, String variantId) {
+        return valueForVariant(degradation, variantId, "effective_percentage");
+    }
+
+    private String valueForVariant(Map<String, Object> degradation, String variantId, String fieldName) {
+        if (degradation == null) {
+            return "";
+        }
+        Object rawVariants = degradation.get("variants");
+        if (!(rawVariants instanceof List<?> variants)) {
+            return "";
+        }
+        for (Object rawVariant : variants) {
+            if (!(rawVariant instanceof Map<?, ?> variantMap)) {
+                continue;
+            }
+            if (variantId.equals(variantMap.get("variant"))) {
+                Object value = variantMap.get(fieldName);
+                return value != null ? value.toString() : "";
+            }
+        }
+        return "";
+    }
+
+    private Map<String, Integer> appliedKindCounts(List<ModelDegrader.AppliedDegradation> applied) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (ModelDegrader.AppliedDegradation degradation : applied) {
+            counts.merge(degradation.kind(), 1, Integer::sum);
+        }
+        return counts;
+    }
+
+    private double effectivePercentage(int appliedCount, int eligibleCandidateCount) {
+        if (eligibleCandidateCount <= 0) {
+            return 0.0d;
+        }
+        return (appliedCount * 100.0d) / eligibleCandidateCount;
     }
 
     private Path siblingPath(Path outputPath, String fileName) {

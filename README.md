@@ -178,7 +178,16 @@ The report always includes at least:
         "percentage": 8,
         "minimum": 2,
         "eligible_candidate_count": 12,
+        "eligible_kind_counts": {
+          "omit_field": 6,
+          "reverse_relation": 6
+        },
         "applied_count": 2,
+        "effective_percentage": 16.666666666666668,
+        "applied_kind_counts": {
+          "omit_field": 1,
+          "reverse_relation": 1
+        },
         "applied": [
           {
             "kind": "omit_field",
