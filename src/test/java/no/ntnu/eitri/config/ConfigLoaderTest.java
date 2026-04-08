@@ -29,6 +29,7 @@ class ConfigLoaderTest {
                     groupInheritance: 3
                     classAttributeIconSize: 4
                     showNested: false
+                    generateDegradedDiagrams: false
                     showLabels: false
                 """);
 
@@ -39,6 +40,7 @@ class ConfigLoaderTest {
         assertEquals(3, plantUml.groupInheritance());
         assertEquals(4, plantUml.classAttributeIconSize());
         assertFalse(plantUml.showNested());
+        assertFalse(plantUml.generateDegradedDiagrams());
         assertFalse(plantUml.showLabels());
     }
 

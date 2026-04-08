@@ -69,6 +69,7 @@ class EitriServiceTest {
                 verbose: true
                 writers:
                   plantuml:
+                    generateDegradedDiagrams: true
                     diagramName: service-demo
                     hidePrivate: true
                 """);
@@ -213,6 +214,54 @@ class EitriServiceTest {
         assertTrue(summary.contains("diagram_v3_path"));
         assertTrue(summary.contains("diagram_v2_applied_count"));
         assertTrue(summary.contains("diagram_v3_applied_count"));
+    }
+
+    @Test
+    void skipsDegradedVariantArtifactsWhenDisabledInManifestWriterConfig() throws Exception {
+        Path inputDir = tempDir.resolve("input-no-degradation");
+        Path runDir = tempDir.resolve("run-no-degradation");
+        Path manifestPath = runDir.resolve("config").resolve("manifest.yaml");
+        Files.createDirectories(manifestPath.getParent());
+
+        writeJavaSource(
+                inputDir.resolve("src/main/java/demo/Sample.java"),
+                """
+                        package demo;
+                        public class Sample {
+                            public String value;
+                        }
+                        """);
+
+        Files.writeString(manifestPath, """
+                version: 1
+                run_id: no-degradation-run
+                source_relpaths:
+                  - src/main/java
+                writers:
+                  plantuml:
+                    generateDegradedDiagrams: false
+                """);
+
+        int exitCode = new EitriService(inputDir, runDir, manifestPath).run();
+
+        assertEquals(0, exitCode);
+        Path diagramPath = runDir.resolve("artifacts/model/diagram.puml");
+        Path diagramV2Path = runDir.resolve("artifacts/model/diagram_v2.puml");
+        Path diagramV3Path = runDir.resolve("artifacts/model/diagram_v3.puml");
+        assertTrue(Files.exists(diagramPath));
+        assertFalse(Files.exists(diagramV2Path));
+        assertFalse(Files.exists(diagramV3Path));
+
+        Map<String, Object> report = readYamlLikeJson(runDir.resolve("outputs/run_report.json"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> artifacts = (Map<String, Object>) report.get("artifacts");
+        assertNull(artifacts.get("diagram_v2_path"));
+        assertNull(artifacts.get("diagram_v3_path"));
+        assertNull(report.get("degradation"));
+
+        String summary = Files.readString(runDir.resolve("outputs/summary.md"));
+        assertTrue(summary.contains("| diagram_v2_path |  |"));
+        assertTrue(summary.contains("| diagram_v3_path |  |"));
     }
 
     @Test

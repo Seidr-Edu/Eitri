@@ -33,6 +33,7 @@ public record PlantUmlConfig(
         boolean showAssociation,
         boolean showDependency,
         boolean showNested,
+        boolean generateDegradedDiagrams,
         boolean hideCommonPackages,
         boolean hideExternalPackages,
         boolean hideSiblingPackages) implements WriterConfig {
@@ -74,6 +75,7 @@ public record PlantUmlConfig(
                 true,
                 true,
                 true,
+                false,
                 false,
                 true,
                 false,

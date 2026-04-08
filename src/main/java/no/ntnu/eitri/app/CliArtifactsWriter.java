@@ -30,15 +30,21 @@ public final class CliArtifactsWriter {
         }
 
         PlantUmlConfig config = new ConfigService().resolve(cliOptions).plantUmlConfig();
-        ModelDegrader degrader = new ModelDegrader();
-        List<ModelDegrader.DiagramDegradationResult> variants = degrader.degradeAll(result.model(), config);
-        PlantUmlWriter writer = new PlantUmlWriter();
 
         Path outputPath = result.outputPath();
-        Path diagramV2Path = siblingPath(outputPath, "diagram_v2.puml");
-        Path diagramV3Path = siblingPath(outputPath, "diagram_v3.puml");
-        for (ModelDegrader.DiagramDegradationResult variant : variants) {
-            writer.write(variant.model(), config, siblingPath(outputPath, variant.variant() + ".puml"));
+        Path diagramV2Path = null;
+        Path diagramV3Path = null;
+        List<ModelDegrader.DiagramDegradationResult> variants = List.of();
+
+        if (config.generateDegradedDiagrams()) {
+            ModelDegrader degrader = new ModelDegrader();
+            PlantUmlWriter writer = new PlantUmlWriter();
+            variants = degrader.degradeAll(result.model(), config);
+            diagramV2Path = siblingPath(outputPath, "diagram_v2.puml");
+            diagramV3Path = siblingPath(outputPath, "diagram_v3.puml");
+            for (ModelDegrader.DiagramDegradationResult variant : variants) {
+                writer.write(variant.model(), config, siblingPath(outputPath, variant.variant() + ".puml"));
+            }
         }
 
         Path reportPath = siblingPath(outputPath, "run_report.json");
@@ -64,11 +70,11 @@ public final class CliArtifactsWriter {
 
         Map<String, Object> artifacts = new LinkedHashMap<>();
         artifacts.put("diagram_path", result.outputPath().toString());
-        artifacts.put("diagram_v2_path", diagramV2Path.toString());
-        artifacts.put("diagram_v3_path", diagramV3Path.toString());
+        artifacts.put("diagram_v2_path", diagramV2Path != null ? diagramV2Path.toString() : null);
+        artifacts.put("diagram_v3_path", diagramV3Path != null ? diagramV3Path.toString() : null);
         artifacts.put("model_snapshot_path", ModelSnapshotWriter.defaultPath(result.outputPath()).toString());
         report.put("artifacts", artifacts);
-        report.put("degradation", degradationDocument(result.outputPath(), variants));
+        report.put("degradation", variants.isEmpty() ? null : degradationDocument(result.outputPath(), variants));
         return report;
     }
 
@@ -142,8 +148,8 @@ public final class CliArtifactsWriter {
                 """.formatted(
                 report.get("status"),
                 artifacts.get("diagram_path"),
-                artifacts.get("diagram_v2_path"),
-                artifacts.get("diagram_v3_path"),
+                nullToEmpty(artifacts.get("diagram_v2_path")),
+                nullToEmpty(artifacts.get("diagram_v3_path")),
                 report.get("type_count"),
                 report.get("relation_count"),
                 appliedCountForVariant(degradation, "diagram_v2"),
@@ -174,6 +180,10 @@ public final class CliArtifactsWriter {
     private Path siblingPath(Path outputPath, String fileName) {
         Path parent = outputPath.getParent();
         return parent == null ? Path.of(fileName) : parent.resolve(fileName);
+    }
+
+    private String nullToEmpty(Object value) {
+        return value == null ? "" : value.toString();
     }
 
     @SuppressWarnings("unchecked")

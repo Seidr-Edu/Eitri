@@ -193,6 +193,10 @@ The report always includes at least:
 }
 ```
 
+Set `writers.plantuml.generateDegradedDiagrams: false` to skip `diagram_v2.puml`,
+`diagram_v3.puml`, and degradation entries in the report. When disabled, the
+report keeps the same keys and sets degradation-related values to `null`.
+
 If manifest validation or Eitri execution fails, the service still writes
 `run_report.json` and `summary.md` unless `/run` is not writable. The
 orchestrator should branch on `run_report.json.status`, not on the process exit
@@ -243,6 +247,14 @@ requested output path:
 - `diagram_v3.puml`: moderately degraded variant
 - `run_report.json`: local machine-readable report with degradation details
 - `summary.md`: local human-readable summary
+
+To disable degraded variants for normal CLI or service runs:
+
+```yaml
+writers:
+  plantuml:
+    generateDegradedDiagrams: false
+```
 
 ### Choose Parser and Writer
 
