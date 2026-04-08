@@ -173,6 +173,9 @@ class EitriServiceTest {
                 run_id: degraded-run
                 source_relpaths:
                   - src/main/java
+                writers:
+                  plantuml:
+                    generateDegradedDiagrams: true
                 """);
 
         int exitCode = new EitriService(inputDir, runDir, manifestPath).run();
@@ -204,9 +207,30 @@ class EitriServiceTest {
         List<Map<String, Object>> variants = (List<Map<String, Object>>) degradation.get("variants");
         assertEquals(2, variants.size());
         for (Map<String, Object> variant : variants) {
-            assertTrue(((Number) variant.get("eligible_candidate_count"))
-                    .intValue() >= ((Number) variant.get("applied_count")).intValue());
-            assertTrue(((Number) variant.get("applied_count")).intValue() > 0);
+            int eligibleCandidateCount = ((Number) variant.get("eligible_candidate_count")).intValue();
+            int appliedCount = ((Number) variant.get("applied_count")).intValue();
+            assertTrue(eligibleCandidateCount >= appliedCount);
+            assertTrue(appliedCount > 0);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> eligibleKindCounts = (Map<String, Object>) variant.get("eligible_kind_counts");
+            assertNotNull(eligibleKindCounts);
+            int summedEligibleKindCounts = eligibleKindCounts.values().stream()
+                    .map(Number.class::cast)
+                    .mapToInt(Number::intValue)
+                    .sum();
+            assertEquals(eligibleCandidateCount, summedEligibleKindCounts);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> appliedKindCounts = (Map<String, Object>) variant.get("applied_kind_counts");
+            assertNotNull(appliedKindCounts);
+            int summedKindCounts = appliedKindCounts.values().stream()
+                    .map(Number.class::cast)
+                    .mapToInt(Number::intValue)
+                    .sum();
+            assertEquals(appliedCount, summedKindCounts);
+            assertEquals(
+                    appliedCount * 100.0d / eligibleCandidateCount,
+                    ((Number) variant.get("effective_percentage")).doubleValue(),
+                    0.0001d);
         }
 
         String summary = Files.readString(runDir.resolve("outputs/summary.md"));
@@ -214,6 +238,12 @@ class EitriServiceTest {
         assertTrue(summary.contains("diagram_v3_path"));
         assertTrue(summary.contains("diagram_v2_applied_count"));
         assertTrue(summary.contains("diagram_v3_applied_count"));
+        assertTrue(summary.contains("diagram_v2_effective_percentage"));
+        assertTrue(summary.contains("diagram_v3_effective_percentage"));
+        assertTrue(summary.contains("diagram_v2_eligible_kind_counts"));
+        assertTrue(summary.contains("diagram_v3_eligible_kind_counts"));
+        assertTrue(summary.contains("diagram_v2_applied_kind_counts"));
+        assertTrue(summary.contains("diagram_v3_applied_kind_counts"));
     }
 
     @Test

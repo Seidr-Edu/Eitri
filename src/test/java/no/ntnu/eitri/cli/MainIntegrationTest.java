@@ -98,9 +98,18 @@ class MainIntegrationTest {
                 assertTrue(reportContent.contains("\"diagram_v2_path\""));
                 assertTrue(reportContent.contains("\"diagram_v3_path\""));
                 assertTrue(reportContent.contains("\"degradation\""));
+                assertTrue(reportContent.contains("\"eligible_kind_counts\""));
+                assertTrue(reportContent.contains("\"applied_kind_counts\""));
+                assertTrue(reportContent.contains("\"effective_percentage\""));
                 String summaryContent = Files.readString(summary);
                 assertTrue(summaryContent.contains("diagram_v2_path"));
                 assertTrue(summaryContent.contains("diagram_v3_path"));
+                assertTrue(summaryContent.contains("diagram_v2_effective_percentage"));
+                assertTrue(summaryContent.contains("diagram_v3_effective_percentage"));
+                assertTrue(summaryContent.contains("diagram_v2_eligible_kind_counts"));
+                assertTrue(summaryContent.contains("diagram_v3_eligible_kind_counts"));
+                assertTrue(summaryContent.contains("diagram_v2_applied_kind_counts"));
+                assertTrue(summaryContent.contains("diagram_v3_applied_kind_counts"));
         }
 
         @Test
