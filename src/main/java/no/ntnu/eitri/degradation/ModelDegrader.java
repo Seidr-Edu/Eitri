@@ -64,6 +64,7 @@ public final class ModelDegrader {
         UmlModel workingModel = UmlModelCloner.cloneModel(model);
         RenderableModelView view = RenderableModelView.analyze(workingModel, config);
         List<DegradationCandidate> eligibleCandidates = discoverCandidates(workingModel, view, profile);
+        Map<String, Integer> eligibleKindCounts = kindCounts(eligibleCandidates);
         int desiredCount = desiredAppliedCount(profile, eligibleCandidates.size());
         List<DegradationCandidate> selected = selectCandidates(
                 eligibleCandidates,
@@ -83,9 +84,24 @@ public final class ModelDegrader {
                 profile.percentage(),
                 profile.minimum(),
                 eligibleCandidates.size(),
+                eligibleKindCounts,
                 applied.size(),
                 List.copyOf(applied),
                 workingModel);
+    }
+
+    private Map<String, Integer> kindCounts(List<DegradationCandidate> candidates) {
+        Map<String, Integer> counts = new HashMap<>();
+        for (DegradationCandidate candidate : candidates) {
+            counts.merge(candidate.kind().wireName(), 1, Integer::sum);
+        }
+        return counts.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (left, _right) -> left,
+                        java.util.LinkedHashMap::new));
     }
 
     List<DegradationCandidate> discoverCandidates(
@@ -256,11 +272,13 @@ public final class ModelDegrader {
             int percentage,
             int minimum,
             int eligibleCandidateCount,
+            Map<String, Integer> eligibleKindCounts,
             int appliedCount,
             List<AppliedDegradation> applied,
             UmlModel model) {
 
         public DiagramDegradationResult {
+            eligibleKindCounts = Map.copyOf(eligibleKindCounts);
             applied = List.copyOf(applied);
         }
     }
