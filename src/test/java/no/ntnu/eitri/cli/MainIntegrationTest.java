@@ -49,23 +49,30 @@ class MainIntegrationTest {
     void writesOutputFileOnSuccessfulRun() throws Exception {
         Path src = tempDir.resolve("src");
         Files.createDirectories(src);
-        Files.writeString(src.resolve("Sample.java"), """
+        Files.writeString(src.resolve("Outer.java"), """
                 package com.example;
 
-                public class Sample {
-                  public String name;
-                  public Helper helper;
-                  public void run() {}
-                  public void stop() {}
+                public class Outer {
+                  public static class Inner {}
                 }
                 """);
-        Files.writeString(src.resolve("Helper.java"), """
+        Files.writeString(src.resolve("Leaf.java"), """
                 package com.example;
 
-                public class Helper {
-                  public int count;
-                  public void help() {}
-                }
+                import org.junit.jupiter.api.extension.Extension;
+
+                public class Leaf implements Extension {}
+                """);
+        Files.writeString(src.resolve("Hub.java"), """
+                package com.example;
+
+                public abstract class Hub {}
+                """);
+        Path config = tempDir.resolve("eitri.yaml");
+        Files.writeString(config, """
+                writers:
+                  plantuml:
+                    showNested: true
                 """);
         Path out = tempDir.resolve("diagram.puml");
         Path diagramV2 = tempDir.resolve("diagram_v2.puml");
@@ -75,7 +82,8 @@ class MainIntegrationTest {
 
         int exitCode = new CommandLine(new Main()).execute(
                 "--src", src.toString(),
-                "--out", out.toString()
+                "--out", out.toString(),
+                "--config", config.toString()
         );
 
         assertEquals(0, exitCode);
@@ -92,7 +100,6 @@ class MainIntegrationTest {
         assertTrue(reportContent.contains("\"diagram_v2_path\""));
         assertTrue(reportContent.contains("\"diagram_v3_path\""));
         assertTrue(reportContent.contains("\"degradation\""));
-
         String summaryContent = Files.readString(summary);
         assertTrue(summaryContent.contains("diagram_v2_path"));
         assertTrue(summaryContent.contains("diagram_v3_path"));

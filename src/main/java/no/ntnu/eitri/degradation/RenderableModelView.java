@@ -30,13 +30,13 @@ final class RenderableModelView {
     private final PlantUmlConfig config;
     private final Map<String, UmlType> typesByFqn;
     private final Set<String> renderedTypeFqns;
-    private final Set<String> nestedTypeFqns;
-    private final Set<String> sourcePackages;
     private final List<UmlRelation> renderedRelations;
     private final Map<String, Integer> visibleFieldCounts;
     private final Map<String, Integer> visibleMethodCounts;
     private final Map<String, Integer> renderedRelationCounts;
-    private final PlantUmlRenderer renderer;
+    private final Map<String, Integer> inboundModeledReferenceCounts;
+    private final Map<String, Set<String>> incidentModeledNeighborFqns;
+    private final Set<String> typesWithRenderedNestedChildren;
 
     private RenderableModelView(
             PlantUmlConfig config,
@@ -48,17 +48,20 @@ final class RenderableModelView {
             Map<String, Integer> visibleFieldCounts,
             Map<String, Integer> visibleMethodCounts,
             Map<String, Integer> renderedRelationCounts,
+            Map<String, Integer> inboundModeledReferenceCounts,
+            Map<String, Set<String>> incidentModeledNeighborFqns,
+            Set<String> typesWithRenderedNestedChildren,
             PlantUmlRenderer renderer) {
         this.config = config;
         this.typesByFqn = typesByFqn;
         this.renderedTypeFqns = renderedTypeFqns;
-        this.nestedTypeFqns = nestedTypeFqns;
-        this.sourcePackages = sourcePackages;
         this.renderedRelations = renderedRelations;
         this.visibleFieldCounts = visibleFieldCounts;
         this.visibleMethodCounts = visibleMethodCounts;
         this.renderedRelationCounts = renderedRelationCounts;
-        this.renderer = renderer;
+        this.inboundModeledReferenceCounts = inboundModeledReferenceCounts;
+        this.incidentModeledNeighborFqns = incidentModeledNeighborFqns;
+        this.typesWithRenderedNestedChildren = typesWithRenderedNestedChildren;
     }
 
     static RenderableModelView analyze(UmlModel model, PlantUmlConfig config) {
@@ -113,9 +116,24 @@ final class RenderableModelView {
         }
 
         Map<String, Integer> renderedRelationCounts = new LinkedHashMap<>();
+        Map<String, Integer> inboundModeledReferenceCounts = new LinkedHashMap<>();
+        Map<String, Set<String>> incidentModeledNeighborFqns = new LinkedHashMap<>();
         for (UmlRelation relation : renderedRelations) {
             increment(renderedRelationCounts, relation.getFromTypeFqn(), typesByFqn);
             increment(renderedRelationCounts, relation.getToTypeFqn(), typesByFqn);
+            incrementInboundModeledReferenceCount(inboundModeledReferenceCounts, relation, typesByFqn);
+            linkNeighbor(incidentModeledNeighborFqns, relation.getFromTypeFqn(), relation.getToTypeFqn(), typesByFqn);
+            linkNeighbor(incidentModeledNeighborFqns, relation.getToTypeFqn(), relation.getFromTypeFqn(), typesByFqn);
+        }
+
+        Set<String> typesWithRenderedNestedChildren = new HashSet<>();
+        for (UmlType type : model.getTypes()) {
+            if (renderedTypeFqns.contains(type.getFqn())
+                    && type.isNested()
+                    && type.getOuterTypeFqn() != null
+                    && renderedTypeFqns.contains(type.getOuterTypeFqn())) {
+                typesWithRenderedNestedChildren.add(type.getOuterTypeFqn());
+            }
         }
 
         return new RenderableModelView(
@@ -128,6 +146,9 @@ final class RenderableModelView {
                 visibleFieldCounts,
                 visibleMethodCounts,
                 renderedRelationCounts,
+                inboundModeledReferenceCounts,
+                incidentModeledNeighborFqns,
+                typesWithRenderedNestedChildren,
                 renderer);
     }
 
@@ -136,6 +157,27 @@ final class RenderableModelView {
             return;
         }
         counts.merge(typeFqn, 1, Integer::sum);
+    }
+
+    private static void incrementInboundModeledReferenceCount(
+            Map<String, Integer> counts,
+            UmlRelation relation,
+            Map<String, UmlType> typesByFqn) {
+        if (!typesByFqn.containsKey(relation.getFromTypeFqn()) || !typesByFqn.containsKey(relation.getToTypeFqn())) {
+            return;
+        }
+        counts.merge(relation.getToTypeFqn(), 1, Integer::sum);
+    }
+
+    private static void linkNeighbor(
+            Map<String, Set<String>> neighborsByType,
+            String typeFqn,
+            String neighborFqn,
+            Map<String, UmlType> typesByFqn) {
+        if (!typesByFqn.containsKey(typeFqn) || !typesByFqn.containsKey(neighborFqn)) {
+            return;
+        }
+        neighborsByType.computeIfAbsent(typeFqn, _ignored -> new HashSet<>()).add(neighborFqn);
     }
 
     boolean isRenderedType(String typeFqn) {
@@ -168,6 +210,18 @@ final class RenderableModelView {
 
     Map<String, Integer> renderedRelationCounts() {
         return renderedRelationCounts;
+    }
+
+    int inboundModeledReferenceCount(String typeFqn) {
+        return inboundModeledReferenceCounts.getOrDefault(typeFqn, 0);
+    }
+
+    Set<String> incidentModeledNeighborFqns(String typeFqn) {
+        return incidentModeledNeighborFqns.getOrDefault(typeFqn, Set.of());
+    }
+
+    boolean hasRenderedNestedChildren(String typeFqn) {
+        return typesWithRenderedNestedChildren.contains(typeFqn);
     }
 
     Set<String> renderedTypeFqns() {

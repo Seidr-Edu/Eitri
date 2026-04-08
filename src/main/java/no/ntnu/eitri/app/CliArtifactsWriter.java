@@ -5,7 +5,6 @@ import no.ntnu.eitri.config.ConfigException;
 import no.ntnu.eitri.config.ConfigService;
 import no.ntnu.eitri.config.PlantUmlConfig;
 import no.ntnu.eitri.degradation.ModelDegrader;
-import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.writer.WriteException;
 import no.ntnu.eitri.writer.plantuml.PlantUmlWriter;
 
@@ -152,7 +151,6 @@ public final class CliArtifactsWriter {
                 report.get("generated_at"));
     }
 
-    @SuppressWarnings("unchecked")
     private String appliedCountForVariant(Map<String, Object> degradation, String variantId) {
         if (degradation == null) {
             return "";

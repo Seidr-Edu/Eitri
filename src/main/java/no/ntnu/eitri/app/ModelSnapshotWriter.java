@@ -1,8 +1,6 @@
 package no.ntnu.eitri.app;
 
 import no.ntnu.eitri.model.Modifier;
-import no.ntnu.eitri.model.RelationKind;
-import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlField;
 import no.ntnu.eitri.model.UmlGeneric;
 import no.ntnu.eitri.model.UmlMethod;
@@ -10,7 +8,6 @@ import no.ntnu.eitri.model.UmlModel;
 import no.ntnu.eitri.model.UmlParameter;
 import no.ntnu.eitri.model.UmlRelation;
 import no.ntnu.eitri.model.UmlType;
-import no.ntnu.eitri.model.Visibility;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -157,7 +154,8 @@ final class ModelSnapshotWriter {
 
     private static List<Map<String, Object>> genericDocuments(List<UmlGeneric> generics) {
         return generics.stream()
-                .sorted(Comparator.comparing(UmlGeneric::identifier).thenComparing(generic -> nullable(generic.bounds())))
+                .sorted(Comparator.comparing(UmlGeneric::identifier)
+                        .thenComparing(generic -> nullable(generic.bounds())))
                 .<Map<String, Object>>map(generic -> {
                     LinkedHashMap<String, Object> entry = new LinkedHashMap<>();
                     entry.put("identifier", generic.identifier());
@@ -188,7 +186,6 @@ final class ModelSnapshotWriter {
         return value != null ? value : "";
     }
 
-    @SuppressWarnings("unchecked")
     private static String toJson(Object value) {
         StringBuilder builder = new StringBuilder();
         appendJson(builder, value);

@@ -203,8 +203,8 @@ class EitriServiceTest {
         List<Map<String, Object>> variants = (List<Map<String, Object>>) degradation.get("variants");
         assertEquals(2, variants.size());
         for (Map<String, Object> variant : variants) {
-            assertTrue(((Number) variant.get("eligible_candidate_count")).intValue() >=
-                    ((Number) variant.get("applied_count")).intValue());
+            assertTrue(((Number) variant.get("eligible_candidate_count"))
+                    .intValue() >= ((Number) variant.get("applied_count")).intValue());
             assertTrue(((Number) variant.get("applied_count")).intValue() > 0);
         }
 
@@ -386,7 +386,7 @@ class EitriServiceTest {
                 tempDir.resolve("manifest.yaml"),
                 Clock.systemUTC());
 
-        Object result = invokePrivate(service, "attachLogFileSafely", new Class<?>[]{Path.class},
+        Object result = invokePrivate(service, "attachLogFileSafely", new Class<?>[] { Path.class },
                 tempDir.resolve("missing-parent").resolve("service.log"));
 
         assertNull(result);
@@ -404,7 +404,7 @@ class EitriServiceTest {
 
         InvocationTargetException error = assertThrows(
                 InvocationTargetException.class,
-                () -> invokePrivate(service, "resolveSourcePath", new Class<?>[]{String.class}, "   "));
+                () -> invokePrivate(service, "resolveSourcePath", new Class<?>[] { String.class }, "   "));
 
         EitriServiceManifestException cause = (EitriServiceManifestException) error.getCause();
         assertEquals("invalid-manifest", cause.reasonCode());
@@ -439,13 +439,13 @@ class EitriServiceTest {
         Files.writeString(path, content);
     }
 
-    private Object invokePrivate(Object target, String methodName, Class<?>[] parameterTypes, Object... args) throws Exception {
+    private Object invokePrivate(Object target, String methodName, Class<?>[] parameterTypes, Object... args)
+            throws Exception {
         Method method = target.getClass().getDeclaredMethod(methodName, parameterTypes);
         method.setAccessible(true);
         return method.invoke(target, args);
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> readYamlLikeJson(Path path) throws IOException {
         try (var in = Files.newInputStream(path)) {
             return new Yaml().load(in);
