@@ -47,6 +47,7 @@ class ConfigServiceTest {
                   plantuml:
                     diagramName: demo
                     showNested: false
+                    generateDegradedDiagrams: false
                     showLabels: false
                 """);
 
@@ -65,6 +66,7 @@ class ConfigServiceTest {
         assertEquals(out, resolution.runConfig().outputPath());
         assertEquals("demo", resolution.plantUmlConfig().diagramName());
         assertFalse(resolution.plantUmlConfig().showNested());
+        assertFalse(resolution.plantUmlConfig().generateDegradedDiagrams());
         assertFalse(resolution.plantUmlConfig().showLabels());
     }
 
@@ -92,6 +94,7 @@ class ConfigServiceTest {
             assertNull(resolution.configFileUsed());
             assertEquals("diagram", resolution.plantUmlConfig().diagramName());
             assertFalse(resolution.plantUmlConfig().showNested());
+            assertFalse(resolution.plantUmlConfig().generateDegradedDiagrams());
         } finally {
             System.setProperty("user.dir", previous);
         }

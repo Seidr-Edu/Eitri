@@ -20,6 +20,7 @@ class PlantUmlConfigTest {
         assertEquals(LayoutDirection.TOP_TO_BOTTOM, config.direction());
         assertTrue(config.showLabels());
         assertFalse(config.showNested());
+        assertFalse(config.generateDegradedDiagrams());
         assertTrue(config.showUnlinked());
         assertTrue(config.hideEmptyMembers());
         assertFalse(config.showThrows());
@@ -46,6 +47,7 @@ class PlantUmlConfigTest {
                 true,
                 true,
                 false,
+                true,
                 true,
                 true,
                 true,

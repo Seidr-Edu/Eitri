@@ -127,7 +127,7 @@ public final class EitriService {
             EitriServiceManifest manifest,
             String defaultRunId,
             Instant startedAt,
-            Path logsDir) throws IOException, EitriServiceManifestException {
+            Path logsDir) throws IOException, EitriServiceManifestException, ConfigException {
         String runId = resolveRunId(manifest, defaultRunId);
         Path configPath = materializeWriterConfigIfPresent(manifest, logsDir);
         List<Path> sourcePaths = resolveSourcePaths(manifest.sourceRelpaths());
@@ -144,7 +144,7 @@ public final class EitriService {
         LOGGER.log(Level.INFO, "Starting Eitri service run {0}", runId);
         RunResult result = new EitriRunner().run(cliOptions);
         DegradationArtifacts degradationArtifacts = null;
-        if (result.exitCode() == 0 && result.model() != null) {
+        if (result.exitCode() == 0 && result.model() != null && shouldGenerateDegradedArtifacts(cliOptions)) {
             try {
                 degradationArtifacts = generateDegradedArtifacts(result.model(), cliOptions);
             } catch (Exception e) {
@@ -417,6 +417,10 @@ public final class EitriService {
             writer.write(variant.model(), plantUmlConfig, generateVariantPath(variant.variant()));
         }
         return new DegradationArtifacts(diagramV2, diagramV3, variants);
+    }
+
+    private boolean shouldGenerateDegradedArtifacts(CliOptions cliOptions) throws ConfigException {
+        return new ConfigService().resolve(cliOptions).plantUmlConfig().generateDegradedDiagrams();
     }
 
     private String appliedCountForVariant(Map<String, Object> degradation, String variantId) {
