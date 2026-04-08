@@ -294,8 +294,10 @@ public final class EitriService {
 
         Map<String, Object> artifacts = new LinkedHashMap<>();
         artifacts.put("diagram_path", diagramPath().toString());
-        artifacts.put("diagram_v2_path", degradationArtifacts != null ? degradationArtifacts.diagramV2Path().toString() : null);
-        artifacts.put("diagram_v3_path", degradationArtifacts != null ? degradationArtifacts.diagramV3Path().toString() : null);
+        artifacts.put("diagram_v2_path",
+                degradationArtifacts != null ? degradationArtifacts.diagramV2Path().toString() : null);
+        artifacts.put("diagram_v3_path",
+                degradationArtifacts != null ? degradationArtifacts.diagramV3Path().toString() : null);
         artifacts.put("model_snapshot_path", modelSnapshotPath().toString());
         artifacts.put("logs_dir", logsDir().toString());
         artifacts.put("repository_stats_path", repositoryStats != null ? repositoryStatsPath().toString() : null);
@@ -417,7 +419,6 @@ public final class EitriService {
         return new DegradationArtifacts(diagramV2, diagramV3, variants);
     }
 
-    @SuppressWarnings("unchecked")
     private String appliedCountForVariant(Map<String, Object> degradation, String variantId) {
         if (degradation == null) {
             return "";

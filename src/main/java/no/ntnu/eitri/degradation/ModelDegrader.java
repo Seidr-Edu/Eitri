@@ -2,6 +2,7 @@ package no.ntnu.eitri.degradation;
 
 import no.ntnu.eitri.config.PlantUmlConfig;
 import no.ntnu.eitri.model.RelationKind;
+import no.ntnu.eitri.model.TypeKind;
 import no.ntnu.eitri.model.UmlField;
 import no.ntnu.eitri.model.UmlMethod;
 import no.ntnu.eitri.model.UmlModel;
@@ -17,7 +18,6 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HexFormat;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,9 +25,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Generates deterministic degraded UML variants from a canonical semantic model.
+ * Generates deterministic degraded UML variants from a canonical semantic
+ * model.
  */
 public final class ModelDegrader {
+    private static final int MIN_INBOUND_REFERENCES_FOR_TYPE_REMOVAL = 1;
+    private static final int MAX_INBOUND_REFERENCES_FOR_TYPE_REMOVAL = 3;
 
     public static final DiagramVariantProfile DIAGRAM_V2 = new DiagramVariantProfile(
             "diagram_v2",
@@ -42,7 +45,8 @@ public final class ModelDegrader {
                     DegradationKind.OMIT_FIELD,
                     DegradationKind.OMIT_METHOD,
                     DegradationKind.REVERSE_RELATION,
-                    DegradationKind.OMIT_RELATION));
+                    DegradationKind.OMIT_RELATION,
+                    DegradationKind.OMIT_TYPE));
 
     private static final HexFormat HEX_FORMAT = HexFormat.of();
 
@@ -94,6 +98,15 @@ public final class ModelDegrader {
             if (!view.isRenderedType(type.getFqn())) {
                 continue;
             }
+            if (profile.allowedKinds().contains(DegradationKind.OMIT_TYPE)
+                    && view.renderedTypeFqns().size() >= 4
+                    && isLowCouplingRemovableType(type, view)) {
+                int inboundReferenceCount = view.inboundModeledReferenceCount(type.getFqn());
+                candidates.add(DegradationCandidate.forType(
+                        type,
+                        inboundReferenceCount,
+                        view.incidentModeledNeighborFqns(type.getFqn())));
+            }
             if (profile.allowedKinds().contains(DegradationKind.OMIT_FIELD)) {
                 for (UmlField field : type.getFields()) {
                     if (view.isVisibleField(field)) {
@@ -124,6 +137,18 @@ public final class ModelDegrader {
         }
 
         return candidates;
+    }
+
+    private boolean isLowCouplingRemovableType(UmlType type, RenderableModelView view) {
+        if (type.getKind() != TypeKind.CLASS && type.getKind() != TypeKind.RECORD) {
+            return false;
+        }
+        if (view.hasRenderedNestedChildren(type.getFqn())) {
+            return false;
+        }
+        int inboundReferenceCount = view.inboundModeledReferenceCount(type.getFqn());
+        return inboundReferenceCount >= MIN_INBOUND_REFERENCES_FOR_TYPE_REMOVAL
+                && inboundReferenceCount <= MAX_INBOUND_REFERENCES_FOR_TYPE_REMOVAL;
     }
 
     int desiredAppliedCount(DiagramVariantProfile profile, int eligibleCount) {
@@ -194,7 +219,8 @@ public final class ModelDegrader {
         OMIT_FIELD("omit_field"),
         OMIT_METHOD("omit_method"),
         REVERSE_RELATION("reverse_relation"),
-        OMIT_RELATION("omit_relation");
+        OMIT_RELATION("omit_relation"),
+        OMIT_TYPE("omit_type");
 
         private final String wireName;
 
@@ -245,7 +271,12 @@ public final class ModelDegrader {
         private final Map<String, Integer> remainingVisibleMethodsByType;
         private final Map<String, Integer> remainingRenderedRelationsByType;
         private final boolean showUnlinked;
+        private int remainingRenderedTypeCount;
+        private boolean typeRemovalSelected;
         private final Set<String> selectedTargets = new java.util.HashSet<>();
+        private final Set<String> selectedMemberTypes = new java.util.HashSet<>();
+        private final Set<String> selectedRelationTypes = new java.util.HashSet<>();
+        private final Set<String> removedTypes = new java.util.HashSet<>();
 
         private SelectionState(
                 Set<String> modeledTypeFqns,
@@ -258,6 +289,7 @@ public final class ModelDegrader {
             this.remainingVisibleMethodsByType = new HashMap<>(visibleMethodCounts);
             this.remainingRenderedRelationsByType = new HashMap<>(renderedRelationCounts);
             this.showUnlinked = showUnlinked;
+            this.remainingRenderedTypeCount = modeledTypeFqns.size();
         }
 
         private boolean select(DegradationCandidate candidate) {
@@ -265,48 +297,91 @@ public final class ModelDegrader {
                 return false;
             }
 
-            return switch (candidate.kind()) {
+            boolean selected = switch (candidate.kind()) {
                 case OMIT_FIELD -> canRemoveVisibleMember(
                         candidate.typeFqn(),
-                        remainingVisibleFieldsByType,
-                        candidate.targetKey());
+                        remainingVisibleFieldsByType);
                 case OMIT_METHOD -> canRemoveVisibleMember(
                         candidate.typeFqn(),
-                        remainingVisibleMethodsByType,
-                        candidate.targetKey());
-                case REVERSE_RELATION -> true;
-                case OMIT_RELATION -> canOmitRelation(candidate);
+                        remainingVisibleMethodsByType);
+                case REVERSE_RELATION -> canSelectRelation(candidate, false);
+                case OMIT_RELATION -> canSelectRelation(candidate, true);
+                case OMIT_TYPE -> canOmitType(candidate);
             };
+            if (!selected) {
+                selectedTargets.remove(candidate.targetKey());
+            }
+            return selected;
         }
 
-        private boolean canRemoveVisibleMember(String typeFqn, Map<String, Integer> remainingCounts, String targetKey) {
+        private boolean canRemoveVisibleMember(String typeFqn, Map<String, Integer> remainingCounts) {
+            if (removedTypes.contains(typeFqn)) {
+                return false;
+            }
             int remaining = remainingCounts.getOrDefault(typeFqn, 0);
             if (remaining <= 1) {
-                selectedTargets.remove(targetKey);
                 return false;
             }
             remainingCounts.put(typeFqn, remaining - 1);
+            selectedMemberTypes.add(typeFqn);
             return true;
         }
 
-        private boolean canOmitRelation(DegradationCandidate candidate) {
-            if (showUnlinked) {
-                return true;
+        private boolean canSelectRelation(DegradationCandidate candidate, boolean omitRelation) {
+            if (removedTypes.contains(candidate.relation().fromTypeFqn())
+                    || removedTypes.contains(candidate.relation().toTypeFqn())) {
+                return false;
             }
 
-            for (String endpoint : List.of(candidate.relation().fromTypeFqn(), candidate.relation().toTypeFqn())) {
-                if (!modeledTypeFqns.contains(endpoint)) {
-                    continue;
+            if (omitRelation && !showUnlinked) {
+                for (String endpoint : List.of(candidate.relation().fromTypeFqn(), candidate.relation().toTypeFqn())) {
+                    if (!modeledTypeFqns.contains(endpoint)) {
+                        continue;
+                    }
+                    int remaining = remainingRenderedRelationsByType.getOrDefault(endpoint, 0);
+                    if (remaining <= 1) {
+                        return false;
+                    }
                 }
-                int remaining = remainingRenderedRelationsByType.getOrDefault(endpoint, 0);
-                if (remaining <= 1) {
-                    selectedTargets.remove(candidate.targetKey());
-                    return false;
+
+                decrementRelationCount(candidate.relation().fromTypeFqn());
+                decrementRelationCount(candidate.relation().toTypeFqn());
+            }
+            if (modeledTypeFqns.contains(candidate.relation().fromTypeFqn())) {
+                selectedRelationTypes.add(candidate.relation().fromTypeFqn());
+            }
+            if (modeledTypeFqns.contains(candidate.relation().toTypeFqn())) {
+                selectedRelationTypes.add(candidate.relation().toTypeFqn());
+            }
+            return true;
+        }
+
+        private boolean canOmitType(DegradationCandidate candidate) {
+            String typeFqn = candidate.typeFqn();
+            if (typeRemovalSelected
+                    || remainingRenderedTypeCount <= 2
+                    || removedTypes.contains(typeFqn)
+                    || selectedMemberTypes.contains(typeFqn)
+                    || selectedRelationTypes.contains(typeFqn)) {
+                return false;
+            }
+
+            if (!showUnlinked) {
+                for (String neighborFqn : candidate.incidentModeledNeighborFqns()) {
+                    int remaining = remainingRenderedRelationsByType.getOrDefault(neighborFqn, 0);
+                    if (remaining <= 1) {
+                        return false;
+                    }
                 }
             }
 
-            decrementRelationCount(candidate.relation().fromTypeFqn());
-            decrementRelationCount(candidate.relation().toTypeFqn());
+            typeRemovalSelected = true;
+            removedTypes.add(typeFqn);
+            remainingRenderedTypeCount--;
+            decrementRelationCount(typeFqn);
+            for (String neighborFqn : candidate.incidentModeledNeighborFqns()) {
+                decrementRelationCount(neighborFqn);
+            }
             return true;
         }
 
@@ -331,7 +406,8 @@ public final class ModelDegrader {
             String fieldType,
             String methodName,
             List<String> methodParameterTypes,
-            RelationDescriptor relation) {
+            RelationDescriptor relation,
+            List<String> incidentModeledNeighborFqns) {
 
         private static DegradationCandidate forField(UmlType owner, UmlField field) {
             String target = field.getName();
@@ -348,7 +424,8 @@ public final class ModelDegrader {
                     field.getType(),
                     null,
                     List.of(),
-                    null);
+                    null,
+                    List.of());
         }
 
         private static DegradationCandidate forMethod(UmlType owner, UmlMethod method) {
@@ -369,7 +446,8 @@ public final class ModelDegrader {
                     null,
                     method.getName(),
                     parameterTypes,
-                    null);
+                    null,
+                    List.of());
         }
 
         private static DegradationCandidate forRelation(UmlRelation relation, DegradationKind kind) {
@@ -389,7 +467,30 @@ public final class ModelDegrader {
                     null,
                     null,
                     List.of(),
-                    descriptor);
+                    descriptor,
+                    List.of());
+        }
+
+        private static DegradationCandidate forType(
+                UmlType type,
+                int inboundReferenceCount,
+                Set<String> incidentModeledNeighborFqns) {
+            return new DegradationCandidate(
+                    "type:" + type.getFqn(),
+                    "type:" + type.getFqn(),
+                    "",
+                    DegradationKind.OMIT_TYPE,
+                    type.getFqn(),
+                    type.getFqn(),
+                    "Removed low-coupling type " + type.getFqn()
+                            + " (inbound_modeled_references=" + inboundReferenceCount + ")",
+                    type.getFqn(),
+                    null,
+                    null,
+                    null,
+                    List.of(),
+                    null,
+                    incidentModeledNeighborFqns.stream().sorted().toList());
         }
 
         private static String methodSignature(UmlMethod method, boolean simpleTypes) {
@@ -413,7 +514,8 @@ public final class ModelDegrader {
                     fieldType,
                     methodName,
                     methodParameterTypes,
-                    relation);
+                    relation,
+                    incidentModeledNeighborFqns);
         }
 
         private UmlModel apply(UmlModel model) {
@@ -422,6 +524,7 @@ public final class ModelDegrader {
                 case OMIT_METHOD -> applyMethodRemoval(model);
                 case REVERSE_RELATION -> applyRelationReplacement(model, relation.reversed());
                 case OMIT_RELATION -> applyRelationRemoval(model);
+                case OMIT_TYPE -> applyTypeRemoval(model);
             };
         }
 
@@ -491,6 +594,25 @@ public final class ModelDegrader {
                 relations.add(relation.matches(existing) ? replacement : existing);
             }
             return rebuildWithRelations(model, relations);
+        }
+
+        private UmlModel applyTypeRemoval(UmlModel model) {
+            UmlModel.Builder builder = UmlModel.builder()
+                    .name(model.getName())
+                    .sourcePackages(model.getSourcePackages())
+                    .notes(new ArrayList<>(model.getNotes()));
+
+            for (UmlType type : model.getTypesSorted()) {
+                if (!type.getFqn().equals(typeFqn)) {
+                    builder.addType(type);
+                }
+            }
+            for (UmlRelation existing : model.getRelations()) {
+                if (!existing.getFromTypeFqn().equals(typeFqn) && !existing.getToTypeFqn().equals(typeFqn)) {
+                    builder.addRelation(existing);
+                }
+            }
+            return builder.build();
         }
 
         private AppliedDegradation toAppliedDegradation() {
