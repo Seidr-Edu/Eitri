@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -101,7 +102,7 @@ public final class ModelDegrader {
                         Map.Entry::getKey,
                         Map.Entry::getValue,
                         (left, _right) -> left,
-                        java.util.LinkedHashMap::new));
+                        LinkedHashMap::new));
     }
 
     List<DegradationCandidate> discoverCandidates(
@@ -173,6 +174,16 @@ public final class ModelDegrader {
         }
         int percentageCount = (int) Math.ceil(eligibleCount * (profile.percentage() / 100.0d));
         return Math.min(eligibleCount, Math.max(profile.minimum(), percentageCount));
+    }
+
+    static int maxTypeRemovalsForRenderedTypeCount(int renderedTypeCount) {
+        if (renderedTypeCount < 30) {
+            return 1;
+        }
+        if (renderedTypeCount < 80) {
+            return 3;
+        }
+        return 5;
     }
 
     private List<DegradationCandidate> selectCandidates(
@@ -289,8 +300,9 @@ public final class ModelDegrader {
         private final Map<String, Integer> remainingVisibleMethodsByType;
         private final Map<String, Integer> remainingRenderedRelationsByType;
         private final boolean showUnlinked;
+        private final int maxTypeRemovals;
         private int remainingRenderedTypeCount;
-        private boolean typeRemovalSelected;
+        private int selectedTypeRemovals;
         private final Set<String> selectedTargets = new java.util.HashSet<>();
         private final Set<String> selectedMemberTypes = new java.util.HashSet<>();
         private final Set<String> selectedRelationTypes = new java.util.HashSet<>();
@@ -308,6 +320,7 @@ public final class ModelDegrader {
             this.remainingRenderedRelationsByType = new HashMap<>(renderedRelationCounts);
             this.showUnlinked = showUnlinked;
             this.remainingRenderedTypeCount = modeledTypeFqns.size();
+            this.maxTypeRemovals = maxTypeRemovalsForRenderedTypeCount(this.remainingRenderedTypeCount);
         }
 
         private boolean select(DegradationCandidate candidate) {
@@ -376,7 +389,7 @@ public final class ModelDegrader {
 
         private boolean canOmitType(DegradationCandidate candidate) {
             String typeFqn = candidate.typeFqn();
-            if (typeRemovalSelected
+            if (selectedTypeRemovals >= maxTypeRemovals
                     || remainingRenderedTypeCount <= 2
                     || removedTypes.contains(typeFqn)
                     || selectedMemberTypes.contains(typeFqn)
@@ -393,7 +406,7 @@ public final class ModelDegrader {
                 }
             }
 
-            typeRemovalSelected = true;
+            selectedTypeRemovals++;
             removedTypes.add(typeFqn);
             remainingRenderedTypeCount--;
             decrementRelationCount(typeFqn);

@@ -157,23 +157,38 @@ class ModelDegraderTest {
         }
 
         @Test
-        void atMostOneTypeIsRemovedWhenTypeRemovalIsEnabled() {
+        void typeRemovalCapScalesWithRenderedDiagramSize() {
                 UmlModel model = sampleModel();
-                PlantUmlConfig nestedConfig = config("showNested", true);
                 ModelDegrader.DiagramVariantProfile typeOnlyProfile = new ModelDegrader.DiagramVariantProfile(
                                 "type-only",
                                 100,
                                 100,
                                 EnumSet.of(ModelDegrader.DegradationKind.OMIT_TYPE));
 
-                ModelDegrader.DiagramDegradationResult degraded = degrader.degrade(model, nestedConfig,
+                ModelDegrader.DiagramDegradationResult degraded = degrader.degrade(model, config("showNested", true),
+                                typeOnlyProfile);
+                ModelDegrader.DiagramDegradationResult mediumDegraded = degrader.degrade(
+                                lowInboundPoolModel(40),
+                                config,
+                                typeOnlyProfile);
+                ModelDegrader.DiagramDegradationResult largeDegraded = degrader.degrade(
+                                lowInboundPoolModel(100),
+                                config,
                                 typeOnlyProfile);
 
                 long removedTypes = degraded.applied().stream()
                                 .filter(applied -> "omit_type".equals(applied.kind()))
                                 .count();
+                long mediumRemovedTypes = mediumDegraded.applied().stream()
+                                .filter(applied -> "omit_type".equals(applied.kind()))
+                                .count();
+                long largeRemovedTypes = largeDegraded.applied().stream()
+                                .filter(applied -> "omit_type".equals(applied.kind()))
+                                .count();
 
                 assertEquals(1, removedTypes);
+                assertEquals(3, mediumRemovedTypes);
+                assertEquals(5, largeRemovedTypes);
         }
 
         @Test
@@ -413,6 +428,23 @@ class ModelDegraderTest {
                                 .addRelation(UmlRelation.association(hub.getFqn(), helper.getFqn(), "uses"))
                                 .sourcePackages(Set.of("demo"))
                                 .build();
+        }
+
+        private UmlModel lowInboundPoolModel(int typeCount) {
+                UmlModel.Builder builder = UmlModel.builder()
+                                .sourcePackages(Set.of("demo"));
+
+                for (int i = 0; i < typeCount; i++) {
+                        builder.addType(type("demo.Type" + i, "Type" + i, TypeKind.CLASS).build());
+                }
+                for (int i = 0; i + 1 < typeCount; i += 2) {
+                        builder.addRelation(UmlRelation.association(
+                                        "demo.Type" + i,
+                                        "demo.Type" + (i + 1),
+                                        "uses" + i));
+                }
+
+                return builder.build();
         }
 
         private UmlType.Builder type(String fqn, String simpleName, TypeKind kind) {
