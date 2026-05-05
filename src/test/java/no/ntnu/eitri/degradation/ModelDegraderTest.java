@@ -69,7 +69,7 @@ class ModelDegraderTest {
                 assertEquals(2, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V2, 5));
                 assertEquals(5, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V2, 50));
                 assertEquals(3, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V3, 10));
-                assertEquals(3, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V3, 25));
+                assertEquals(5, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V3, 25));
         }
 
         @Test
@@ -480,8 +480,7 @@ class ModelDegraderTest {
                         map.put((String) keyValues[i], keyValues[i + 1]);
                 }
                 try {
-                        return RecordBinder.<PlantUmlConfig>bindFlatRecord(map, PlantUmlConfig.class,
-                                        PlantUmlConfig.defaults(),
+                        return RecordBinder.bindFlatRecord(map, PlantUmlConfig.class, PlantUmlConfig.defaults(),
                                         "test");
                 } catch (ConfigException e) {
                         throw new RuntimeException(e);

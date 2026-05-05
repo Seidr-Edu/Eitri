@@ -94,8 +94,7 @@ public final class ModelDegrader {
     private Map<String, Integer> kindCounts(List<DegradationCandidate> candidates) {
         Map<String, Integer> counts = new HashMap<>();
         for (DegradationCandidate candidate : candidates) {
-            String kind = candidate.kind().wireName();
-            counts.put(kind, counts.getOrDefault(kind, 0) + 1);
+            counts.merge(candidate.kind().wireName(), 1, Integer::sum);
         }
         return counts.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())

@@ -156,7 +156,7 @@ final class RenderableModelView {
         if (!typesByFqn.containsKey(typeFqn)) {
             return;
         }
-        counts.put(typeFqn, counts.getOrDefault(typeFqn, 0) + 1);
+        counts.merge(typeFqn, 1, Integer::sum);
     }
 
     private static void incrementInboundModeledReferenceCount(
@@ -166,7 +166,7 @@ final class RenderableModelView {
         if (!typesByFqn.containsKey(relation.getFromTypeFqn()) || !typesByFqn.containsKey(relation.getToTypeFqn())) {
             return;
         }
-        counts.put(relation.getToTypeFqn(), counts.getOrDefault(relation.getToTypeFqn(), 0) + 1);
+        counts.merge(relation.getToTypeFqn(), 1, Integer::sum);
     }
 
     private static void linkNeighbor(

@@ -110,8 +110,7 @@ public final class CliArtifactsWriter {
             entry.put("eligible_kind_counts", variant.eligibleKindCounts());
             entry.put("applied_count", variant.appliedCount());
             entry.put("applied_kind_counts", appliedKindCounts(variant.applied()));
-            entry.put("effective_percentage",
-                    effectivePercentage(variant.appliedCount(), variant.eligibleCandidateCount()));
+            entry.put("effective_percentage", effectivePercentage(variant.appliedCount(), variant.eligibleCandidateCount()));
 
             List<Map<String, Object>> appliedEntries = new ArrayList<>();
             for (ModelDegrader.AppliedDegradation applied : variant.applied()) {
@@ -228,8 +227,7 @@ public final class CliArtifactsWriter {
     private Map<String, Integer> appliedKindCounts(List<ModelDegrader.AppliedDegradation> applied) {
         Map<String, Integer> counts = new LinkedHashMap<>();
         for (ModelDegrader.AppliedDegradation degradation : applied) {
-            String kind = degradation.kind();
-            counts.put(kind, counts.getOrDefault(kind, 0) + 1);
+            counts.merge(degradation.kind(), 1, Integer::sum);
         }
         return counts;
     }
