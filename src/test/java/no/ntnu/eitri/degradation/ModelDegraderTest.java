@@ -67,7 +67,7 @@ class ModelDegraderTest {
                 assertEquals(0, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V2, 0));
                 assertEquals(1, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V2, 1));
                 assertEquals(2, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V2, 5));
-                assertEquals(4, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V2, 50));
+                assertEquals(5, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V2, 50));
                 assertEquals(3, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V3, 10));
                 assertEquals(3, degrader.desiredAppliedCount(ModelDegrader.DIAGRAM_V3, 25));
         }

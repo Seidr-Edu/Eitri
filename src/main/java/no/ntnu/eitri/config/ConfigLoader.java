@@ -43,7 +43,7 @@ public final class ConfigLoader {
         }
 
         Map<String, Object> plantUml = requireMap(plantUmlNode, ROOT_CONFIG_KEY + "." + PLANTUML_WRITER_KEY);
-        return RecordBinder.bindFlatRecord(
+        return RecordBinder.<PlantUmlConfig>bindFlatRecord(
                 plantUml,
                 PlantUmlConfig.class,
                 PlantUmlConfig.defaults(),
