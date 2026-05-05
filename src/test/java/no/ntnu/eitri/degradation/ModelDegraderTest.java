@@ -480,7 +480,8 @@ class ModelDegraderTest {
                         map.put((String) keyValues[i], keyValues[i + 1]);
                 }
                 try {
-                        return RecordBinder.bindFlatRecord(map, PlantUmlConfig.class, PlantUmlConfig.defaults(),
+                        return RecordBinder.<PlantUmlConfig>bindFlatRecord(map, PlantUmlConfig.class,
+                                        PlantUmlConfig.defaults(),
                                         "test");
                 } catch (ConfigException e) {
                         throw new RuntimeException(e);
