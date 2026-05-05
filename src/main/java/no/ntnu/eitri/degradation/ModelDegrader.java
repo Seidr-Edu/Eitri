@@ -35,12 +35,12 @@ public final class ModelDegrader {
 
     public static final DiagramVariantProfile DIAGRAM_V2 = new DiagramVariantProfile(
             "diagram_v2",
-            8,
+            10,
             2,
             EnumSet.of(DegradationKind.OMIT_FIELD, DegradationKind.OMIT_METHOD, DegradationKind.REVERSE_RELATION));
     public static final DiagramVariantProfile DIAGRAM_V3 = new DiagramVariantProfile(
             "diagram_v3",
-            12,
+            20,
             3,
             EnumSet.of(
                     DegradationKind.OMIT_FIELD,
