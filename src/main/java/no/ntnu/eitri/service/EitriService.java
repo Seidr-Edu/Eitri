@@ -397,7 +397,8 @@ public final class EitriService {
             entry.put("eligible_kind_counts", variant.eligibleKindCounts());
             entry.put("applied_count", variant.appliedCount());
             entry.put("applied_kind_counts", appliedKindCounts(variant.applied()));
-            entry.put("effective_percentage", effectivePercentage(variant.appliedCount(), variant.eligibleCandidateCount()));
+            entry.put("effective_percentage",
+                    effectivePercentage(variant.appliedCount(), variant.eligibleCandidateCount()));
 
             List<Map<String, Object>> applied = new ArrayList<>();
             for (ModelDegrader.AppliedDegradation degradation : variant.applied()) {
@@ -493,7 +494,8 @@ public final class EitriService {
     private Map<String, Integer> appliedKindCounts(List<ModelDegrader.AppliedDegradation> applied) {
         Map<String, Integer> counts = new LinkedHashMap<>();
         for (ModelDegrader.AppliedDegradation degradation : applied) {
-            counts.merge(degradation.kind(), 1, Integer::sum);
+            String kind = degradation.kind();
+            counts.put(kind, counts.getOrDefault(kind, 0) + 1);
         }
         return counts;
     }

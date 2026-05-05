@@ -46,7 +46,7 @@ final class RepositoryStatsCollector {
             if (packageName == null || packageName.isBlank()) {
                 continue;
             }
-            packageTypeCounts.merge(packageName, 1, Integer::sum);
+            packageTypeCounts.put(packageName, packageTypeCounts.getOrDefault(packageName, 0) + 1);
         }
 
         List<String> packages = new ArrayList<>(packageTypeCounts.keySet());
